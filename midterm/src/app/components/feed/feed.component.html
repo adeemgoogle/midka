@@ -1,1 +1,94 @@
-<p>feed works!</p>
+<main>
+    <button routerLink="/">HOME</button>
+    <button routerLink="/feed">FEED</button>
+    <button routerLink="/about">ABOUT US</button>
+    <section class="tweet-composer">
+      
+      <div>
+        <textarea [(ngModel)]="postText" placeholder="What's happening?"></textarea>
+        <button (click)="addPost()">Post</button>
+      </div>
+    </section>
+  
+    <section class="tweets">
+     
+      <div class="tweet" *ngFor="let tweet of tweets" appHoverHighlight>
+        <div class="user-avatar">
+       
+        </div>
+        <div class="comments">
+            <div *ngFor="let comment of getComments(tweet)">
+                {{ comment.text }}
+              </div>
+            <div>
+                <input [(ngModel)]="commentText" placeholder="Add a comment...">
+
+                <button (click)="addComment(tweet, commentText)">Comment</button>
+            </div>
+        </div>
+        <div class="tweet-content">
+          <div class="user-info">
+            <span class="user-name">Adem</span>
+            <span class="username">@Ademgoogle</span>
+          </div>
+          <p class="tweet-text">{{ tweet.text }}</p>
+          <div class="tweet-actions">
+            <div>
+              <button (click)="toggleLike(tweet)">
+                {{ isLiked(tweet) ? 'Unlike' : 'Like' }}
+              </button>
+              <span>{{ likeCount(tweet) }} Likes</span>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+      
+    </section>
+  </main>
+  <main>
+    <section class="tweet-composer">
+      
+      <div>
+        <textarea [(ngModel)]="postText" placeholder="What's happening?"></textarea>
+        <button (click)="addPost()">Post</button>
+      </div>
+    </section>
+  
+    <section class="tweets">
+     
+      <div class="tweet" *ngFor="let tweet of tweets" appHoverHighlight>
+        <div class="user-avatar">
+       
+        </div>
+        <div class="comments">
+            <div *ngFor="let comment of getComments(tweet)">
+                {{ comment.text }}
+              </div>
+            <div>
+                <input [(ngModel)]="commentText" placeholder="Add a comment...">
+
+                <button (click)="addComment(tweet, commentText)">Comment</button>
+            </div>
+        </div>
+        <div class="tweet-content">
+          <div class="user-info">
+            <span class="user-name">Adem</span>
+            <span class="username">@Ademgoogle</span>
+          </div>
+          <p class="tweet-text">{{ tweet.text }}</p>
+          <div class="tweet-actions">
+            <div>
+              <button (click)="toggleLike(tweet)">
+                {{ isLiked(tweet) ? 'Unlike' : 'Like' }}
+              </button>
+              <span>{{ likeCount(tweet) }} Likes</span>
+            </div>
+            
+          </div>
+        </div>
+      </div>
+      
+    </section>
+  </main>
+  
