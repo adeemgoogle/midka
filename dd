@@ -2,3 +2,4 @@ git clone openssl/3.1.2: error:0a000152:ssl routines::unsafe legacy renegotiatio
  log/slog: package log/slog is not in GOROOT 
  module declares its path as: github.com/IBM/sarama
                 but was required as: github.com/Shopify/sarama
+go: github.com/gofiber/fiber/v2: GOPROXY list is not the empty string, but contains no entries
