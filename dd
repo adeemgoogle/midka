@@ -6,3 +6,4 @@ go: github.com/gofiber/fiber/v2: GOPROXY list is not the empty string, but conta
 go: go: module golang.org/toolchain: Get "https://go.dev/dl/mod/golang.org/toolchain/@v/list": tls: server chose an unconfigured cipher suite
 go: malformed module path "get": missing dot in first path element
 go: github.com/gofiber/fiber/v2@v2.51.0: verifying module: missing GOSUMDB
+go: malformed module path "get": missing dot in first path element
