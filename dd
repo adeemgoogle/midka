@@ -7,3 +7,23 @@ go: go: module golang.org/toolchain: Get "https://go.dev/dl/mod/golang.org/toolc
 go: malformed module path "get": missing dot in first path element
 go: github.com/gofiber/fiber/v2@v2.51.0: verifying module: missing GOSUMDB
 go: malformed module path "get": missing dot in first path element
+
+
+
+https://bytebytego.com/courses/system-design-interview/scale-from-zero-to-millions-of-users
+
+https://sybase91.medium.com/system-design-basics-part-4-latency-throughput-and-availability-99d5e0cfaa11
+
+https://www.linkedin.com/pulse/system-design-basics-part-i-client-server-model-thomas-varghese/
+
+https://dataschool.com/data-modeling-101/row-vs-column-oriented-databases/
+
+https://levelup.gitconnected.com/understanding-isolation-levels-in-a-database-transaction-af78aea3f44
+
+https://youtu.be/-qNSXK7s7_w?si=Ld38-VOiXQJ_S8bm
+
+https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336
+
+https://bytebytego.com/courses/system-design-interview/back-of-the-envelope-estimation
+
+https://bytebytego.com/courses/system-design-interview/a-framework-for-system-design-interviews
