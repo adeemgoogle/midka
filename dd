@@ -41,40 +41,45 @@ import (
 package main
 
 import (
-	"context"
-	"context/handler"
+	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func main() {
-	duration := 2 * time.Second
-	ctx := context.Background()
-	d := time.Now().Add(duration)
-	ctx = context.WithValue(ctx, "test", "google")
-	ctx, cancel := context.WithDeadline(ctx, d)
-
-	defer cancel()
-
-	handler.DoRequest(ctx, "https://www.google.kz/?hl=ru")
-}
-
-
-func DoRequest(ctx context.Context, req string) {
-	requ, _ := http.NewRequest(http.MethodGet, req, nil)
-	requ = requ.WithContext(ctx)
+func DoRequest(fctx *fiber.Ctx, req string) error {
+	ctx := fctx.Context() // Получаем внутренний контекст Fasthttp от Fiber
+	requ, _ := http.NewRequestWithContext(ctx, http.MethodGet, req, nil)
 
 	client := &http.Client{}
 	res, err := client.Do(requ)
 	if err != nil {
-		panic(err)
+		return fctx.Status(http.StatusInternalServerError).SendString(err.Error())
 	}
+	defer res.Body.Close()
 
 	select {
 	case <-time.After(500 * time.Millisecond):
-		fmt.Printf("resquest complited=%d\n", res.StatusCode)
-		fmt.Println(ctx.Value("test"))
+		fmt.Printf("request completed=%d\n", res.StatusCode)
+		// Пример использования значения из контекста Fiber
+		testValue := fctx.Locals("test")
+		fmt.Println(testValue)
+		return fctx.Status(res.StatusCode).SendString("Request completed")
 	case <-ctx.Done():
 		fmt.Println("request too long")
-
+		return fctx.SendString("Request took too long")
 	}
+}
+
+func main() {
+	app := fiber.New()
+
+	app.Get("/do_request", func(c *fiber.Ctx) error {
+		// Пример установки значения в контекст Fiber
+		c.Locals("test", "example value")
+		return DoRequest(c, "http://example.com")
+	})
+
+	app.Listen(":3000")
 }
