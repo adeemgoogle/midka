@@ -27,3 +27,54 @@ https://medium.com/@waleoyediran/spatial-indexing-with-quadtrees-b998ae49336
 https://bytebytego.com/courses/system-design-interview/back-of-the-envelope-estimation
 
 https://bytebytego.com/courses/system-design-interview/a-framework-for-system-design-interviews
+
+
+package handler
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+)
+
+package main
+
+import (
+	"context"
+	"context/handler"
+	"time"
+)
+
+func main() {
+	duration := 2 * time.Second
+	ctx := context.Background()
+	d := time.Now().Add(duration)
+	ctx = context.WithValue(ctx, "test", "google")
+	ctx, cancel := context.WithDeadline(ctx, d)
+
+	defer cancel()
+
+	handler.DoRequest(ctx, "https://www.google.kz/?hl=ru")
+}
+
+
+func DoRequest(ctx context.Context, req string) {
+	requ, _ := http.NewRequest(http.MethodGet, req, nil)
+	requ = requ.WithContext(ctx)
+
+	client := &http.Client{}
+	res, err := client.Do(requ)
+	if err != nil {
+		panic(err)
+	}
+
+	select {
+	case <-time.After(500 * time.Millisecond):
+		fmt.Printf("resquest complited=%d\n", res.StatusCode)
+		fmt.Println(ctx.Value("test"))
+	case <-ctx.Done():
+		fmt.Println("request too long")
+
+	}
+}
