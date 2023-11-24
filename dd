@@ -1,13 +1,27 @@
-git clone openssl/3.1.2: error:0a000152:ssl routines::unsafe legacy renegotiation disabled 
- log/slog: package log/slog is not in GOROOT 
- module declares its path as: github.com/IBM/sarama
-                but was required as: github.com/Shopify/sarama
-go: github.com/gofiber/fiber/v2: GOPROXY list is not the empty string, but contains no entries
-go: go: module golang.org/toolchain: Get "https://go.dev/dl/mod/golang.org/toolchain/@v/list": tls: server chose an unconfigured cipher suite
-go: malformed module path "get": missing dot in first path element
-go: github.com/gofiber/fiber/v2@v2.51.0: verifying module: missing GOSUMDB
-go: malformed module path "get": missing dot in first path element
+func DoRequestWithDeadline(fctx *fiber.Ctx, req string, deadline time.Duration) error {
+	// Создаем контекст с дедлайном
+	ctx, cancel := context.WithDeadline(fctx.Context(), time.Now().Add(deadline))
+	defer cancel()
 
+	// Создаем HTTP запрос с контекстом
+	requ, _ := http.NewRequestWithContext(ctx, http.MethodGet, req, nil)
+
+	client := &http.Client{}
+	res, err := client.Do(requ)
+	if err != nil {
+		return fctx.Status(http.StatusInternalServerError).SendString(err.Error())
+	}
+	defer res.Body.Close()
+
+	select {
+	case <-time.After(500 * time.Millisecond):
+		fmt.Printf("request completed=%d\n", res.StatusCode)
+		return fctx.Status(res.StatusCode).SendString("Request completed")
+	case <-ctx.Done():
+		fmt.Println("request too long")
+		return fctx.SendString("Request took too long")
+	}
+}
 
 
 https://bytebytego.com/courses/system-design-interview/scale-from-zero-to-millions-of-users
