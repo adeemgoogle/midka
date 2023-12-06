@@ -97,3 +97,4 @@ func main() {
 
 	app.Listen(":3000")
 }
+ github.com/lithammer/shortuuid/v3@v3.0.4: unexpected EOF 
