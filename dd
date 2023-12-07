@@ -98,3 +98,5 @@ func main() {
 	app.Listen(":3000")
 }
  github.com/lithammer/shortuuid/v3@v3.0.4: unexpected EOF 
+xmlns:xs="http://www.w3.org/2001/XMLSchema" 
+                        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string"><?xml version="1.0" encoding="UTF-8" standalone="no"?>;<requestMessage xmlns="http://www.w3.org/2001/XMLSchema">;
