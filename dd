@@ -1,7 +1,7 @@
-go: github.com/tinylib/msgp@v1.1.8 requires
-        golang.org/x/tools@v0.4.0 requires
-        golang.org/x/net@v0.3.0: reading golang.org/x/net/go.mod at revision v0.3.0: git ls-remote -q origin in go\go1.18\pkg\mod\cache\vcs\ed42bd05533fd84ae290a5d33ebd3695a0a2b06131beebd5450825bee8603aca: exit
- status 128:
+go: github.com/golang-migrate/migrate/v4@v4.14.1 requires
+        cloud.google.com/go@v0.64.0 requires
+        github.com/golang/mock@v1.4.4: reading github.com/golang/mock/go.mod at revision v1.4.4: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9
+838f0b: exit status 128:
         fatal: 'origin' does not appear to be a git repository
         fatal: Could not read from remote repository.
 
