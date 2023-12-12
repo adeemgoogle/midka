@@ -1,9 +1,73 @@
-go: github.com/golang-migrate/migrate/v4@v4.14.1 requires
-        cloud.google.com/go@v0.64.0 requires
-        github.com/golang/mock@v1.4.4: reading github.com/golang/mock/go.mod at revision v1.4.4: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9
-838f0b: exit status 128:
-        fatal: 'origin' does not appear to be a git repository
-        fatal: Could not read from remote repository.
 
-        Please make sure you have the correct access rights
-        and the repository exists.
+go: github.com/armon/go-metrics@v0.4.1: invalid version: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\a39a20cfc50b8d7488b8993bffeadc8da4f1c5e3d7e045664cefa24c33645e02: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: github.com/jackc/pgx/v4@v4.18.1: invalid version: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\4fb6b0aa70bd805edf598659a99e777804ef1eab3ec0ddce4b2561f9e78727f8: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: github.com/jackc/pgx/v5@v5.3.1: invalid version: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\4fb6b0aa70bd805edf598659a99e777804ef1eab3ec0ddce4b2561f9e78727f8: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/fileutil@v1.0.0: invalid version: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\26fda3777d5dc85402797e956c4e512306afa138e26ee2967c55ef2d5e8fbba8: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/golex@v1.0.0: invalid version: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\331abdfca303c81a23ece466d46e18fedd2836c595dcfad18b8e9e93c37f08d5: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/internal@v1.0.0: invalid version: git ls-remote -q origin in C:\Users\00058157\go\go1.18\pkg\mod\cache\vcs\66dde3c1901576f44c3fd19b25462a48efaeab1e923d278a5ab992f1e0452cbb: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/lldb@v1.0.0: invalid version: git ls-remote -q origin in \go\go1.18\pkg\mod\cache\vcs\f173de2a2f98ed6d3ed0248e24fd906517f95c45588b77262bdd88e8d19f1216: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/mathutil@v1.5.0: invalid version: git ls-remote -q origin in \go\go1.18\pkg\mod\cache\vcs\6d5eb6f7314c374a7460656aec0e757c87dfb068fcb28b5ae365ea2e3a1a35fa: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/ql@v1.0.0: invalid version: git ls-remote -q origin in \go\go1.18\pkg\mod\cache\vcs\cd116ec3eaad7bda95fbee9d25b208ef49581f64a8a3d53e614f620155277344: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/sortutil@v1.1.0: invalid version: git ls-remote -q origin in \go\go1.18\pkg\mod\cache\vcs\a5ed8e7d489705958b6cc3d81aa2d58e007ae80170b4c8cbf388209f7d55a060: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/strutil@v1.1.3: invalid version: git ls-remote -q origin in go\go1.18\pkg\mod\cache\vcs\151fa26af08bed5ec6a699b872ba143ac5282cae786b63f0587fe46054a0175f: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
+go: modernc.org/zappy@v1.0.0: invalid version: git ls-remote -q origin in go\go1.18\pkg\mod\cache\vcs\dc1509d5785e98bfa6be1bdc729899c75c4893db9c43ae7811745e2204dc57f9: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
