@@ -1,1 +1,5 @@
-http2: server: error reading preface from client //./pipe/docker_engine: file has already been closed
+---
+ > [ 4/11] RUN apk update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.2/main:
+0.321 fetch http://dl-cdn.alpinelinux.org/alpine/v3.2/main/x86_64/APKINDEX.tar.gz
+1.003 fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/main/x86_64/APKINDEX.tar.gz
+2.937 086BD9AAD17F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
