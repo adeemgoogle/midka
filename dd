@@ -1,5 +1,23 @@
----
- > [ 4/11] RUN apk update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.2/main:
-0.321 fetch http://dl-cdn.alpinelinux.org/alpine/v3.2/main/x86_64/APKINDEX.tar.gz
-1.003 fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/main/x86_64/APKINDEX.tar.gz
-2.937 086BD9AAD17F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
+=> ERROR [ 5/12] RUN apk update --no-cache --repository https://dl-3.alpinelinux.org/alpine/v3.19/main/                                                                                                                       1.0s 
+------
+ > [ 5/12] RUN apk update --no-cache --repository https://dl-3.alpinelinux.org/alpine/v3.19/main/:
+0.225 fetch https://dl-3.alpinelinux.org/alpine/v3.19/main/x86_64/APKINDEX.tar.gz
+0.474 082B0B39237F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
+0.475 WARNING: fetching https://dl-3.alpinelinux.org/alpine/v3.19/main/: Permission denied
+0.476 fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/main/x86_64/APKINDEX.tar.gz
+0.767 082B0B39237F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
+0.769 WARNING: fetching https://dl-cdn.alpinelinux.org/alpine/v3.19/main: Permission denied
+0.769 fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/community/x86_64/APKINDEX.tar.gz
+0.944 082B0B39237F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
+0.945 WARNING: fetching https://dl-cdn.alpinelinux.org/alpine/v3.19/community: Permission denied
+0.945 6 unavailable, 0 stale; 16 distinct packages available
+------
+Dockerfile:6
+--------------------
+   4 |     RUN apk --no-cache add ca-certificates \
+   5 |         && update-ca-certificates
+   6 | >>> RUN apk update --no-cache --repository https://dl-3.alpinelinux.org/alpine/v3.19/main/
+   7 |     RUN apk add ca-certificates --no-cache --repository https://dl-3.alpinelinux.org/alpine/v3.19/main/
+   8 |     RUN apk add build-base --no-cache --repository https://dl-3.alpinelinux.org/alpine/v3.19/main/
+--------------------
+ERROR: failed to solve: process "/bin/sh -c apk update --no-cache --repository https://dl-3.alpinelinux.org/alpine/v3.19/main/" did not complete successfully: exit code: 6
