@@ -1,2 +1,1 @@
-An error occurred during specification rendering
-Resource does not exist: uria/government/address-register/api/address/1
+http2: server: error reading preface from client //./pipe/docker_engine: file has already been closed
