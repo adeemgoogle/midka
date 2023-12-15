@@ -1,1 +1,11 @@
-require golang.org/x/exp v0.0.0-20230101000000-abcdefabcdef
+[ 4/11] RUN apk update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.15/main:
+0.301 fetch http://dl-cdn.alpinelinux.org/alpine/v3.15/main/x86_64/APKINDEX.tar.gz
+1.843 fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/main/x86_64/APKINDEX.tar.gz
+2.143 085B88EB0E7F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
+2.144 fetch https://dl-cdn.alpinelinux.org/alpine/v3.19/community/x86_64/APKINDEX.tar.gz
+2.144 WARNING: fetching https://dl-cdn.alpinelinux.org/alpine/v3.19/main: Permission denied
+2.322 085B88EB0E7F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
+2.324 WARNING: fetching https://dl-cdn.alpinelinux.org/alpine/v3.19/community: Permission denied
+2.339 v3.15.11-5-ge3ad11b4f46 [http://dl-cdn.alpinelinux.org/alpine/v3.15/main]
+2.339 4 unavailable, 0 stale; 4846 distinct packages available
+------
