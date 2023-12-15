@@ -1,13 +1,1 @@
-# golang.org/x/exp/slog
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\level.go:159:13: undefined: atomic.Int64
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\attr.go:20:19: undefined: StringValue
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\attr.go:68:19: undefined: GroupValue
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\handler.go:446:15: undefined: StringValue
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\json_handler.go:109:20: v.str undefined (type Value has no field or method str)
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\record.go:192:9: undefined: GroupValue
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\text_handler.go:99:20: v.str undefined (type Value has no field or method str)
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\value.go:87:7: undefined: stringptr
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\value.go:91:7: undefined: groupptr
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\value.go:173:10: undefined: StringValue
-..\..\..\..\go\go1.18\pkg\mod\golang.org\x\exp@v0.0.0-20230905200255-921286631fa9\slog\value.go:173:10: too many errors
-note: module requires Go 1.20
+require golang.org/x/exp v0.0.0-20230101000000-abcdefabcdef
