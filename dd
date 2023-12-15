@@ -1,1 +1,2 @@
-ERROR: failed to solve: process "/bin/sh -c apk update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.14/main" did not complete successfully: exit code: 4
+An error occurred during specification rendering
+Resource does not exist:
