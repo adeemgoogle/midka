@@ -1,1 +1,1 @@
-08CB027B647F0000:error:0A000086:SSL routines:tls_post_process_server_certificate:certificate verify failed:ssl/statem/statem_clnt.c:1889:
+ERROR: failed to solve: process "/bin/sh -c apk update --no-cache --repository http://dl-cdn.alpinelinux.org/alpine/v3.14/main" did not complete successfully: exit code: 4
