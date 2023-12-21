@@ -1,12 +1,1 @@
-// HandleIIN godoc
-// @Summary Post account
-// @Description getting the data for the given iin
-// @Tags account
-// @Accept json
-// @Produce json
-// @Param requestBody body model.Request true "Post by iin"
-// @Success 200 {array} model.Account
-// @Failure 400 {string} string "Bad request"
-// @Failure 404 {string} string "Bad Request"
-// @Failure 500 {string} string "Internal Server Error"
-// @Router /account [post]
+.go :missing required param comment parameters "token header string true svsdvdv
