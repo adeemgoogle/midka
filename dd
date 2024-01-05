@@ -1,1 +1,6 @@
-.go :missing required param comment parameters "token header string true svsdvdv
+go: github.com/armon/go-metrics@v0.4.1: invalid version: git ls-remote -q origin in go1.18\pkg\mod\cache\vcs\a39a20cfc50b8d7488b8993bffeadc8da4f1c5e3d7e045664cefa24c33645e02: exit status 128:
+	fatal: 'origin' does not appear to be a git repository
+	fatal: Could not read from remote repository.
+	
+	Please make sure you have the correct access rights
+	and the repository exists.
