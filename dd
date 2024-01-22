@@ -1,17 +1,41 @@
-mkdir -p go1.18\pkg\mod\cache\vcs # git3 https://github.com/golang/mock
-# lock \go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9838f0b.lock# \go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9838f0b for git3 https://github.com/golang/mock
-cd \go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9838f0b; git tag -l
-0.444s # cd o1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9838f0b; git tag -l
-cd \go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9838f0b; git ls-remote -q origin
-0.358s # cd go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9838f0b; git ls-remote -q origin
-# get https://github.com/golang/mock
-# get https://github.com/golang/mock: 200 OK (0.364s)
-go: github.com/spf13/afero@v1.9.3 requires
-	cloud.google.com/go/storage@v1.14.0 requires
-	cloud.google.com/go@v0.75.0 requires
-	github.com/golang/mock@v1.4.4: reading github.com/golang/mock/go.mod at revision v1.4.4: git ls-remote -q origin in go1.18\pkg\mod\cache\vcs\e0a6dff9fb6c1f7c23e670e933cb00d791bc91d7acab4aef9d400ff3e9838f0b: exit status 128:
-	fatal: 'origin' does not appear to be a git repository
-	fatal: Could not read from remote repository.
-	
-	Please make sure you have the correct access rights
-	and the repository exists.
+WITH RECURSIVE Ats AS (
+    
+    SELECT d_ats_types.id AS ats_type_id,
+           s_ats.id AS ats_id,
+           s_ats.parent_id,
+           s_buildings.id AS building_id,
+           d_ats_types.value_ru AS ats_valueru,
+           s_ats.name_ru as s_ats_nameRU,
+           s_ats.name_kz as s_ats_nameKZ,
+           s_geonims.name_kz As Geonim_kz,
+           s_geonims.name_ru As Geonim_ru,
+           d_geonims_types.value_ru As GeonimRU,
+           d_geonims_types.value_kz As GeonimKZ,
+           s_buildings.number as building_number,
+           d_buildings_pointers.value_ru As building_pointerru,
+           d_buildings_pointers.value_kz as building_pointerkz
+    from s_ats
+
+        left join s_geonims on s_ats.id = s_geonims.s_ats_id
+        left join s_buildings on s_geonims.id = s_buildings.s_geonim_id
+        left join d_ats_types on s_ats.d_ats_type_id = d_ats_types.id
+        left join d_geonims_types on s_geonims.d_geonims_type_id = d_geonims_types.id
+        left join d_buildings_pointers on s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
+
+        union all
+        SELECT d_ats_types.id, s_ats.id, s_ats.parent_id, s_buildings.id, s_ats.name_ru, s_ats.name_kz,d_ats_types.value_ru , s_geonims.name_kz,
+               s_geonims.name_ru, d_geonims_types.value_ru,d_geonims_types.value_kz,
+               s_buildings.number,
+               d_buildings_pointers.value_ru,d_buildings_pointers.value_kz
+        from Ats
+        Join s_ats on s_ats.id = s_ats.parent_id
+        left join s_geonims on s_ats.id = s_geonims.s_ats_id
+        left join s_buildings on s_geonims.id = s_buildings.s_geonim_id
+        left join d_ats_types on s_ats.d_ats_type_id = d_ats_types.id
+        left join d_geonims_types on s_geonims.d_geonims_type_id = d_geonims_types.id
+        left join d_buildings_pointers on s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
+        where s_ats.parent_id is null AND s_ats.d_ats_type_id=s_ats.id
+
+)
+
+select * from Ats;
