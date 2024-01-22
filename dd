@@ -39,3 +39,47 @@ WITH RECURSIVE Ats AS (
 )
 
 select * from Ats;
+
+
+WITH RECURSIVE Ats AS (
+    SELECT
+        id AS ats_id,
+        d_ats_type_id AS ats_type_id,
+        parent_id,
+        -- Другие поля, которые вам нужны
+    FROM s_ats
+    WHERE d_ats_type_id = '10'
+    
+    UNION ALL
+    
+    SELECT
+        s_ats.id,
+        s_ats.d_ats_type_id,
+        s_ats.parent_id,
+        -- Другие поля, которые вам нужны
+    FROM Ats
+    JOIN s_ats ON Ats.parent_id = s_ats.id
+)
+
+SELECT
+    ats_id,
+    ats_type_id,
+    s_ats_nameRU,
+    s_ats_nameKZ,
+    Geonim_kz,
+    Geonim_ru,
+    building_number
+FROM (
+    SELECT
+        ats_id,
+        ats_type_id,
+        MAX(s_ats_nameRU) AS s_ats_nameRU,
+        MAX(s_ats_nameKZ) AS s_ats_nameKZ,
+        MAX(Geonim_kz) AS Geonim_kz,
+        MAX(Geonim_ru) AS Geonim_ru,
+        MAX(building_number) AS building_number,
+        ROW_NUMBER() OVER (ORDER BY CASE WHEN ats_type_id = '10' THEN 0 ELSE 1 END, ats_id) AS row_num
+    FROM Ats
+    GROUP BY ats_id, ats_type_id
+) AS ranked_data
+ORDER BY row_num;
