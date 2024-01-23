@@ -1,1 +1,50 @@
+WITH RECURSIVE LocationHierarchy AS (
+    SELECT
+        s_ats.id AS location_id,
+        s_ats.parent_id,
+        d_ats_types.id AS ats_type_id,
+        d_ats_types.value_ru AS ats_value_ru,
+        d_ats_types.value_kz AS ats_value_kz,
+        s_ats.name_ru AS s_ats_name_ru,
+        s_ats.name_kz AS s_ats_name_kz,
+        1 AS level
+    FROM s_ats
+    JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+    WHERE s_ats.d_ats_type_id = '10' -- Задайте ваш нужный d_ats_type_id
 
+    UNION ALL
+
+    SELECT
+        s_ats.id,
+        s_ats.parent_id,
+        d_ats_types.id,
+        d_ats_types.value_ru,
+        d_ats_types.value_kz,
+        s_ats.name_ru,
+        s_ats.name_kz,
+        lh.level + 1
+    FROM LocationHierarchy lh
+    JOIN s_ats ON lh.location_id = s_ats.parent_id
+    JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+)
+
+SELECT
+    CONCAT_WS(' ', 
+        MAX(CASE WHEN level = 1 THEN ats_value_ru END),
+        MAX(CASE WHEN level = 2 THEN ats_value_ru END),
+        MAX(CASE WHEN level = 3 THEN ats_value_ru END),
+        MAX(CASE WHEN level = 4 THEN ats_value_ru END),
+        MAX(CASE WHEN level = 5 THEN ats_value_ru END),
+        MAX(CASE WHEN level = 6 THEN ats_value_ru END)
+    ) AS full_location_ru,
+    CONCAT_WS(' ', 
+        MAX(CASE WHEN level = 1 THEN ats_value_kz END),
+        MAX(CASE WHEN level = 2 THEN ats_value_kz END),
+        MAX(CASE WHEN level = 3 THEN ats_value_kz END),
+        MAX(CASE WHEN level = 4 THEN ats_value_kz END),
+        MAX(CASE WHEN level = 5 THEN ats_value_kz END),
+        MAX(CASE WHEN level = 6 THEN ats_value_kz END)
+    ) AS full_location_kz
+FROM LocationHierarchy
+GROUP BY location_id
+ORDER BY location_id;
