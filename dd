@@ -1,118 +1,111 @@
-WITH RECURSIVE Ats AS (
+CREATE TEMPORARY TABLE temp_region AS
+WITH RECURSIVE Region AS (
     SELECT
-        'Казахстан' AS country,
-        NULL AS region,
-        NULL AS city,
-        NULL AS street,
-        NULL AS building,
         s_ats.id AS ats_id,
-        s_ats.parent_id,
-        s_buildings.id AS building_id,
-        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END AS ats_valueru,
-        s_ats.name_ru AS s_ats_nameRU,
-        s_ats.name_kz AS s_ats_nameKZ,
-        s_geonims.name_kz AS Geonim_kz,
-        s_geonims.name_ru AS Geonim_ru,
-        d_geonims_types.value_ru AS GeonimRU,
-        d_geonims_types.value_kz AS GeonimKZ,
-        s_buildings.number AS building_number,
-        d_buildings_pointers.value_ru AS building_pointerru,
-        d_buildings_pointers.value_kz AS building_pointerkz
+        d_ats_types.value_ru AS region
     FROM s_ats
-    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
-    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
     LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
-    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
-    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
-    
-    UNION ALL
-    
-    SELECT
-        'Казахстан',
-        CASE WHEN d_ats_types.id = '10' THEN d_ats_types.value_ru ELSE NULL END AS region,
-        s_ats.name_ru AS city,
-        NULL AS street,
-        NULL AS building,
-        s_ats.id,
-        s_ats.parent_id,
-        s_buildings.id,
-        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
-        s_ats.name_ru,
-        s_ats.name_kz,
-        s_geonims.name_kz,
-        s_geonims.name_ru,
-        d_geonims_types.value_ru,
-        d_geonims_types.value_kz,
-        s_buildings.number,
-        d_buildings_pointers.value_ru,
-        d_buildings_pointers.value_kz
-    FROM Ats
-    JOIN s_ats ON s_ats.id = Ats.parent_id
-    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
-    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
-    LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
-    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
-    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
     WHERE s_ats.parent_id IS NULL AND s_ats.d_ats_type_id = s_ats.id
     
     UNION ALL
     
     SELECT
-        'Казахстан',
-        d_ats_types.value_ru AS region,
-        s_ats.name_ru AS city,
-        s_geonims.name_ru AS street,
-        NULL AS building,
         s_ats.id,
-        s_ats.parent_id,
-        s_buildings.id,
-        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
-        s_ats.name_ru,
-        s_ats.name_kz,
-        s_geonims.name_kz,
-        s_geonims.name_ru,
-        d_geonims_types.value_ru,
-        d_geonims_types.value_kz,
-        s_buildings.number,
-        d_buildings_pointers.value_ru,
-        d_buildings_pointers.value_kz
-    FROM Ats
-    JOIN s_ats ON s_ats.id = Ats.parent_id
-    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
-    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
+        d_ats_types.value_ru
+    FROM Region
+    JOIN s_ats ON Region.ats_id = s_ats.parent_id
     LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
-    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
-    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
     WHERE s_ats.parent_id IS NOT NULL AND s_ats.d_ats_type_id = s_ats.id
+)
+SELECT * FROM Region;
+
+CREATE TEMPORARY TABLE temp_city AS
+WITH RECURSIVE City AS (
+    SELECT
+        s_ats.id AS ats_id,
+        s_ats.name_ru AS city
+    FROM s_ats
+    WHERE s_ats.parent_id IS NULL AND s_ats.d_ats_type_id = s_ats.id
     
     UNION ALL
     
     SELECT
-        'Казахстан',
-        d_ats_types.value_ru AS region,
-        s_ats.name_ru AS city,
-        s_geonims.name_ru AS street,
-        d_buildings_pointers.value_ru AS building,
         s_ats.id,
-        s_ats.parent_id,
-        s_buildings.id,
-        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
-        s_ats.name_ru,
-        s_ats.name_kz,
-        s_geonims.name_kz,
-        s_geonims.name_ru,
-        d_geonims_types.value_ru,
-        d_geonims_types.value_kz,
-        s_buildings.number,
-        d_buildings_pointers.value_ru,
-        d_buildings_pointers.value_kz
-    FROM Ats
-    JOIN s_ats ON s_ats.id = Ats.parent_id
-    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
-    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
-    LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
-    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
-    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
+        s_ats.name_ru
+    FROM City
+    JOIN s_ats ON City.ats_id = s_ats.parent_id
     WHERE s_ats.parent_id IS NOT NULL AND s_ats.d_ats_type_id = s_ats.id
 )
-SELECT * FROM Ats;
+SELECT * FROM City;
+
+CREATE TEMPORARY TABLE temp_street AS
+WITH RECURSIVE Street AS (
+    SELECT
+        s_ats.id AS ats_id,
+        s_geonims.name_ru AS street
+    FROM s_ats
+    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
+    WHERE s_ats.parent_id IS NULL AND s_ats.d_ats_type_id = s_ats.id
+    
+    UNION ALL
+    
+    SELECT
+        s_ats.id,
+        s_geonims.name_ru
+    FROM Street
+    JOIN s_ats ON Street.ats_id = s_ats.parent_id
+    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
+    WHERE s_ats.parent_id IS NOT NULL AND s_ats.d_ats_type_id = s_ats.id
+)
+SELECT * FROM Street;
+
+CREATE TEMPORARY TABLE temp_building AS
+WITH RECURSIVE Building AS (
+    SELECT
+        s_ats.id AS ats_id,
+        s_buildings.number AS building
+    FROM s_ats
+    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
+    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
+    WHERE s_ats.parent_id IS NULL AND s_ats.d_ats_type_id = s_ats.id
+    
+    UNION ALL
+    
+    SELECT
+        s_ats.id,
+        s_buildings.number
+    FROM Building
+    JOIN s_ats ON Building.ats_id = s_ats.parent_id
+    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
+    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
+    WHERE s_ats.parent_id IS NOT NULL AND s_ats.d_ats_type_id = s_ats.id
+)
+SELECT * FROM Building;
+
+-- Теперь соединим все таблицы с основной
+SELECT
+    'Казахстан' AS country,
+    R.region,
+    C.city,
+    S.street,
+    B.building,
+    A.ats_id,
+    A.parent_id,
+    A.building_id,
+    CASE WHEN D.id = '10' THEN 'Республика' ELSE D.value_ru END AS ats_valueru,
+    A.s_ats_nameRU,
+    A.s_ats_nameKZ,
+    A.Geonim_kz,
+    A.Geonim_ru,
+    A.GeonimRU,
+    A.GeonimKZ,
+    A.building_number,
+    A.building_pointerru,
+    A.building_pointerkz
+FROM s_ats A
+LEFT JOIN temp_region R ON A.id = R.ats_id
+LEFT JOIN temp_city C ON A.id = C.ats_id
+LEFT JOIN temp_street S ON A.id = S.ats_id
+LEFT JOIN temp_building B ON A.id = B.ats_id
+LEFT JOIN d_ats_types D ON A.d_ats_type_id = D.id
+WHERE A.parent_id IS NULL AND A.d_ats_type_id = A.id;
