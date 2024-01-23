@@ -1,100 +1,28 @@
 WITH RECURSIVE Ats AS (
-    
-    SELECT d_ats_types.id AS ats_type_id,
-           s_ats.id AS ats_id,
-           s_ats.parent_id,
-           s_buildings.id AS building_id,
-           d_ats_types.value_ru AS ats_valueru,
-           s_ats.name_ru as s_ats_nameRU,
-           s_ats.name_kz as s_ats_nameKZ,
-           s_geonims.name_kz As Geonim_kz,
-           s_geonims.name_ru As Geonim_ru,
-           d_geonims_types.value_ru As GeonimRU,
-           d_geonims_types.value_kz As GeonimKZ,
-           s_buildings.number as building_number,
-           d_buildings_pointers.value_ru As building_pointerru,
-           d_buildings_pointers.value_kz as building_pointerkz
-    from s_ats
-
-        left join s_geonims on s_ats.id = s_geonims.s_ats_id
-        left join s_buildings on s_geonims.id = s_buildings.s_geonim_id
-        left join d_ats_types on s_ats.d_ats_type_id = d_ats_types.id
-        left join d_geonims_types on s_geonims.d_geonims_type_id = d_geonims_types.id
-        left join d_buildings_pointers on s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
-
-        union all
-        SELECT d_ats_types.id, s_ats.id, s_ats.parent_id, s_buildings.id, s_ats.name_ru, s_ats.name_kz,d_ats_types.value_ru , s_geonims.name_kz,
-               s_geonims.name_ru, d_geonims_types.value_ru,d_geonims_types.value_kz,
-               s_buildings.number,
-               d_buildings_pointers.value_ru,d_buildings_pointers.value_kz
-        from Ats
-        Join s_ats on s_ats.id = s_ats.parent_id
-        left join s_geonims on s_ats.id = s_geonims.s_ats_id
-        left join s_buildings on s_geonims.id = s_buildings.s_geonim_id
-        left join d_ats_types on s_ats.d_ats_type_id = d_ats_types.id
-        left join d_geonims_types on s_geonims.d_geonims_type_id = d_geonims_types.id
-        left join d_buildings_pointers on s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
-        where s_ats.parent_id is null AND s_ats.d_ats_type_id=s_ats.id
-
-)
-
-select * from Ats;
-
-
-WITH RECURSIVE Ats AS (
     SELECT
-        id AS ats_id,
-        d_ats_type_id AS ats_type_id,
-        parent_id,
-        -- Другие поля, которые вам нужны
-    FROM s_ats
-    WHERE d_ats_type_id = '10'
+        'Казахстан' AS location,
+        NULL AS ats_id,
+        NULL AS parent_id,
+        NULL AS building_id,
+        NULL AS ats_valueru,
+        NULL AS s_ats_nameRU,
+        NULL AS s_ats_nameKZ,
+        NULL AS Geonim_kz,
+        NULL AS Geonim_ru,
+        NULL AS GeonimRU,
+        NULL AS GeonimKZ,
+        NULL AS building_number,
+        NULL AS building_pointerru,
+        NULL AS building_pointerkz
     
     UNION ALL
     
     SELECT
-        s_ats.id,
-        s_ats.d_ats_type_id,
-        s_ats.parent_id,
-        -- Другие поля, которые вам нужны
-    FROM Ats
-    JOIN s_ats ON Ats.parent_id = s_ats.id
-)
-
-SELECT
-    ats_id,
-    ats_type_id,
-    s_ats_nameRU,
-    s_ats_nameKZ,
-    Geonim_kz,
-    Geonim_ru,
-    building_number
-FROM (
-    SELECT
-        ats_id,
-        ats_type_id,
-        MAX(s_ats_nameRU) AS s_ats_nameRU,
-        MAX(s_ats_nameKZ) AS s_ats_nameKZ,
-        MAX(Geonim_kz) AS Geonim_kz,
-        MAX(Geonim_ru) AS Geonim_ru,
-        MAX(building_number) AS building_number,
-        ROW_NUMBER() OVER (ORDER BY CASE WHEN ats_type_id = '10' THEN 0 ELSE 1 END, ats_id) AS row_num
-    FROM Ats
-    GROUP BY ats_id, ats_type_id
-) AS ranked_data
-ORDER BY row_num;
-
-
-
-
-
-WITH RECURSIVE Ats AS (
-    SELECT
-        d_ats_types.id AS ats_type_id,
+        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
         s_ats.id AS ats_id,
         s_ats.parent_id,
         s_buildings.id AS building_id,
-        d_ats_types.value_ru AS ats_valueru,
+        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END AS ats_valueru,
         s_ats.name_ru AS s_ats_nameRU,
         s_ats.name_kz AS s_ats_nameKZ,
         s_geonims.name_kz AS Geonim_kz,
@@ -114,105 +42,13 @@ WITH RECURSIVE Ats AS (
     UNION ALL
     
     SELECT
-        d_ats_types.id,
+        d_ats_types.value_ru,
         s_ats.id,
         s_ats.parent_id,
         s_buildings.id,
+        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
         s_ats.name_ru,
         s_ats.name_kz,
-        d_ats_types.value_ru,
-        s_geonims.name_kz,
-        s_geonims.name_ru,
-        d_geonims_types.value_ru,
-        d_geonims_types.value_kz,
-        s_buildings.number,
-        d_buildings_pointers.value_ru,
-        d_buildings_pointers.value_kz
-    FROM Ats
-    JOIN s_ats ON s_ats.id = Ats.parent_id
-    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
-    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
-    LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
-    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
-    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
-    WHERE s_ats.parent_id IS NULL AND s_ats.d_ats_type_id = s_ats.id
-
-    UNION ALL
-    
-    SELECT
-        '10' AS ats_type_id,
-        NULL AS ats_id,
-        NULL AS parent_id,
-        NULL AS building_id,
-        NULL AS ats_valueru,
-        'Республика' AS s_ats_nameRU,
-        NULL AS s_ats_nameKZ,
-        NULL AS Geonim_kz,
-        NULL AS Geonim_ru,
-        NULL AS GeonimRU,
-        NULL AS GeonimKZ,
-        NULL AS building_number,
-        NULL AS building_pointerru,
-        NULL AS building_pointerkz
-)
-SELECT * FROM Ats;
-
-
-
-
-
-
-WITH RECURSIVE Ats AS (
-    SELECT
-        '10' AS ats_type_id,
-        NULL AS ats_id,
-        NULL AS parent_id,
-        NULL AS building_id,
-        NULL AS ats_valueru,
-        'Республика' AS s_ats_nameRU,
-        NULL AS s_ats_nameKZ,
-        NULL AS Geonim_kz,
-        NULL AS Geonim_ru,
-        NULL AS GeonimRU,
-        NULL AS GeonimKZ,
-        NULL AS building_number,
-        NULL AS building_pointerru,
-        NULL AS building_pointerkz
-    
-    UNION ALL
-    
-    SELECT
-        d_ats_types.id AS ats_type_id,
-        s_ats.id AS ats_id,
-        s_ats.parent_id,
-        s_buildings.id AS building_id,
-        d_ats_types.value_ru AS ats_valueru,
-        s_ats.name_ru AS s_ats_nameRU,
-        s_ats.name_kz AS s_ats_nameKZ,
-        s_geonims.name_kz AS Geonim_kz,
-        s_geonims.name_ru AS Geonim_ru,
-        d_geonims_types.value_ru AS GeonimRU,
-        d_geonims_types.value_kz AS GeonimKZ,
-        s_buildings.number AS building_number,
-        d_buildings_pointers.value_ru AS building_pointerru,
-        d_buildings_pointers.value_kz AS building_pointerkz
-    FROM s_ats
-    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
-    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
-    LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
-    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
-    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
-    
-    UNION ALL
-    
-    SELECT
-        d_ats_types.id,
-        s_ats.id,
-        s_ats.parent_id,
-        s_buildings.id,
-        s_ats.name_ru,
-        s_ats.name_kz,
-        d_ats_types.value_ru,
         s_geonims.name_kz,
         s_geonims.name_ru,
         d_geonims_types.value_ru,
