@@ -5,28 +5,6 @@ WITH RECURSIVE Ats AS (
         NULL AS city,
         NULL AS street,
         NULL AS building,
-        NULL AS ats_id,
-        NULL AS parent_id,
-        NULL AS building_id,
-        NULL AS ats_valueru,
-        NULL AS s_ats_nameRU,
-        NULL AS s_ats_nameKZ,
-        NULL AS Geonim_kz,
-        NULL AS Geonim_ru,
-        NULL AS GeonimRU,
-        NULL AS GeonimKZ,
-        NULL AS building_number,
-        NULL AS building_pointerru,
-        NULL AS building_pointerkz
-    
-    UNION ALL
-    
-    SELECT
-        'Казахстан',
-        CASE WHEN d_ats_types.id = '10' THEN d_ats_types.value_ru ELSE NULL END AS region,
-        NULL AS city,
-        NULL AS street,
-        NULL AS building,
         s_ats.id AS ats_id,
         s_ats.parent_id,
         s_buildings.id AS building_id,
@@ -51,7 +29,7 @@ WITH RECURSIVE Ats AS (
     
     SELECT
         'Казахстан',
-        d_ats_types.value_ru AS region,
+        CASE WHEN d_ats_types.id = '10' THEN d_ats_types.value_ru ELSE NULL END AS region,
         s_ats.name_ru AS city,
         NULL AS street,
         NULL AS building,
@@ -133,4 +111,8 @@ WITH RECURSIVE Ats AS (
     LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
     LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
     LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
-    LEFT JOIN d_geonims_types ON s_geonims
+    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
+    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
+    WHERE s_ats.parent_id IS NOT NULL AND s_ats.d_ats_type_id = s_ats.id
+)
+SELECT * FROM Ats;
