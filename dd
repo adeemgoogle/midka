@@ -1,1 +1,31 @@
+WITH RECURSIVE LocationHierarchy AS (
+    SELECT
+        s_ats.id AS location_id,
+        d_ats_types.value_ru AS location_name_ru,
+        d_ats_types.value_kz AS location_name_kz,
+        s_ats.parent_id
+    FROM
+        s_ats
+    JOIN
+        d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+    WHERE
+        s_ats.id = '1' -- Начните с республики
+    UNION ALL
+    SELECT
+        s_ats.id,
+        d_ats_types.value_ru,
+        d_ats_types.value_kz,
+        s_ats.parent_id
+    FROM
+        LocationHierarchy
+    JOIN
+        s_ats ON LocationHierarchy.location_id = s_ats.parent_id
+    JOIN
+        d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+)
 
+SELECT
+    STRING_AGG(location_name_ru, ' ') AS full_location_ru,
+    STRING_AGG(location_name_kz, ' ') AS full_location_kz
+FROM
+    LocationHierarchy;
