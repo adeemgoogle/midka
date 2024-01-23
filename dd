@@ -1,1 +1,42 @@
 
+WITH RECURSIVE LocationHierarchy AS (
+    SELECT
+        s_ats.id AS location_id,
+        d_ats_types.value_ru AS location_name_ru,
+        d_ats_types.value_kz AS location_name_kz,
+        s_ats.parent_id,
+        d_ats_types.id AS location_type_id
+    FROM
+        s_ats
+    JOIN
+        d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+    WHERE
+        s_ats.id = '1' -- Начнем с республики
+    UNION ALL
+    SELECT
+        s_ats.id,
+        d_ats_types.value_ru,
+        d_ats_types.value_kz,
+        s_ats.parent_id,
+        d_ats_types.id
+    FROM
+        LocationHierarchy
+    JOIN
+        s_ats ON LocationHierarchy.location_id = s_ats.parent_id
+    JOIN
+        d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+)
+
+SELECT
+    MAX(CASE WHEN location_type_id = '10' THEN location_name_ru END) AS Republic_ru,
+    MAX(CASE WHEN location_type_id = '10' THEN location_name_kz END) AS Republic_kz,
+    MAX(CASE WHEN location_type_id = '7' THEN location_name_ru END) AS Region_ru,
+    MAX(CASE WHEN location_type_id = '7' THEN location_name_kz END) AS Region_kz,
+    MAX(CASE WHEN location_type_id = '5' THEN location_name_ru END) AS District_ru,
+    MAX(CASE WHEN location_type_id = '5' THEN location_name_kz END) AS District_kz,
+    MAX(CASE WHEN location_type_id = '4' THEN location_name_ru END) AS City_ru,
+    MAX(CASE WHEN location_type_id = '4' THEN location_name_kz END) AS City_kz
+FROM
+    LocationHierarchy
+WHERE
+    parent_id IS NULL; -- Это фильтрует только республику
