@@ -1,6 +1,10 @@
 WITH RECURSIVE Ats AS (
     SELECT
-        'Казахстан' AS location,
+        'Казахстан' AS country,
+        NULL AS region,
+        NULL AS city,
+        NULL AS street,
+        NULL AS building,
         NULL AS ats_id,
         NULL AS parent_id,
         NULL AS building_id,
@@ -18,7 +22,11 @@ WITH RECURSIVE Ats AS (
     UNION ALL
     
     SELECT
-        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
+        'Казахстан',
+        CASE WHEN d_ats_types.id = '10' THEN d_ats_types.value_ru ELSE NULL END AS region,
+        NULL AS city,
+        NULL AS street,
+        NULL AS building,
         s_ats.id AS ats_id,
         s_ats.parent_id,
         s_buildings.id AS building_id,
@@ -42,7 +50,11 @@ WITH RECURSIVE Ats AS (
     UNION ALL
     
     SELECT
-        d_ats_types.value_ru,
+        'Казахстан',
+        d_ats_types.value_ru AS region,
+        s_ats.name_ru AS city,
+        NULL AS street,
+        NULL AS building,
         s_ats.id,
         s_ats.parent_id,
         s_buildings.id,
@@ -64,5 +76,61 @@ WITH RECURSIVE Ats AS (
     LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
     LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
     WHERE s_ats.parent_id IS NULL AND s_ats.d_ats_type_id = s_ats.id
-)
-SELECT * FROM Ats;
+    
+    UNION ALL
+    
+    SELECT
+        'Казахстан',
+        d_ats_types.value_ru AS region,
+        s_ats.name_ru AS city,
+        s_geonims.name_ru AS street,
+        NULL AS building,
+        s_ats.id,
+        s_ats.parent_id,
+        s_buildings.id,
+        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
+        s_ats.name_ru,
+        s_ats.name_kz,
+        s_geonims.name_kz,
+        s_geonims.name_ru,
+        d_geonims_types.value_ru,
+        d_geonims_types.value_kz,
+        s_buildings.number,
+        d_buildings_pointers.value_ru,
+        d_buildings_pointers.value_kz
+    FROM Ats
+    JOIN s_ats ON s_ats.id = Ats.parent_id
+    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
+    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
+    LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+    LEFT JOIN d_geonims_types ON s_geonims.d_geonims_type_id = d_geonims_types.id
+    LEFT JOIN d_buildings_pointers ON s_buildings.d_buildings_pointer_id = d_buildings_pointers.id
+    WHERE s_ats.parent_id IS NOT NULL AND s_ats.d_ats_type_id = s_ats.id
+    
+    UNION ALL
+    
+    SELECT
+        'Казахстан',
+        d_ats_types.value_ru AS region,
+        s_ats.name_ru AS city,
+        s_geonims.name_ru AS street,
+        d_buildings_pointers.value_ru AS building,
+        s_ats.id,
+        s_ats.parent_id,
+        s_buildings.id,
+        CASE WHEN d_ats_types.id = '10' THEN 'Республика' ELSE d_ats_types.value_ru END,
+        s_ats.name_ru,
+        s_ats.name_kz,
+        s_geonims.name_kz,
+        s_geonims.name_ru,
+        d_geonims_types.value_ru,
+        d_geonims_types.value_kz,
+        s_buildings.number,
+        d_buildings_pointers.value_ru,
+        d_buildings_pointers.value_kz
+    FROM Ats
+    JOIN s_ats ON s_ats.id = Ats.parent_id
+    LEFT JOIN s_geonims ON s_ats.id = s_geonims.s_ats_id
+    LEFT JOIN s_buildings ON s_geonims.id = s_buildings.s_geonim_id
+    LEFT JOIN d_ats_types ON s_ats.d_ats_type_id = d_ats_types.id
+    LEFT JOIN d_geonims_types ON s_geonims
