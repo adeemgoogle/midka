@@ -1,1 +1,25 @@
-error CS0308: Неуниверсальный тип "ILogger" нельзя использовать с аргументами типа.
+using Microsoft.AspNetCore.Mvc;
+using Serilog;
+
+namespace TradePointAPI.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class HealthzController : ControllerBase
+    {
+        private readonly ILogger<HealthzController> _logger;
+
+        public HealthzCheckController(ILogger<HealthzController> logger)
+        {
+            _logger = logger;
+        }
+
+        [HttpGet(Name = "healthz")]
+        public string GetHealthz()
+        {
+            string msg = Startup.Server.Healthz();
+            return msg;
+        }
+    }
+
+}
