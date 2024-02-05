@@ -40,3 +40,30 @@ FROM
     LocationHierarchy
 WHERE
     parent_id IS NULL; -- Это фильтрует только республику
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using System.Threading.Tasks;
+
+namespace YourNamespace.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class HealthCheckController : ControllerBase
+    {
+        private readonly HealthCheckService _healthCheckService;
+
+        public HealthCheckController(HealthCheckService healthCheckService)
+        {
+            _healthCheckService = healthCheckService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Check()
+        {
+            var result = await _healthCheckService.CheckHealthAsync();
+            return Ok(result);
+        }
+    }
+}
+
