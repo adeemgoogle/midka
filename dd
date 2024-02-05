@@ -1,2 +1,81 @@
-Startup.cs(67,8): error CS1061: "IApplicationBuilder" не содержит определения "UseHealthzChecks", и не удалось найти доступный метод расширения "UseHealthzChecks", принимающий тип "IApplicationBuilder" в качестве первого аргумен
-та (возможно, пропущена директива using или ссылка на сборку).
+Controllers\HealthzCheck.cs(20,20): error CS0029: Не удается неявно преобразовать тип "Microsoft.AspNetCore.Mvc.OkObjectResult" в "string". [API.csproj]
+Startup.cs(67,8): error CS1061: "IApplicationBuilder" не содержит определения "UseRouting", и не удалось найти доступный метод расширения "UseRouting", принимающий тип "IApplicationBuilder" в качестве первого аргумента (возможно
+, пропущена директива using или ссылка на сборку). [API.csproj]
+Startup.cs(68,8): error CS1061: "IApplicationBuilder" не содержит определения "UseEndpoints", и не удалось найти доступный метод расширения "UseEndpoints", принимающий тип "IApplicationBuilder" в качестве первого аргумента (возм
+ожно, пропущена директива using или ссылка на сборку). [API.csproj]
+
+
+using GraphiQl;
+using GraphQL;
+using GraphQL.Types;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using TradePointAPI.Models.GraphQL;
+using TradePointAPI.Queries;
+using TradePointAPI.Repositories;
+using TradePointAPI.Schemas;
+using Serilog;
+using Microsoft.Extensions.Logging;
+using Prometheus;
+
+using TradePointAPI.Elastic;
+
+namespace TradePointAPI
+{
+    public class Startup
+    {
+        private readonly IConfiguration Configuration;
+
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to add services to the container.
+        /// For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        /// </summary>
+        /// <param name="services"></param>
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc();
+            services.AddOptions();
+            services.Configure<ElasticConnectionSettings>(Configuration.GetSection("ElasticConnectionSettings"));
+            services.AddTransient<IRepository, ElasticRepository>();
+            services.AddScoped<TPQuery>();
+            services.AddScoped<IDocumentExecuter, DocumentExecuter>();
+            services.AddTransient<ATMType>();
+            services.AddTransient<BranchType>();
+            services.AddTransient<KATOType>();
+            services.AddTransient<LocationType>();
+            services.AddTransient<WorkTimeType>();
+            services.AddTransient<AddressType>();
+            services.AddTransient<IntLanguageType>();
+            services.AddTransient<CircleInputType>(); 
+			services.AddHealthChecks();
+            services.AddSingleton(typeof(ElasticClientProvider));
+            var sp = services.BuildServiceProvider();
+            services.AddSingleton<ISchema>(new TradePointsSchema(new FuncDependencyResolver(type => sp.GetService(type))));
+
+        }
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory logger)
+        {
+            logger.AddSerilog();
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            app.UseMetricServer();
+            app.UseGraphiQl();
+			app.UseRouting();
+			app.UseEndpoints(endpoints => {
+			endpoints.MapHealthChecks("/healthz");
+});
+            app.UseMvc();
+        }
+    }
+}
