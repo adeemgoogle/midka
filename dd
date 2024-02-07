@@ -1,27 +1,19 @@
-При отправке запроса вместо амперсанды пишет "https://fo.sulpak.kz:8190/api/Methods/GetBalanceByPhone?APIKey=ce454999-5721-4343-9wed-aa47b676ca9e\u0026phone=7778952
-4881\" почему? как исправить?
-	request, err := http.NewRequest("POST", s.url+"?APIKey="+s.apiKey+"&phone="+req.Phone, nil)
+func postRequest(cli *http.Client, request *http.Request) ([]byte, error) {
+
+	resp, err := cli.Do(request)
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
-	resp, err := postRequest(s.cli, request)
-	if err != nil {
-		return nil, err
+	if resp.StatusCode != 200 {
+		return nil, errors.New("error from merchant, status: " + resp.Status)
 	}
 
-	balanceSG, err := s.unmarchal(resp)
-	if err != nil {
-		return nil, err
+	respBody, readErr := io.ReadAll(resp.Body)
+	if readErr != nil {
+		return nil, readErr
 	}
 
-	balanceSA := new(model.Balance)
-	balanceSA.Type = "additional"
-	balanceSA.Amount = 0
-
-	merchantS := new(model.Merchant)
-	merchantS.MerchantId = "sulpak"
-	merchantS.Phone = req.Phone
-	merchantS.Balances = append(merchantS.Balances, balanceSG)
-	merchantS.Balances = append(merchantS.Balances, balanceSA)
-	return merchantS, nil
+	return respBody, nil
+}
