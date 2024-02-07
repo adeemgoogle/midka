@@ -1,81 +1,27 @@
-Controllers\HealthzCheck.cs(20,20): error CS0029: Не удается неявно преобразовать тип "Microsoft.AspNetCore.Mvc.OkObjectResult" в "string". [API.csproj]
-Startup.cs(67,8): error CS1061: "IApplicationBuilder" не содержит определения "UseRouting", и не удалось найти доступный метод расширения "UseRouting", принимающий тип "IApplicationBuilder" в качестве первого аргумента (возможно
-, пропущена директива using или ссылка на сборку). [API.csproj]
-Startup.cs(68,8): error CS1061: "IApplicationBuilder" не содержит определения "UseEndpoints", и не удалось найти доступный метод расширения "UseEndpoints", принимающий тип "IApplicationBuilder" в качестве первого аргумента (возм
-ожно, пропущена директива using или ссылка на сборку). [API.csproj]
+При отправке запроса вместо амперсанды пишет "https://fo.sulpak.kz:8190/api/Methods/GetBalanceByPhone?APIKey=ce454999-5721-4343-9wed-aa47b676ca9e\u0026phone=7778952
+4881\" почему? как исправить?
+	request, err := http.NewRequest("POST", s.url+"?APIKey="+s.apiKey+"&phone="+req.Phone, nil)
+	if err != nil {
+		return nil, err
+	}
 
+	resp, err := postRequest(s.cli, request)
+	if err != nil {
+		return nil, err
+	}
 
-using GraphiQl;
-using GraphQL;
-using GraphQL.Types;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using TradePointAPI.Models.GraphQL;
-using TradePointAPI.Queries;
-using TradePointAPI.Repositories;
-using TradePointAPI.Schemas;
-using Serilog;
-using Microsoft.Extensions.Logging;
-using Prometheus;
+	balanceSG, err := s.unmarchal(resp)
+	if err != nil {
+		return nil, err
+	}
 
-using TradePointAPI.Elastic;
+	balanceSA := new(model.Balance)
+	balanceSA.Type = "additional"
+	balanceSA.Amount = 0
 
-namespace TradePointAPI
-{
-    public class Startup
-    {
-        private readonly IConfiguration Configuration;
-
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
-        /// <summary>
-        /// This method gets called by the runtime. Use this method to add services to the container.
-        /// For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
-        /// </summary>
-        /// <param name="services"></param>
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMvc();
-            services.AddOptions();
-            services.Configure<ElasticConnectionSettings>(Configuration.GetSection("ElasticConnectionSettings"));
-            services.AddTransient<IRepository, ElasticRepository>();
-            services.AddScoped<TPQuery>();
-            services.AddScoped<IDocumentExecuter, DocumentExecuter>();
-            services.AddTransient<ATMType>();
-            services.AddTransient<BranchType>();
-            services.AddTransient<KATOType>();
-            services.AddTransient<LocationType>();
-            services.AddTransient<WorkTimeType>();
-            services.AddTransient<AddressType>();
-            services.AddTransient<IntLanguageType>();
-            services.AddTransient<CircleInputType>(); 
-			services.AddHealthChecks();
-            services.AddSingleton(typeof(ElasticClientProvider));
-            var sp = services.BuildServiceProvider();
-            services.AddSingleton<ISchema>(new TradePointsSchema(new FuncDependencyResolver(type => sp.GetService(type))));
-
-        }
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory logger)
-        {
-            logger.AddSerilog();
-
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-
-            app.UseMetricServer();
-            app.UseGraphiQl();
-			app.UseRouting();
-			app.UseEndpoints(endpoints => {
-			endpoints.MapHealthChecks("/healthz");
-});
-            app.UseMvc();
-        }
-    }
-}
+	merchantS := new(model.Merchant)
+	merchantS.MerchantId = "sulpak"
+	merchantS.Phone = req.Phone
+	merchantS.Balances = append(merchantS.Balances, balanceSG)
+	merchantS.Balances = append(merchantS.Balances, balanceSA)
+	return merchantS, nil
