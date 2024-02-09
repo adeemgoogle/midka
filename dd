@@ -1,19 +1,24 @@
-func postRequest(cli *http.Client, request *http.Request) ([]byte, error) {
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
-	resp, err := cli.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+namespace TradePointsLoader.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class HealthzController : ControllerBase
+    {
+        private readonly ILogger<HealthzController> _logger;
 
-	if resp.StatusCode != 200 {
-		return nil, errors.New("error from merchant, status: " + resp.Status)
-	}
+        public HealthzController(ILogger<HealthzController> logger)
+        {
+            _logger = logger;
+        }
 
-	respBody, readErr := io.ReadAll(resp.Body)
-	if readErr != nil {
-		return nil, readErr
-	}
+        [HttpGet(Name = "healthz")]
+        public IActionResult GetHealthz()
+        {
+            return new OkObjectResult("OK");
+        }
+    }
 
-	return respBody, nil
 }
