@@ -1,24 +1,14 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
+if err != nil {
+		insErr := s.Mark.InsertKundelikError(kundelikID, owClientID, err.Error())
 
-namespace TradePointsLoader.Controllers
-{
-    [ApiController]
-    [Route("[controller]")]
-    public class HealthzController : ControllerBase
-    {
-        private readonly ILogger<HealthzController> _logger;
+func (s *MarkStore) InsertKundelikError(kundelikId, owClientId, error string) error {
+	query := `
+		INSERT INTO 
+		    kundelik_errors (ow_client_id, kundelik_id, kundelik_response) 
+		VALUES 
+		    ($1, $2, $3)
+	`
 
-        public HealthzController(ILogger<HealthzController> logger)
-        {
-            _logger = logger;
-        }
-
-        [HttpGet(Name = "healthz")]
-        public IActionResult GetHealthz()
-        {
-            return new OkObjectResult("OK");
-        }
-    }
-
+	_, err := s.DB.Exec(query, owClientId, kundelikId, error)
+	return err
 }
