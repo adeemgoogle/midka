@@ -1,14 +1,10 @@
-if err != nil {
-		insErr := s.Mark.InsertKundelikError(kundelikID, owClientID, err.Error())
+type StudentWithMarks struct {
+	Student
+	Marks []*StudentMark
+}
 
-func (s *MarkStore) InsertKundelikError(kundelikId, owClientId, error string) error {
-	query := `
-		INSERT INTO 
-		    kundelik_errors (ow_client_id, kundelik_id, kundelik_response) 
-		VALUES 
-		    ($1, $2, $3)
-	`
-
-	_, err := s.DB.Exec(query, owClientId, kundelikId, error)
-	return err
+type Student struct {
+	KundelikID string    
+	OwClientID string   
+	CreatedAt  time.Time 
 }
