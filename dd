@@ -8,3 +8,19 @@ type Student struct {
 	OwClientID string   
 	CreatedAt  time.Time 
 }
+func GetNonDuplicateStudentsWithMarks() ([]*models.StudentWithMarks, error) {
+	marks := []*models.StudentWithMarks{
+		{
+
+			Marks: []*models.StudentMark{
+				{
+					KundelikID:     "2",
+					MarkDateString: "2024-02-07 ",
+					SubjectID:      "3",
+					GroupParallel:  0,
+				},
+			},
+		},
+	}
+	return marks, nil
+}
