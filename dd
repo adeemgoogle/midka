@@ -1,78 +1,16 @@
-package go_bonus
+это моя тестируемая функция
+func (s *BonusRedeemer) RedeemBonus(student *models.StudentWithMarks) error {
+	bonusAmount := len(student.Marks) * config.Get().BonusAmount
 
-import (
-    "log"
-    "testing"
-    "time"
+	bonus := &models.Bonus{
+		Amount:     bonusAmount,
+		OwClientId: student.OwClientID,
+		KundelikId: student.KundelikID,
+	}
+_, _, err = broker.SendMessage(config.Get().KafkaTopic, msg)
 
-    "github.com/your/package/internal/models"
-    "github.com/your/package/pkg/config"
-    "github.com/stretchr/testify/assert"
-    "github.com/stretchr/testify/mock"
-)
-
-type MockMarksLogger interface {
-    LogStudentMarks(marks []*models.StudentMark, markLoadDateString string, bonus *models.Bonus) error
+	return err
 }
-
-type MockBonusRedeemer struct {
-    marksLogger MockMarksLogger
-}
-
-func (m *MockBonusRedeemer) LogStudentMarks(marks []*models.StudentMark, markLoadDateString string, bonus *models.Bonus) error {
-    return nil
-}
-
-func TestRedeemBonus(t *testing.T) {
-    // Создаем мок-объект MarksLogger
-    mockLogger := &MockMarksLogger{}
-
-    s := &BonusRedeemer{
-        marksLogger: mockLogger,
-    }
-    // Не нужно вызывать config.Parse() в тесте
-
-    student := &models.StudentWithMarks{
-        Marks: []*models.StudentMark{
-            {
-                KundelikID:     "1000003352507",
-                MarkDateString: "2024-02-07 08:58:23.000000",
-                SubjectID:      "1208089952166536233",
-                GroupParallel:  6,
-            },
-        },
-        Student: models.Student{
-            KundelikID: "1000003352507",
-            OwClientID: "288154590",
-            CreatedAt:  time.Date(2024, time.February, 9, 14, 19, 7, 560389, time.UTC),
-        },
-    }
-
-    err := s.RedeemBonus(student)
-    assert.NoError(t, err)
-}
-
-type MockSaramaProducer struct {
-    mock.Mock
-}
-
-func (m *MockSaramaProducer) SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error) {
-    args := m.Called(msg)
-    return args.Get(0).(int32), args.Get(1).(int64), args.Error(2)
-}
-
-func TestSendMessage(t *testing.T) {
-    // Создаем мок-объект SaramaProducer
-    mockProducer := &MockSaramaProducer{}
-
-    // Используем мок-объект вместо реального producer
-
-    // Здесь создание нового сообщения msg
-
-    _, _, err := mockProducer.SendMessage(msg)
-    assert.NoError(t, err)
-}
-
 это мой тест
 package go_bonus
 
