@@ -1,3 +1,4 @@
+это мой тест
 package go_bonus
 
 import (
@@ -47,6 +48,7 @@ func TestRedeemBonus(t *testing.T) {
 	require.NoError(t, err)
 }
 
+это моя функция
 func SendMessage(topic string, message []byte) (int32, int64, error) {
 	newMessage := &sarama.ProducerMessage{
 		Topic: topic,
@@ -61,5 +63,7 @@ func SendMessage(topic string, message []byte) (int32, int64, error) {
 
 	return partition, offset, nil
 }
+
+это мне надо замокать
 
 _, _, err = broker.SendMessage(config.Get().KafkaTopic, msg)
