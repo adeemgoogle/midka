@@ -1,2 +1,12 @@
 
 }
+
+func Test_GetStudentsMarks(t *testing.T) {
+
+	s := &BookService{
+		bookStore: MockBookStore(),
+	}
+
+	err := s.GetBookMarks(time.Date(2024, time.February, 9, 14, 19, 7, 5555, time.UTC))
+	require.NoError(t, err)
+}
