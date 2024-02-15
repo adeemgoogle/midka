@@ -1,12 +1,65 @@
+package go_bonus
 
+import (
+	"github.com/stretchr/testify/require"
+	_ "github.com/stretchr/testify/require"
+	"mark-worker/internal/models"
+	"mark-worker/pkg/config"
+	"testing"
+	"time"
+)
+
+type MockMarksLogger interface {
+	LogStudentMarks(marks []*models.StudentMark, markLoadDateString string, bonus *models.Bonus) error
 }
 
-func Test_GetStudentsMarks(t *testing.T) {
+type MockBonusRedeemer struct {
+	marksLogger MarksLogger
+}
 
-	s := &BookService{
-		bookStore: MockBookStore(),
+func (m MockBonusRedeemer) LogStudentMarks(marks []*models.StudentMark, markLoadDateString string, bonus *models.Bonus) error {
+	return nil
+}
+
+func TestRedeemBonus(t *testing.T) {
+	s := &BonusRedeemer{
+		marksLogger: &MockBonusRedeemer{},
+	}
+	config.Parse()
+
+	student := models.StudentWithMarks{
+		Marks: []*models.StudentMark{
+			{
+				KundelikID:     "1000003352507",
+				MarkDateString: "2024-02-07 08:58:23.000000",
+				SubjectID:      "1208089952166536233",
+				GroupParallel:  6,
+			},
+		},
+		Student: models.Student{
+			KundelikID: "1000003352507",
+			OwClientID: "288154590",
+			CreatedAt:  time.Date(2024, time.February, 9, 14, 19, 7, 560389, time.UTC),
+		},
 	}
 
-	err := s.GetBookMarks(time.Date(2024, time.February, 9, 14, 19, 7, 5555, time.UTC))
+	err := s.RedeemBonus(&student)
 	require.NoError(t, err)
 }
+
+func SendMessage(topic string, message []byte) (int32, int64, error) {
+	newMessage := &sarama.ProducerMessage{
+		Topic: topic,
+		Value: sarama.ByteEncoder(message),
+	}
+
+	partition, offset, err := producer.SendMessage(newMessage)
+	if err != nil {
+		log.Println("failed to send message to kafka", "error", err)
+		return 0, 0, err
+	}
+
+	return partition, offset, nil
+}
+
+_, _, err = broker.SendMessage(config.Get().KafkaTopic, msg)
