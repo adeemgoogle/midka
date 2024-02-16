@@ -1,38 +1,31 @@
-
-Cannot use '&MockHTTPClient{}' (type *MockHTTPClient) as the type *http.Client
-
-type httpClient interface {
-	Do(req *httpclient.Request) (*httpclient.Response, error)
-}
-type MockHTTPClient struct{
-	httpClient
-}
-
-func (c *MockHTTPClient) Do(req *httpclient.Request) (*httpclient.Response, error) {
-	if req.Url == "welcome" {
-		return &httpclient.Response{
-			Code: http.StatusOK,
-			Body: []byte(``),
-		}, nil
-	} else if req.Url == "mock_unauthorized_url" {
-		return &httpclient.Response{
-			Code: http.StatusUnauthorized,
-			Body: []byte(``),
-		}, nil
-	} else if req.Url == "mock_status_forbidden" {
-		return &httpclient.Response{
-			Code: http.StatusForbidden,
-			Body: []byte(``),
-		}, nil
-	} else {
-		return nil, errors.New("mocked request error")
+func (s *Service) download(datasetUrl string) ([]byte, error) {
+	req := &httpclient.Request{
+		Url:        datasetUrl,
+		Header:     header(),
+		HTTPMethod: http.MethodGet,
+		Params:     url.Values{},
+		Body:       &bytes.Buffer{},
 	}
-}
 
-func TestGetStudentsMarksDatasetByDay(t *testing.T) {
-	s := &KundelikService{cli: &MockHTTPClient{}}
-	data := time.Now()
-	resp, err := s.getStudentsMarksDatasetByDay(data)
-	assert.NoError(t, err)
-	assert.NotNil(t, resp)
+	reqByte, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := httpclient.Do(s.cli, req)
+	if err != nil {
+		_ = s.logStore.Marks(string(reqByte), string(resp.Body), err.Error(), resp.Code)
+		return nil, err
+	}
+
+	if resp.Code != http.StatusOK {
+		errString := fmt.Sprintf(errors_const.FailedRequestWithStatusError, resp.Code, resp.Body)
+		_ = s.logStore.Marks(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
+
+		return nil, errors.New(errString)
+	}
+
+	_ = s.logStore.Marks(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
+
+	return resp.Body, nil
 }
