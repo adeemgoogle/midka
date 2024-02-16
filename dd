@@ -1,49 +1,38 @@
-func (s *Service) getStudents(date time.Time) (*models.Response, error) {
-	params := url.Values{}
-	params.Add("date", date.Format(DefaultDateFormat))
 
-	Url := string_builder.Build(config.Get().URL, MarksRoute)
+Cannot use '&MockHTTPClient{}' (type *MockHTTPClient) as the type *http.Client
 
-	req := &httpclient.Request{
-		Url:        Url,
-		Header:     header(),
-		Params:     params,
-		HTTPMethod: http.MethodGet,
-		Body:       &bytes.Buffer{},
+type httpClient interface {
+	Do(req *httpclient.Request) (*httpclient.Response, error)
+}
+type MockHTTPClient struct{
+	httpClient
+}
+
+func (c *MockHTTPClient) Do(req *httpclient.Request) (*httpclient.Response, error) {
+	if req.Url == "welcome" {
+		return &httpclient.Response{
+			Code: http.StatusOK,
+			Body: []byte(``),
+		}, nil
+	} else if req.Url == "mock_unauthorized_url" {
+		return &httpclient.Response{
+			Code: http.StatusUnauthorized,
+			Body: []byte(``),
+		}, nil
+	} else if req.Url == "mock_status_forbidden" {
+		return &httpclient.Response{
+			Code: http.StatusForbidden,
+			Body: []byte(``),
+		}, nil
+	} else {
+		return nil, errors.New("mocked request error")
 	}
+}
 
-	reqByte, err := json.Marshal(req)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := httpclient.Do(s.cli, req)
-	if err != nil {
-		_ = s.logStore.AddLog(string(reqByte), string(resp.Body), err.Error(), resp.Code)
-		return nil, err
-	} else if resp.Code != http.StatusOK {
-		_ = s.logStore.AddLog(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
-
-		if resp.Code == http.StatusUnauthorized {
-			return nil, errors.New(errors_const.UnauthorizedError)
-		}
-
-		if resp.Code == http.StatusForbidden {
-			return nil, errors.New(errors_const.ForbiddenError)
-		}
-
-		errString := fmt.Sprintf(errors_const.FailedRequestWithStatusError, resp.Code, resp.Body)
-		return nil, errors.New(errString)
-	}
-
-	_ = s.logStore.AddLog(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
-
-	var Response models.Response
-	err = json.Unmarshal(resp.Body, &Response)
-	if err != nil {
-		errString := fmt.Sprintf(errors_const.FailedWithError, err.Error(), resp.Body)
-		return nil, errors.New(errString)
-	}
-
-	return &Response, nil
+func TestGetStudentsMarksDatasetByDay(t *testing.T) {
+	s := &KundelikService{cli: &MockHTTPClient{}}
+	data := time.Now()
+	resp, err := s.getStudentsMarksDatasetByDay(data)
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
 }
