@@ -1,70 +1,4 @@
-package go_bonus_test
 
-import (
-	"errors"
-	"testing"
-	"time"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-
-	"github.com/your/package/internal/models"
-	"github.com/your/package/go_bonus"
-)
-
-type MockMarksLogger struct{}
-
-func (m *MockMarksLogger) LogStudentMarks(marks []*models.StudentMark, markLoadDateString string, bonus *models.Bonus) error {
-	return nil
-}
-
-type MockSaramaProducer struct {
-	mock.Mock
-}
-
-func (m *MockSaramaProducer) SendMessage(msg *sarama.ProducerMessage) (partition int32, offset int64, err error) {
-	args := m.Called(msg)
-	return args.Int32(0), args.Int64(1), args.Error(2)
-}
-
-func TestRedeemBonus(t *testing.T) {
-	mockLogger := &MockMarksLogger{}
-	mockProducer := &MockSaramaProducer{}
-
-	s := &go_bonus.BonusRedeemer{
-		marksLogger: mockLogger,
-		producer:    mockProducer,
-	}
-
-	// Создаем тестовые данные
-	student := &models.StudentWithMarks{
-		Marks: []*models.StudentMark{
-			{
-				KundelikID:     "1000003352507",
-				MarkDateString: "2024-02-07 08:58:23.000000",
-				SubjectID:      "1208089952166536233",
-				GroupParallel:  6,
-			},
-		},
-		Student: models.Student{
-			KundelikID: "1000003352507",
-			OwClientID: "288154590",
-			CreatedAt:  time.Date(2024, time.February, 9, 14, 19, 7, 560389, time.UTC),
-		},
-	}
-
-	// Ожидаем вызов функции SendMessage
-	mockProducer.On("SendMessage", mock.Anything).Return(int32(0), int64(0), nil)
-
-	// Вызываем функцию, которую мы тестируем
-	err := s.RedeemBonus(student)
-
-	// Проверяем, что функция не возвращает ошибку
-	assert.NoError(t, err)
-
-	// Проверяем, что функция SendMessage была вызвана с правильными аргументами
-	mockProducer.AssertCalled(t, "SendMessage", mock.Anything)
-}
 
 
 это моя тестируемая функция
@@ -113,15 +47,15 @@ func TestRedeemBonus(t *testing.T) {
 	student := models.StudentWithMarks{
 		Marks: []*models.StudentMark{
 			{
-				KundelikID:     "1000003352507",
+				KundelikID:     "33",
 				MarkDateString: "2024-02-07 08:58:23.000000",
-				SubjectID:      "1208089952166536233",
+				SubjectID:      "133",
 				GroupParallel:  6,
 			},
 		},
 		Student: models.Student{
-			KundelikID: "1000003352507",
-			OwClientID: "288154590",
+			KundelikID: "55",
+			OwClientID: "44",
 			CreatedAt:  time.Date(2024, time.February, 9, 14, 19, 7, 560389, time.UTC),
 		},
 	}
