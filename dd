@@ -1,6 +1,61 @@
 import (
 	"testing"
 	"time"
+	"github.com/stretchr/testify/mock"
+)
+
+// MockService - мок для сервиса
+type MockService struct {
+	mock.Mock
+}
+
+// isValidC - замоканная версия функции isValidC
+func (m *MockService) isValidC(cards []*models.Response) bool {
+	args := m.Called(cards)
+	return args.Bool(0)
+}
+
+func TestService_IsValidC(t *testing.T) {
+	mockService := new(MockService) // Создаем мок сервиса
+
+	t.Run("ValidResponse", func(t *testing.T) {
+		response := []*models.Response{
+			&models.Response{
+				IsReady:      "Y",
+				ContrStatus:  "00;C OK",
+				CExpired:     "2202", // Допустимая дата в формате YYMM
+			},
+		}
+		mockService.On("isValidC", response).Return(true) // Устанавливаем ожидаемое поведение мока
+		actual := mockService.isValidC(response)
+		expected := true
+		if actual != expected {
+			t.Errorf("Expected %v but got %v", expected, actual)
+		}
+	})
+
+	t.Run("InvalidResponse", func(t *testing.T) {
+		response := []*models.Response{
+			&models.Response{
+				IsReady:      "N", // Не готовая карта
+				ContrStatus:  "00;C OK",
+				CExpired:     "2202",
+			},
+		}
+		mockService.On("isValidC", response).Return(false) // Устанавливаем ожидаемое поведение мока
+		actual := mockService.isValidC(response)
+		expected := false
+		if actual != expected {
+			t.Errorf("Expected %v but got %v", expected, actual)
+		}
+	})
+	// Добавьте другие тестовые случаи по необходимости
+}
+
+
+import (
+	"testing"
+	"time"
 	"github.com/your-package/models" // Подставьте правильный путь к вашему пакету models
 )
 
