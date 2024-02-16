@@ -1,3 +1,53 @@
+import (
+	"testing"
+	"time"
+	"github.com/your-package/models" // Подставьте правильный путь к вашему пакету models
+)
+
+func TestIsValidC(t *testing.T) {
+	service := &Service{} // Создаем экземпляр сервиса для тестирования
+
+	// Создаем тестовые данные
+	testCases := []struct {
+		name          string
+		inputResponse []*models.Response
+		expected      bool
+	}{
+		{
+			name: "ValidResponse",
+			inputResponse: []*models.Response{
+				&models.Response{
+					IsReady:      "Y",
+					ContrStatus:  "00;C OK",
+					CExpired:     "2202", // Дата в формате YYMM (допустимая дата)
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "InvalidResponse",
+			inputResponse: []*models.Response{
+				&models.Response{
+					IsReady:      "N", // Не готовая карта
+					ContrStatus:  "00;C OK",
+					CExpired:     "2202",
+				},
+			},
+			expected: false,
+		},
+		// Добавьте другие тестовые случаи по необходимости
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := service.isValidC(tc.inputResponse)
+			if actual != tc.expected {
+				t.Errorf("Expected %v but got %v", tc.expected, actual)
+			}
+		})
+	}
+}
+
 func (s *Service) isValidC(cards []*models.Response) bool {
 	var isValid bool
 	for _, card := range cards {
