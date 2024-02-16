@@ -1,85 +1,49 @@
+func (s *Service) getStudents(date time.Time) (*models.Response, error) {
+	params := url.Values{}
+	params.Add("date", date.Format(DefaultDateFormat))
 
+	Url := string_builder.Build(config.Get().URL, MarksRoute)
 
-
-это моя тестируемая функция
-func (s *BonusRedeemer) RedeemBonus(student *models.StudentWithMarks) error {
-	bonusAmount := len(student.Marks) * config.Get().BonusAmount
-
-	bonus := &models.Bonus{
-		Amount:     bonusAmount,
-		OwClientId: student.OwClientID,
-		KundelikId: student.KundelikID,
-	}
-_, _, err = broker.SendMessage(config.Get().KafkaTopic, msg)
-
-	return err
-}
-это мой тест
-package go_bonus
-
-import (
-	"github.com/stretchr/testify/require"
-	_ "github.com/stretchr/testify/require"
-	"mark-worker/internal/models"
-	"mark-worker/pkg/config"
-	"testing"
-	"time"
-)
-
-type MockMarksLogger interface {
-	LogStudentMarks(marks []*models.StudentMark, markLoadDateString string, bonus *models.Bonus) error
-}
-
-type MockBonusRedeemer struct {
-	marksLogger MarksLogger
-}
-
-func (m MockBonusRedeemer) LogStudentMarks(marks []*models.StudentMark, markLoadDateString string, bonus *models.Bonus) error {
-	return nil
-}
-
-func TestRedeemBonus(t *testing.T) {
-	s := &BonusRedeemer{
-		marksLogger: &MockBonusRedeemer{},
-	}
-	config.Parse()
-
-	student := models.StudentWithMarks{
-		Marks: []*models.StudentMark{
-			{
-				KundelikID:     "33",
-				MarkDateString: "2024-02-07 08:58:23.000000",
-				SubjectID:      "133",
-				GroupParallel:  6,
-			},
-		},
-		Student: models.Student{
-			KundelikID: "55",
-			OwClientID: "44",
-			CreatedAt:  time.Date(2024, time.February, 9, 14, 19, 7, 560389, time.UTC),
-		},
+	req := &httpclient.Request{
+		Url:        Url,
+		Header:     header(),
+		Params:     params,
+		HTTPMethod: http.MethodGet,
+		Body:       &bytes.Buffer{},
 	}
 
-	err := s.RedeemBonus(&student)
-	require.NoError(t, err)
-}
-
-это моя функция
-func SendMessage(topic string, message []byte) (int32, int64, error) {
-	newMessage := &sarama.ProducerMessage{
-		Topic: topic,
-		Value: sarama.ByteEncoder(message),
-	}
-
-	partition, offset, err := producer.SendMessage(newMessage)
+	reqByte, err := json.Marshal(req)
 	if err != nil {
-		log.Println("failed to send message to kafka", "error", err)
-		return 0, 0, err
+		return nil, err
 	}
 
-	return partition, offset, nil
+	resp, err := httpclient.Do(s.cli, req)
+	if err != nil {
+		_ = s.logStore.AddLog(string(reqByte), string(resp.Body), err.Error(), resp.Code)
+		return nil, err
+	} else if resp.Code != http.StatusOK {
+		_ = s.logStore.AddLog(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
+
+		if resp.Code == http.StatusUnauthorized {
+			return nil, errors.New(errors_const.UnauthorizedError)
+		}
+
+		if resp.Code == http.StatusForbidden {
+			return nil, errors.New(errors_const.ForbiddenError)
+		}
+
+		errString := fmt.Sprintf(errors_const.FailedRequestWithStatusError, resp.Code, resp.Body)
+		return nil, errors.New(errString)
+	}
+
+	_ = s.logStore.AddLog(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
+
+	var Response models.Response
+	err = json.Unmarshal(resp.Body, &Response)
+	if err != nil {
+		errString := fmt.Sprintf(errors_const.FailedWithError, err.Error(), resp.Body)
+		return nil, errors.New(errString)
+	}
+
+	return &Response, nil
 }
-
-это мне надо замокать
-
-_, _, err = broker.SendMessage(config.Get().KafkaTopic, msg)
