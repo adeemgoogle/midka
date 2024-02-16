@@ -1,88 +1,34 @@
-package main_test
+func (s *Service) isValidC(cards []*models.Response) bool {
+	var isValid bool
+	for _, card := range cards {
+		if card.IsReady != "Y" {
+			continue
+		}
 
-import (
-	"bytes"
-	"errors"
-	"net/http"
-	"net/url"
-	"testing"
+		if card.ContrStatus != "00;C OK" {
+			continue
+		}
 
-	"github.com/stretchr/testify/assert"
-)
+		crExpired, err := strconv.Atoi(c.CExpired)
+		if err != nil {
+			continue
+		}
+		year := 2000 + crExpired/100
+		month := crExpired % 100
 
-type MockHTTPClient struct{}
+		yearNow := time.Now().Year()
+		monthNow := int(time.Now().Month())
+		if year < yearNow {
+			continue
+		}
 
-func (c *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	// Мокируем успешный ответ
-	if req.URL.String() == "success_url" {
-		return &http.Response{
-			Status:     "200 OK",
-			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"data": "mocked response"}`)),
-		}, nil
+		if year == yearNow && month < monthNow {
+			continue
+		}
+
+		isValid = true
+		return isValid
 	}
 
-	// Мокируем ответ с ошибкой
-	return nil, errors.New("mocked error")
-}
-
-func TestDownload_Success(t *testing.T) {
-	// Подготовка теста
-	service := &Service{cli: &MockHTTPClient{}}
-	url := "success_url"
-
-	// Вызов функции
-	data, err := service.download(url)
-
-	// Проверка результата
-	assert.NoError(t, err)
-	assert.NotNil(t, data)
-	// Дополнительные проверки данных, если необходимо
-}
-
-func TestDownload_Failure(t *testing.T) {
-	// Подготовка теста
-	service := &Service{cli: &MockHTTPClient{}}
-	url := "failure_url"
-
-	// Вызов функции
-	data, err := service.download(url)
-
-	// Проверка результата
-	assert.Error(t, err)
-	assert.Nil(t, data)
-	// Дополнительные проверки ошибки, если необходимо
-}
-
-
-func (s *Service) download(datasetUrl string) ([]byte, error) {
-	req := &httpclient.Request{
-		Url:        datasetUrl,
-		Header:     header(),
-		HTTPMethod: http.MethodGet,
-		Params:     url.Values{},
-		Body:       &bytes.Buffer{},
-	}
-
-	reqByte, err := json.Marshal(req)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := httpclient.Do(s.cli, req)
-	if err != nil {
-		_ = s.logStore.Marks(string(reqByte), string(resp.Body), err.Error(), resp.Code)
-		return nil, err
-	}
-
-	if resp.Code != http.StatusOK {
-		errString := fmt.Sprintf(errors_const.FailedRequestWithStatusError, resp.Code, resp.Body)
-		_ = s.logStore.Marks(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
-
-		return nil, errors.New(errString)
-	}
-
-	_ = s.logStore.Marks(string(reqByte), string(resp.Body), EmprtyString, resp.Code)
-
-	return resp.Body, nil
+	return isValid
 }
