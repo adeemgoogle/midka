@@ -1,3 +1,60 @@
+package main_test
+
+import (
+	"bytes"
+	"errors"
+	"net/http"
+	"net/url"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+type MockHTTPClient struct{}
+
+func (c *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	// Мокируем успешный ответ
+	if req.URL.String() == "success_url" {
+		return &http.Response{
+			Status:     "200 OK",
+			StatusCode: http.StatusOK,
+			Body:       ioutil.NopCloser(bytes.NewBufferString(`{"data": "mocked response"}`)),
+		}, nil
+	}
+
+	// Мокируем ответ с ошибкой
+	return nil, errors.New("mocked error")
+}
+
+func TestDownload_Success(t *testing.T) {
+	// Подготовка теста
+	service := &Service{cli: &MockHTTPClient{}}
+	url := "success_url"
+
+	// Вызов функции
+	data, err := service.download(url)
+
+	// Проверка результата
+	assert.NoError(t, err)
+	assert.NotNil(t, data)
+	// Дополнительные проверки данных, если необходимо
+}
+
+func TestDownload_Failure(t *testing.T) {
+	// Подготовка теста
+	service := &Service{cli: &MockHTTPClient{}}
+	url := "failure_url"
+
+	// Вызов функции
+	data, err := service.download(url)
+
+	// Проверка результата
+	assert.Error(t, err)
+	assert.Nil(t, data)
+	// Дополнительные проверки ошибки, если необходимо
+}
+
+
 func (s *Service) download(datasetUrl string) ([]byte, error) {
 	req := &httpclient.Request{
 		Url:        datasetUrl,
