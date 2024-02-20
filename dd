@@ -11,3 +11,41 @@ func (s *Service) putCSV(csv []byte, key string) error {
 
 	return nil
 }
+
+package main
+
+import (
+	"bytes"
+	"errors"
+	"testing"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+)
+
+// MockS3Client is a mock implementation of the S3 client for testing purposes.
+type MockS3Client struct{}
+
+// PutObject mocks the PutObject method of the S3 client.
+func (m *MockS3Client) PutObject(input *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
+	if *input.Bucket == "test-bucket" && *input.Key == "test-key" {
+		return &s3.PutObjectOutput{}, nil
+	}
+	return nil, errors.New("unexpected input")
+}
+
+func TestPutCSV(t *testing.T) {
+	svc := &Service{
+		s1Cli: &MockS3Client{},
+	}
+
+	csvData := []byte("test,csv,data")
+	key := "test-key"
+
+	err := svc.putCSV(csvData, key)
+	if err != nil {
+		t.Errorf("putCSV returned an error: %v", err)
+	}
+
+	// Additional test cases can be added here for different scenarios
+}
