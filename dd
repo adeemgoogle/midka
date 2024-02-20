@@ -1,5 +1,13 @@
-Id        int       `json:"Id" db:"Id"`
-	Type      string    `json:"Type" db:"type"`
-	CreatedAt time.Time `json:"CreatedAt" db:"created_at"`
-	Rows      uint      `json:"Rows" db:"rows"`
-	Url       string    `json:"Url" db:"url"
+func (s *Service) putCSV(csv []byte, key string) error {
+	_, err := s.s1Cli.PutObject(&s1.PutObjectInput{
+		Bucket: aws.String(config.Get().S1Bucket),
+		Key:    aws.String(key),
+		Body:   bytes.NewReader(csv),
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
