@@ -1,8 +1,8 @@
-No loaded projects
-CONSOLE: Use build tool: C:\Program Files\dotnet\sdk\2.2.207\MSBuild.dll
-Microsoft (R) Build Engine версии 16.0.450+ga8dc7f1d34 для .NET Core
-(C) Корпорация Майкрософт (Microsoft Corporation). Все права защищены.
+у меня есть такой запрос localhost:8080/getbook?id=44?data=2023-12-28T14:09:32, тут нужно по отдельности парсить id и data 
 
-MSBUILD : error MSB1004: укажите имя конечного объекта.
-Ключ: /t:
-
+func (s *server) GetBook(ctx *fiber.Ctx) error {
+	
+	b := ctx.Queries()
+		
+	
+}
