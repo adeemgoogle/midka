@@ -1,8 +1,25 @@
-у меня есть такой запрос localhost:8080/getbook?id=44?data=2023-12-28T14:09:32, тут нужно по отдельности парсить id и data 
+type Envelope struct {
+	XMLName xml.Name
+	Body    Body `xml:"Body"`
+}
 
-func (s *server) GetBook(ctx *fiber.Ctx) error {
-	
-	b := ctx.Queries()
-		
-	
+type Body struct {
+	XMLName     xml.Name    `xml:"Body"`
+	S           SendMessage `xml:"sendMessage"`
+}
+
+type SendMessage struct {
+	XMLName xml.Name `xml:"sendMessage"`
+	R       Request  `xml:"request"`
+}
+type Request struct {
+	XMLName     xml.Name    `xml:"request"`
+	M           MessageInfo `xml:"messageInfo"`
+}
+
+type MessageInfo struct {
+	XMLName       xml.Name `xml:"messageInfo"`
+	MessageId     string   `xml:"messageId"`
+	CorrelationId string   `xml:"correlationId"`
+	SessionId     string   `xml:"sessionId"`
 }
