@@ -1,3 +1,18 @@
+<Envelope>
+    <Body>
+        <sendMessage>
+            <request>
+                <messageInfo>
+                    <messageId>your_message_id_here</messageId>
+                    <correlationId>your_correlation_id_here</correlationId>
+                    <sessionId>your_session_id_here</sessionId>
+                </messageInfo>
+            </request>
+        </sendMessage>
+    </Body>
+</Envelope>
+
+
 type Envelope struct {
 	XMLName xml.Name
 	Body    Body `xml:"Body"`
