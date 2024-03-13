@@ -1,73 +1,336 @@
-package model
-
-import "encoding/xml"
-
-type OutputData struct {
-	ServiceID string `json:"serviceId"`
-	Data      string `json:"data"`
-}
-
-type Envelope struct {
-	XMLName xml.Name
-	Body    Body `xml:"Body"`
-}
-
-type Body struct {
-	XMLName     xml.Name    `xml:"Body"`
-	SendMessage SendMessage `xml:"sendMessage"`
-}
-
-type SendMessage struct {
-	XMLName xml.Name `xml:"sendMessage"`
-	Request Request  `xml:"request"`
-}
-type KafkaResponse struct {
-	ServerId  string `xml:"serverId"`
-	MessageId string `xml:"messageId"`
-}
-type Request struct {
-	XMLName     xml.Name    `xml:"request"`
-	RequestInfo RequestInfo `xml:"requestInfo"`
-}
-
-type RequestInfo struct {
-	XMLName       xml.Name `xml:"messageInfo"`
-	MessageId     string   `xml:"messageId"`
-	CorrelationId string   `xml:"correlationId"`
-	SessionId     string   `xml:"sessionId"`
-}
-
-type EnvelopeOut struct {
-	XMLName xml.Name `xml:"SOAP-ENV:Envelope"`
-	Text    string   `xml:",chardata"`
-	SOAPENV string   `xml:"xmlns:SOAP-ENV,attr"`
-	Body    BodyOut  `xml:"SOAP-ENV:Body"`
-}
-
-type BodyOut struct {
-	Text                string              `xml:",chardata"`
-	SendMessageResponse SendMessageResponse `xml:"ns3:sendMessageResponse"`
-}
-
-type SendMessageResponse struct {
-	Text     string   `xml:",chardata"`
-	Ns3      string   `xml:"xmlns:ns3,attr"`
-	Response Response `xml:"response"`
-}
-
-type Response struct {
-	Text          string `xml:",chardata"`
-	MessageId     string `xml:"messageId"`
-	CorrelationId string `xml:"correlationId"`
-	SessionId     string `xml:"sessionId"`
-}
-var envelope model.Envelope
-
-	err := xml.Unmarshal(data, &envelope)
-	if err != nil {
-		logger.Error("unmarshaling error | empty data", "error")
-		return err
-	}
-
-
-почему не анмаршалит 
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+    <SOAP-ENV:Header/>
+    <S:Body>
+<sync:SendMessage xmlns:sync="http://bip.bee.kz/SyncChannel/v10/Types">
+    <request>
+        <requestInfo>
+            <messageId>00007218-FA07-4512-93A8-915CEC0BD3F9</messageId>
+            <serviceId>info</serviceId>
+            <correlationId>1234567890</correlationId>
+            <messageDate>2020-12-03T10:46:04.000+06:00</messageDate>
+            <sender>
+                <senderId>iiscon</senderId>
+                <password>iiscon</password>
+            </sender>
+        </requestInfo>
+        <requestData>
+<data xmlns:s01="http://www.w3.org/2001/XMLSchema-instance" s01:type="requestMessage">
+    <requestMessage>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+        <iin>650805350057</iin>
+        <serviceType>0</serviceType>
+        <isAgree>1</isAgree>
+    </requestMessage>
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="1">
+<ds:SignedInfo>
+<ds:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+<ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#gost34310-gost34311"/>
+<ds:Reference URI="">
+<ds:Transforms>
+<ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+<ds:Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments"/>
+</ds:Transforms>
+<ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#gost34311"/>
+<ds:DigestValue>bZ8xzPc0rYJOI9+upIIT6LKrPXD4vezlBRUhq6W72d4=</ds:DigestValue>
+</ds:Reference>
+</ds:SignedInfo>
+<ds:SignatureValue>tyUgCoD1HqfOUs8R5JPVyUo2gZtj4qdZp0lUoJrxjy4ysSCMncCn4MgB40sFmqvZ
+n7w8WFQFh2o4fwh90XEUeg==</ds:SignatureValue>
+<ds:KeyInfo>
+<ds:X509Data>
+<ds:X9Certificate>
+</ds:X509Data>
+</ds:KeyInfo>
+</ds:Signature></data>
+        </requestData>
+    </request>
+</sync:SendMessage>
+    </S:Body>
+</S:Envelope>
