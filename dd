@@ -1,17 +1,11 @@
-<Envelope>
-    <Body>
-        <sendMessage>
-            <request>
-                <messageInfo>
-                    <messageId>your_message_id_here</messageId>
-                    <correlationId>your_correlation_id_here</correlationId>
-                    <sessionId>your_session_id_here</sessionId>
-                </messageInfo>
-            </request>
-        </sendMessage>
-    </Body>
-</Envelope>
+package model
 
+import "encoding/xml"
+
+type OutputData struct {
+	ServiceID string `json:"serviceId"`
+	Data      string `json:"data"`
+}
 
 type Envelope struct {
 	XMLName xml.Name
@@ -20,21 +14,60 @@ type Envelope struct {
 
 type Body struct {
 	XMLName     xml.Name    `xml:"Body"`
-	S           SendMessage `xml:"sendMessage"`
+	SendMessage SendMessage `xml:"sendMessage"`
 }
 
 type SendMessage struct {
 	XMLName xml.Name `xml:"sendMessage"`
-	R       Request  `xml:"request"`
+	Request Request  `xml:"request"`
+}
+type KafkaResponse struct {
+	ServerId  string `xml:"serverId"`
+	MessageId string `xml:"messageId"`
 }
 type Request struct {
 	XMLName     xml.Name    `xml:"request"`
-	M           MessageInfo `xml:"messageInfo"`
+	RequestInfo RequestInfo `xml:"requestInfo"`
 }
 
-type MessageInfo struct {
+type RequestInfo struct {
 	XMLName       xml.Name `xml:"messageInfo"`
 	MessageId     string   `xml:"messageId"`
 	CorrelationId string   `xml:"correlationId"`
 	SessionId     string   `xml:"sessionId"`
 }
+
+type EnvelopeOut struct {
+	XMLName xml.Name `xml:"SOAP-ENV:Envelope"`
+	Text    string   `xml:",chardata"`
+	SOAPENV string   `xml:"xmlns:SOAP-ENV,attr"`
+	Body    BodyOut  `xml:"SOAP-ENV:Body"`
+}
+
+type BodyOut struct {
+	Text                string              `xml:",chardata"`
+	SendMessageResponse SendMessageResponse `xml:"ns3:sendMessageResponse"`
+}
+
+type SendMessageResponse struct {
+	Text     string   `xml:",chardata"`
+	Ns3      string   `xml:"xmlns:ns3,attr"`
+	Response Response `xml:"response"`
+}
+
+type Response struct {
+	Text          string `xml:",chardata"`
+	MessageId     string `xml:"messageId"`
+	CorrelationId string `xml:"correlationId"`
+	SessionId     string `xml:"sessionId"`
+}
+var envelope model.Envelope
+
+	err := xml.Unmarshal(data, &envelope)
+	if err != nil {
+		logger.Error("unmarshaling error | empty data", "error")
+		return err
+	}
+
+
+почему не анмаршалит 
