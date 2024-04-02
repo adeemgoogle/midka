@@ -1,105 +1,25 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using Welcome.Controllers;
-using Welcome.Models;
-using Welcome.Services;
+using TradePointAPI;
 
-namespace Welcome.Tests.Controllers
+
+namespace TradePointAPI.Tests
 {
-    public class WelcomeControllerTests
+    public class HealthzControllerTests 
     {
         [Test]
-        public async Task Post_WithValidQuery_ReturnsOkResult()
-        {
-            // Arrange
-            var schemaMock = new Mock<ISchema>();
-            var documentExecuterMock = new Mock<IDocumentExecuter>();
-
-            var controller = new WelcomeController(schemaMock.Object, documentExecuterMock.Object);
-
-            var query = new QueryDTO
-            {
-                Query = "valid GraphQL query"
-            };
-
-            // Act
-            var result = await controller.Post(query) as OkObjectResult;
-
-            // Assert
+        public void Test_Healthz(){
+            var loggerMock = new Mock<ILogger<HealthzController>>();
+            var controller = new HealthzController(loggerMock.Object);
+            var result = controller.GetHealthz() as OkObjectResult;
+            
             Assert.IsNotNull(result);
             Assert.AreEqual(200, result.StatusCode);
-        }
-
-        [Test]
-        public async Task Post_WithNullQuery_ReturnsBadRequestResult()
-        {
-            // Arrange
-            var schemaMock = new Mock<ISchema>();
-            var documentExecuterMock = new Mock<IDocumentExecuter>();
-
-            var controller = new WelcomeController(schemaMock.Object, documentExecuterMock.Object);
-
-            // Act
-            var result = await controller.Post(null) as BadRequestObjectResult;
-
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(400, result.StatusCode);
+            Assert.AreEqual("OK", result.Value);
         }
     }
 }
 
-namespace Welcome.Controllers
-{
-    [Route("")]
-    public class WelcomeController : Controller
-    {
-        private readonly ISchema _schema;
-        private readonly IDocumentExecuter _documentExecuter;
-
-        public WelcomeController(ISchema schema, IDocumentExecuter documentExecuter)
-        {
-            _schema = schema;
-            _documentExecuter = documentExecuter;
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Post([FromBody] QueryDTO query)
-        {
-            if (query == null) { throw new ArgumentNullException(nameof(query)); }
-            var inputs = query.Variables?.ToString().ToInputs(); 
-            var execOptions = new ExecutionOptions()
-            {
-                Schema = _schema,
-                Query = query.Query,
-                Inputs = inputs
-            };
-
-            try
-            {
-                var res = await _documentExecuter.ExecuteAsync(execOptions).ConfigureAwait(false);
-
-                if (res.Errors?.Count > 0)
-                {
-                    foreach (var err in res.Errors)
-                    {
-                        Log.Error("Not Found {err} query {query}", err.Message, query.Query);
-                    }
-                    return BadRequest(res);
-                }
-
-                Log.Information("Found {res} query {query}", res.ToString(), query.Query);
-                return Ok(res);
-
-            }
-            catch (Exception ex)
-            {
-                Log.Error("exception {ex} query {query}", ex.Message, query.Query);
-                return BadRequest(ex);
-            }
-        }
-    }
-}
+Не удалось найти тип или имя пространства имен "HealthzController" (возможно, отсутствует директива using или ссылка на сборку)
