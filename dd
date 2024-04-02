@@ -1,21 +1,51 @@
-namespace TradePointAPI.Controllers
+namespace Welcome.Controllers
 {
-    [ApiController]
-    [Route("[controller]")]
-    public class HealthzController : ControllerBase
+    [Route("")]
+    public class WelcomeController : Controller
     {
-        private readonly ILogger<HealthzController> _logger;
+        private readonly ISchema _schema;
+        private readonly IDocumentExecuter _documentExecuter;
 
-        public HealthzController(ILogger<HealthzController> logger)
+        public WelcomeController(ISchema schema, IDocumentExecuter documentExecuter)
         {
-            _logger = logger;
+            _schema = schema;
+            _documentExecuter = documentExecuter;
         }
 
-        [HttpGet(Name = "healthz")]
-        public IActionResult GetHealthz()
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] QueryDTO query)
         {
-            return new OkObjectResult("OK");
+            if (query == null) { throw new ArgumentNullException(nameof(query)); }
+            var inputs = query.Variables?.ToString().ToInputs(); 
+            var execOptions = new ExecutionOptions()
+            {
+                Schema = _schema,
+                Query = query.Query,
+                Inputs = inputs
+            };
+
+            try
+            {
+                var res = await _documentExecuter.ExecuteAsync(execOptions).ConfigureAwait(false);
+
+                if (res.Errors?.Count > 0)
+                {
+                    foreach (var err in res.Errors)
+                    {
+                        Log.Error("Not Found {err} query {query}", err.Message, query.Query);
+                    }
+                    return BadRequest(res);
+                }
+
+                Log.Information("Found {res} query {query}", res.ToString(), query.Query);
+                return Ok(res);
+
+            }
+            catch (Exception ex)
+            {
+                Log.Error("exception {ex} query {query}", ex.Message, query.Query);
+                return BadRequest(ex);
+            }
         }
     }
-
 }
