@@ -1,123 +1,21 @@
-package model
+namespace TradePointAPI.Controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class HealthzController : ControllerBase
+    {
+        private readonly ILogger<HealthzController> _logger;
 
-import "encoding/xml"
+        public HealthzController(ILogger<HealthzController> logger)
+        {
+            _logger = logger;
+        }
 
-type Envelope struct {
-	XMLName xml.Name `xml:"Envelope"`
-	Text    string   `xml:",chardata"`
-	S       string   `xml:"S,attr"`
-	SOAPENV string   `xml:"SOAP-ENV,attr"`
-	Header  string   `xml:"Header"`
-	Body    Body     `xml:"Body"`
-}
+        [HttpGet(Name = "healthz")]
+        public IActionResult GetHealthz()
+        {
+            return new OkObjectResult("OK");
+        }
+    }
 
-type Body struct {
-	Text        string      `xml:",chardata"`
-	SendMessage SendMessage `xml:"SendMessage"`
-}
-
-type SendMessage struct {
-	Text    string   `xml:",chardata"`
-	Sync    string   `xml:"sync,attr"`
-	Request Request  `xml:"request"`
-}
-
-type Request struct {
-	Text         string       `xml:",chardata"`
-	RequestInfo  RequestInfo  `xml:"requestInfo"`
-	RequestData  RequestData  `xml:"requestData"`
-}
-
-type RequestInfo struct {
-	Text          string `xml:",chardata"`
-	MessageId     string `xml:"messageId"`
-	ServiceId     string `xml:"serviceId"`
-	CorrelationId string `xml:"correlationId"`
-	MessageDate   string `xml:"messageDate"`
-	Sender        Sender `xml:"sender"`
-}
-
-type Sender struct {
-	Text     string `xml:",chardata"`
-	SenderId string `xml:"senderId"`
-	Password string `xml:"password"`
-}
-
-type RequestData struct {
-	Text       string       `xml:",chardata"`
-	Data       Data         `xml:"data"`
-	Signature  Signature    `xml:"Signature"`
-}
-
-type Data struct {
-	Text            string           `xml:",chardata"`
-	S01             string           `xml:"s01,attr"`
-	Type            string           `xml:"type,attr"`
-	RequestMessage  RequestMessage   `xml:"requestMessage"`
-}
-
-type RequestMessage struct {
-	Text         string   `xml:",chardata"`
-	Iin          []string `xml:"iin"`
-	ServiceType  []string `xml:"serviceType"`
-	IsAgree      []string `xml:"isAgree"`
-}
-
-type Signature struct {
-	Text             string           `xml:",chardata"`
-	Ds               string           `xml:"ds,attr"`
-	ID               string           `xml:"Id,attr"`
-	SignedInfo       SignedInfo       `xml:"SignedInfo"`
-	SignatureValue   string           `xml:"SignatureValue"`
-	KeyInfo          KeyInfo          `xml:"KeyInfo"`
-}
-
-type SignedInfo struct {
-	Text               string             `xml:",chardata"`
-	CanonicalizationMethod  CanonicalizationMethod  `xml:"CanonicalizationMethod"`
-	SignatureMethod        SignatureMethod        `xml:"SignatureMethod"`
-	Reference              Reference              `xml:"Reference"`
-}
-
-type CanonicalizationMethod struct {
-	Text       string `xml:",chardata"`
-	Algorithm  string `xml:"Algorithm,attr"`
-}
-
-type SignatureMethod struct {
-	Text       string `xml:",chardata"`
-	Algorithm  string `xml:"Algorithm,attr"`
-}
-
-type Reference struct {
-	Text       string `xml:",chardata"`
-	URI        string `xml:"URI,attr"`
-	Transforms Transforms `xml:"Transforms"`
-	DigestMethod DigestMethod `xml:"DigestMethod"`
-	DigestValue  string `xml:"DigestValue"`
-}
-
-type Transforms struct {
-	Text      string       `xml:",chardata"`
-	Transform []Transform  `xml:"Transform"`
-}
-
-type Transform struct {
-	Text      string       `xml:",chardata"`
-	Algorithm string       `xml:"Algorithm,attr"`
-}
-
-type DigestMethod struct {
-	Text       string `xml:",chardata"`
-	Algorithm  string `xml:"Algorithm,attr"`
-}
-
-type KeyInfo struct {
-	Text      string   `xml:",chardata"`
-	X509Data  X509Data `xml:"X509Data"`
-}
-
-type X509Data struct {
-	Text           string           `xml:",chardata"`
-	X509Certificate  string         `xml:"X509Certificate"`
 }
