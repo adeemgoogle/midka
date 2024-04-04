@@ -1,25 +1,20 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Moq;
-using NUnit.Framework;
-using TradePointAPI;
-
-
-namespace TradePointAPI.Tests
-{
-    public class HealthzControllerTests 
-    {
-        [Test]
-        public void Test_Healthz(){
-            var loggerMock = new Mock<ILogger<HealthzController>>();
-            var controller = new HealthzController(loggerMock.Object);
-            var result = controller.GetHealthz() as OkObjectResult;
-            
-            Assert.IsNotNull(result);
-            Assert.AreEqual(200, result.StatusCode);
-            Assert.AreEqual("OK", result.Value);
-        }
-    }
+func GetBonus(s *model.BonusResp) {
+	s.Merchants[].MerchantId = sanitizeString(s.Merchants[].MerchantId)
+	s.Merchants[].Error.ErrorDescription = sanitizeString(s.Merchants[].Error.ErrorDescription)
+	s.Merchants[].Error.ErrorCode = sanitizeString(s.Merchants[].Error.ErrorCode)
+	s.Merchants[].Phone = sanitizeString(s.Merchants[].Phone)
+	balances := s.Merchants[].Balances
+	balances[].Type = sanitizeString(balances[].Type)
 }
 
-Не удалось найти тип или имя пространства имен "HealthzController" (возможно, отсутствует директива using или ссылка на сборку)
+func sanitizeString(s string) string {
+	return html.UnescapeString(p.Sanitize(s))
+}
+
+..\pkg\sanitizer\sanitizer.go:16:14: syntax error: unexpected ], expecting operand
+..\pkg\sanitizer\sanitizer.go:17:14: syntax error: unexpected ], expecting operand
+..\pkg\sanitizer\sanitizer.go:18:14: syntax error: unexpected ], expecting operand
+..\pkg\sanitizer\sanitizer.go:19:14: syntax error: unexpected ], expecting operand
+..\pkg\sanitizer\sanitizer.go:20:26: syntax error: unexpected ], expecting operand
+..\pkg\sanitizer\sanitizer.go:21:11: syntax error: unexpected ], expecting operand
+fix it
