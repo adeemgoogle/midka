@@ -18,3 +18,20 @@ func sanitizeString(s string) string {
 ..\pkg\sanitizer\sanitizer.go:20:26: syntax error: unexpected ], expecting operand
 ..\pkg\sanitizer\sanitizer.go:21:11: syntax error: unexpected ], expecting operand
 fix it
+func GetBonus(s *model.BonusResp) {
+    for i := range s.Merchants {
+        s.Merchants[i].MerchantId = sanitizeString(s.Merchants[i].MerchantId)
+        s.Merchants[i].Error.ErrorDescription = sanitizeString(s.Merchants[i].Error.ErrorDescription)
+        s.Merchants[i].Error.ErrorCode = sanitizeString(s.Merchants[i].Error.ErrorCode)
+        s.Merchants[i].Phone = sanitizeString(s.Merchants[i].Phone)
+        
+        balances := s.Merchants[i].Balances
+        for j := range balances {
+            balances[j].Type = sanitizeString(balances[j].Type)
+        }
+    }
+}
+
+func sanitizeString(s string) string {
+    return html.UnescapeString(p.Sanitize(s))
+}
