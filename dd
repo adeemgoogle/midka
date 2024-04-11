@@ -1,1 +1,32 @@
->CSC: Error CS1705 : Сборка "TradePointAPI" с удостоверением "TradePointAPI, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null" использует "Microsoft.AspNetCore.Mvc.Core, Version=2.2.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60" с более высокой версией, чем у сборки "Microsoft.AspNetCore.Mvc.Core" с удостоверением "Microsoft.AspNetCore.Mvc.Core, Version=2.0.1.0, Culture=neutral, PublicKeyToken=adb9793829ddae60", на которую делается ссылка.
+unit.Sdk.IsTypeException
+Assert.IsType() Failure
+Expected: Microsoft.AspNetCore.Mvc.OkObjectResult
+Actual:   (null)
+ public class QueryControllerControllerTests
+    {
+        private readonly ITestOutputHelper _testOutputHelper;
+        [Fact]
+        public async Task Post_WithValidQuery_ReturnsOkResult()
+        {
+            // Arrange
+            var schemaMock = new Mock<ISchema>();
+            var documentExecuterMock = new Mock<IDocumentExecuter>();
+
+            var controller = new QueryController(schemaMock.Object, documentExecuterMock.Object);
+
+            var query = new QueryDtoTest
+            {
+                query = "ID : "555454545"
+            }
+
+var result = await controller.Post(query) as OkObjectResult;
+            
+
+            //Console.WriteLine("RESULT HERE" + result);
+            _testOutputHelper.WriteLine("Result here", result.Value);
+           Assert.IsType<OkObjectResult>(result);
+           Debug.Assert(result != null, nameof(result) + " != null");
+           Assert.Equal(200, result.StatusCode);
+}
+
+fix it 
