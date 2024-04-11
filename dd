@@ -1,8 +1,4 @@
-unit.Sdk.IsTypeException
-Assert.IsType() Failure
-Expected: Microsoft.AspNetCore.Mvc.OkObjectResult
-Actual:   (null)
- public class QueryControllerControllerTests
+public class QueryControllerControllerTests
     {
         private readonly ITestOutputHelper _testOutputHelper;
         [Fact]
@@ -14,19 +10,46 @@ Actual:   (null)
 
             var controller = new QueryController(schemaMock.Object, documentExecuterMock.Object);
 
-            var query = new QueryDtoTest
+            var query = new QueryDto
             {
-                query = "ID : "555454545"
+                Query = "{\n  atm(id: \"pp\") {\n    id\n    katoCode\n    adress\n    adressKaz\n    allDayFlag\n    cashInCurrencies\n    cashInFlag\n    filial\n    locality\n    location\n    publicFlag\n    geoLocation {\n      latitude\n      longitude\n    }\n    weekdayWorkTime {\n      startTime\n      endTime\n      lunchStart\n      lunchEnd\n    }\n    saturdayWorkTime {\n      startTime\n      endTime\n      lunchStart\n      lunchEnd\n    }\n    sundayWorkTime {\n      startTime\n      endTime\n      lunchStart\n      lunchEnd\n    }\n  }\n}"
+            };
+
+            // var expected = new 
+            var result = await controller.Post(query);
+            Assert.NotNull(result);
+            if (!(query is OkObjectResult)) 
+            {
+                _testOutputHelper.WriteLine($"Assert failed {result.GetType().Name}.");
             }
-
-var result = await controller.Post(query) as OkObjectResult;
-            
-
-            //Console.WriteLine("RESULT HERE" + result);
-            _testOutputHelper.WriteLine("Result here", result.Value);
+             
            Assert.IsType<OkObjectResult>(result);
+           var okResult = result as OkObjectResult;
+           Assert.NotNull(okResult);
+           var valResult = okResult.Value;
+           _testOutputHelper.WriteLine("Well" + valResult);
            Debug.Assert(result != null, nameof(result) + " != null");
-           Assert.Equal(200, result.StatusCode);
-}
+           Assert.Equal(200, okResult.StatusCode);
+        }
+fix : Object reference not set to an instance of an object.
 
-fix it 
+this my model.cs
+public class QueryDto
+    
+    {
+        
+        /// <summary>
+        /// GraphQL query text
+        /// </summary>
+        public string Query { get; set; }
+
+        public string OperationName { get; set; }
+
+        public string NamedQuery { get; set; }
+       
+        /// <summary>
+        /// Query parameters
+        /// </summary>
+        public JObject Variables { get; set; }
+    }
+}
