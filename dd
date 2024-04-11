@@ -1,8 +1,11 @@
+dotnet sonarscanner begin /k:"Ademd" /d:sonar.host.url="http://172.16.10.39:9000"  /d:sonar.login="Adedm'
 SonarScanner for MSBuild 6.2
 Using the .NET Core version of the Scanner for MSBuild
 Pre-processing started.
 Preparing working directories...
-12:16:47.916  Updating build integration targets...
-12:16:48.099  Downloading from http://172.16.10.39:9000/api/server/version failed. Http status code is Forbidden.
-12:16:48.101  An error occured while querying the server version! Please check if the server is running and if the address is correct.
-12:16:48.104  Pre-processing failed. Exit code: 1
+16:30:08.846  Updating build integration targets...
+16:30:09.071  Downloading from http://172.16.10.39:9000/api/server/version failed. Http status code is Forbidden.
+16:30:09.073  An error occured while querying the server version! Please check if the server is running and if the address is correct.
+16:30:09.075  Pre-processing failed. Exit code: 1
+
+fix it
