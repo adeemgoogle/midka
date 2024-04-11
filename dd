@@ -1,3 +1,58 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using Welcome.Controllers;
+using Xunit;
+
+namespace Welcome.Tests
+{
+    public class WelcomeControllerTests
+    {
+        [Fact]
+        public async Task Post_ValidQuery_ReturnsOkResult()
+        {
+            // Arrange
+            var schemaMock = new Mock<ISchema>();
+            var documentExecuterMock = new Mock<IDocumentExecuter>();
+            var query = new QueryDTO
+            {
+                Query = "your_valid_graphql_query_here"
+            };
+            var expectedResult = new ExecutionResult(); // Your expected execution result
+
+            documentExecuterMock.Setup(executer => executer.ExecuteAsync(It.IsAny<ExecutionOptions>()))
+                                .ReturnsAsync(expectedResult);
+
+            var controller = new WelcomeController(schemaMock.Object, documentExecuterMock.Object);
+
+            // Act
+            var result = await controller.Post(query);
+
+            // Assert
+            var okObjectResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(expectedResult, okObjectResult.Value);
+        }
+
+        [Fact]
+        public async Task Post_NullQuery_ReturnsBadRequest()
+        {
+            // Arrange
+            var schemaMock = new Mock<ISchema>();
+            var documentExecuterMock = new Mock<IDocumentExecuter>();
+            var controller = new WelcomeController(schemaMock.Object, documentExecuterMock.Object);
+
+            // Act
+            var result = await controller.Post(null);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+        // You can write more test cases to cover different scenarios such as error handling, logging, etc.
+    }
+}
+
 public class QueryControllerControllerTests
     {
         private readonly ITestOutputHelper _testOutputHelper;
