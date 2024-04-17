@@ -1,11 +1,21 @@
-dotnet sonarscanner begin /k:"Ademd" /d:sonar.host.url="http://172.16.10.39:9000"  /d:sonar.login="Adedm'
-SonarScanner for MSBuild 6.2
-Using the .NET Core version of the Scanner for MSBuild
-Pre-processing started.
-Preparing working directories...
-16:30:08.846  Updating build integration targets...
-16:30:09.071  Downloading from http://172.16.10.39:9000/api/server/version failed. Http status code is Forbidden.
-16:30:09.073  An error occured while querying the server version! Please check if the server is running and if the address is correct.
-16:30:09.075  Pre-processing failed. Exit code: 1
-
-fix it
+SELECT
+       r.id as ats_id,
+       r.name_ru as ats_name_ru,
+       r.name_kz as ats_name_kz,
+       s.id as geonims_id,
+       s.parent_id as geonims_parent_id,
+       s.s_ats_id as geonims_rco,
+       s.rco as geonims_cato,
+       s.cato as geonims_name_kz,
+       s.name_kz as geonims_name_ru,
+       s.name_ru as geonims_name_ru,
+       d.value_ru as geonims_type_ru,
+       d.value_kz as geonims_type_kz
+FROM s_geonims s,
+     d_geonims_types d,
+     s_ats r
+where s.d_geonims_type_id = d.id
+  and s.s_ats_id = r.id
+  and s.actual = true
+  and s.s_ats_id = :ats_id
+  and (lower(s.name_ru) = lower(:name) or lower(s.name_kz) = lower(:name))
