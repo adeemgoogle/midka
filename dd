@@ -1,21 +1,19 @@
-SELECT
-       r.id as ats_id,
-       r.name_ru as ats_name_ru,
-       r.name_kz as ats_name_kz,
-       s.id as geonims_id,
-       s.parent_id as geonims_parent_id,
-       s.s_ats_id as geonims_rco,
-       s.rco as geonims_cato,
-       s.cato as geonims_name_kz,
-       s.name_kz as geonims_name_ru,
-       s.name_ru as geonims_name_ru,
-       d.value_ru as geonims_type_ru,
-       d.value_kz as geonims_type_kz
-FROM s_geonims s,
-     d_geonims_types d,
-     s_ats r
-where s.d_geonims_type_id = d.id
-  and s.s_ats_id = r.id
-  and s.actual = true
-  and s.s_ats_id = :ats_id
-  and (lower(s.name_ru) = lower(:name) or lower(s.name_kz) = lower(:name))
+func (a *ABR) unmarshall(resp []byte) ([]*model.Transaction, error) {
+	Resp := new(ABRResponse)
+	
+	data := new([]model.Transaction)
+	
+	
+	err := json.Unmarshal(resp, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	cashback := Resp.CashBack
+	
+	data[].Amount = cashback
+	
+	return data, nil
+}
+Invalid operation: 'data[]' (type '*[]model.Transaction' does not support indexing)
+Cannot use 'data' (type *[]model.Transaction) as the type []*model.Transaction
