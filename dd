@@ -1,22 +1,14 @@
-func TestNEwServer(t *testing.T) {
-	e := echo.New()
-
-	AccApi := &services.AccountsApi{}
-	kalkan := &services.Kalkan{}
-	logger := hclog.New(&hclog.LoggerOptions{
-		JSONFormat: true,
-		Level:      6,
-	})
-	kafka := &services.Kafka{}
-	name := "GOVT_CLIENTS_ACCOUNTS"
-	
-	resp := NewServer(e, AccApi, kalkan, logger, true, "9", "pp", "dfxd", kafka, name)
-
-	assert.Equal(t, resp, &e)
+ public Server(IConfiguration Configuration)
+        { 
+		PublicBoards = Configuration["PublicBoards:Publicboards"];
+	}
+"PublicBoards": {
+    "PublicBoards": ["EQBD", "EQBR", "TQBD", "TQBR", "TQKR", "TQKD", "TQOG"] 
+  },
+  "DailyBoards": {
+    "DailyBoards": ["CCBN", "KZTK", "KZTO", "KEGC", "KMGZ"]
+  }
 }
-Error:      	Not equal: 
-        	            	expected: *echo.Echo(&echo.Echo{StdLogger:(*log.Logger)(0xc0000968c0), colorer:(*color.Color)(0xc0000acde0), premiddleware:[]echo.MiddlewareFunc(nil), middleware:[]echo.MiddlewareFunc(nil), maxParam:(*int)(0xc00020e2c0), router:(*echo.Router)(0xc0000acdf8), notFoundHandler:(echo.HandlerFunc)(nil), pool:sync.Pool{noCopy:sync.noCopy{}, local:(unsafe.Pointer)(nil), localSize:0x0, victim:(unsafe.Pointer)(nil), victimSize:0x0, New:(func() interface {})(0x5d11e0)}, Server:(*http.Server)(0xc0001821c0), TLSServer:(*http.Server)(0xc0001822a0), Listener:net.Listener(nil), TLSListener:net.Listener(nil), AutoTLSManager:autocert.Manager{Prompt:(func(string) bool)(0x5c2660), Cache:autocert.Cache(nil), HostPolicy:(autocert.HostPolicy)(nil), RenewBefore:0, Client:(*acme.Client)(nil), Email:"", ForceRSA:false, ExtraExtensions:[]pkix.Extension(nil), clientMu:sync.Mutex{state:0, sema:0x0}, client:(*acme.Client)(nil), stateMu:sync.Mutex{state:0, sema:0x0}, state:map[autocert.certKey]*autocert.certState(nil), renewalMu:sync.Mutex{state:0, sema:0x0}, renewal:map[autocert.certKey]*autocert.domainRenewal(nil), challengeMu:sync.RWMutex{w:sync.Mutex{state:0, sema:0x0}, writerSem:0x0, readerSem:0x0, readerCount:0, readerWait:0}, tryHTTP01:false, httpTokens:map[string][]uint8(nil), certTokens:map[string]*tls.Certificate(nil), nowFunc:(func() time.Time)(nil)}, DisableHTTP2:false, Debug:false, HideBanner:false, HidePort:false, HTTPErrorHandler:(echo.HTTPErrorHandler)(0x5d9a80), Binder:(*echo.DefaultBinder)(0xdc92c0), Validator:echo.Validator(nil), Renderer:echo.Renderer(nil), Logger:(*log.Logger)(0xc00017a510)})
-        	            	actual  : **echo.Echo((**echo.Echo)(0xc0000d4698))
-        	Test:       	TestNEwServer
 
-fix it
+
+Fix it : Cannot convert source type 'string' to target type 'string[]'
