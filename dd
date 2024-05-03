@@ -1,12 +1,3 @@
-go: downloading github.com/opentracing/opentracing-go v1.2.0
-go: downloading github.com/segmentio/ksuid v1.0.4
-verifying github.com/go-openapi/spec@v0.20.5/go.mod: checksum mismatch
-        downloaded: h1:2OpW+JddWPrpXSCIX8eOx7lZ5iyuWj3RYR6VaaBKcWA=
-        go.sum:     h1:QbfOSIVt3/sac+a1wzmKbbcLXm5NdZnyBZYtCijp43o=
+Cannot use 'resp.LastInsertId()' (type (int64, error)) as the type int
 
-SECURITY ERROR
-This download does NOT match an earlier download recorded in go.sum.
-The bits may have been replaced on the origin server, or an attacker may
-have intercepted the download attempt.
-
-For more information, see 'go help module-auth'.
+fix it
