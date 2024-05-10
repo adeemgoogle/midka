@@ -1,24 +1,18 @@
-func (g *GatewayLogger) WriteGateway(data model.LogGateway) (int, error) {
-	k := g.DB.Ping()
-	if k != nil {
-		return 0, k
-	}
+You must install or update .NET to run this application.                                                    
+                                                                                                            
+App: C:\Users\00058157\RiderProjects\ASTS\kase-asts-read-tables\ASTS BRIDGE\bin\Debug\net6.0\ASTS BRIDGE.exe
+Architecture: x64                                                                                           
+Framework: 'Microsoft.AspNetCore.App', version '6.0.0' (x64)                                                                 
+.NET location: C:\Program Files\dotnet\                                                                                      
+                                                                                                                             
+The following frameworks were found:                                                                                         
+  2.2.8 at [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]                                                         
+  8.0.3 at [C:\Program Files\dotnet\shared\Microsoft.AspNetCore.App]                                                         
+                                                                                                                             
+Learn more:                                                                                                                  
+https://aka.ms/dotnet/app-launch-failed                                                                                      
+                                                                                                                             
+To install missing framework, download:                                                                                      
+https://aka.ms/dotnet-core-applaunch?framework=Microsoft.AspNetCore.App&framework_version=6.0.0&arch=x64&rid=win-x64&os=win10
 
-	resp, err := g.DB.Exec(`
-			INSERT INTO  logs.gateway ("ip", "user", "service_id", "code", "request", "response", "method")
-			VALUES ($1, $2, $3, $4, $5, $6, $7);
-		`,
-		data.IP,
-		data.User,
-		data.Service,
-		data.Code,
-		data.Request,
-		data.Response,
-		data.Method,
-	)
-	return resp.LastInsertId(), err
-}
-
-Cannot use 'resp.LastInsertId()' (type (int64, error)) as the type int
-
-fix it
+how to fix?
