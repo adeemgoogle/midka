@@ -6,393 +6,404 @@ System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative
    at ASTS_BRIDGE.Models.Server.GetUpdates() in C:\Users\00058157\RiderProjects\ASTS\kase-asts-read-tables\ASTS BRIDGE\Models\Server.cs:line 368
    at System.Threading.Thread.StartCallback()
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
-using static ASTS_BRIDGE.Models.Decoder;
-using static ASTS_BRIDGE.Models.SymbolDictionary;
-using Newtonsoft.Json;
+using System.Threading.Tasks;
 
 namespace ASTS_BRIDGE.Models
 {
-    public class Server
+    public class Decoder
     {
-        public Server(IConfiguration Configuration)
+        public static unsafe int GetInt(int* ptr, out int* newPtr, int sdvig)
         {
-            ServerAddress = Configuration["Asts:ServerAddress"];
-            ServerName = Configuration["Asts:ServerName"];
-            Service = Configuration["Asts:Service"];
-            UserId = Configuration["Asts:UserId"];
-            Password = Configuration["Asts:Password"];
-            Interface = Configuration["Asts:Interface"];
-            Language = Configuration["Asts:Language"];
-            Logging = Configuration["Asts:Logging"];
-            LogFolder = Configuration["Asts:LogFolder"];
-            SecuritiesKafkaTopic = Configuration["KafkaPublic:Topic"];
-            DailyKafkaTopic = Configuration["KafkaPublic:TopicDaily"];
-            PublicBoards = Configuration.GetSection("PublicBoards").Get<string[]>();
-            DailyBoards = Configuration.GetSection("DailyBoards").Get<string[]>();
-            Config = Configuration;
-            mut = new Mutex();
-            isReadingTable = new Dictionary<string, bool>()
-            {
-                { "NEGDEALS", false},
-                { "ORDERS", false},
-                { "TRADES", false}
-            };
-        }
-        
-#if DEV
-        public const string Folder = "lib/dev";
-#else
-        public const string Folder = "lib/prod";
-#endif
+            int[] stringLength = new int[1];
 
+            Marshal.Copy(IntPtr.Add(new IntPtr(ptr), sdvig), stringLength, 0, 1);
 
-        private Mutex mut;
+            int length = stringLength[0];
 
-        public IConfiguration Config { get; set; }
+            ptr += 1; // shift to the int length / сдвигаем на длинну длинны инта
+            newPtr = ptr;
 
-        public string ServerAddress { get; set; }
-        
-        public string[] PublicBoards { get; set;}
-        
-        public string[] DailyBoards { get; set; }
-        public string ServerName { get; set; }
-
-        public string Service { get; set; }
-
-        public string UserId { get; set; }
-
-        public string Password { get; set; }
-
-        public string Interface { get; set; }
-
-        public string Language { get; set; }
-
-        public string Logging { get; set; }
-
-        public string LogFolder { get; set; }
-
-        public string SecuritiesKafkaTopic { get; set; }
-        
-        public string DailyKafkaTopic { get; set; }
-        
-        public Wrapper AstsServer;
-
-        public Dictionary<string, bool> isReadingTable { get; set; }
-
-        public void CreateNewAstsServer(string os)
-        {
-            if (AstsServer == null)
-            {
-                AstsServer = os switch
-                {
-                    "Windows" => new WindowsWrapper(),
-                    _ => new LinuxWrapper()
-                };
-            }
-
-            Connect();
-            Kafka.Init(Config);
-            ExecuteStructure();
+            return length;
         }
 
-        private void Connect()
+        public static unsafe int GetIntFromByte(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
         {
-            StringBuilder settings = new StringBuilder();
+            byte[] stringLength = new byte[1];
 
-            if (Service != null)
+            Marshal.Copy(IntPtr.Add(new IntPtr(ptr), sdvig), stringLength, 0, 1);
+
+            int length = stringLength[0];
+            sdvig += 1; // shift/ сдвигаем 
+
+            while (sdvig >= 4)
             {
-                settings.Append("SERVICE=" + Service + "\r\n");
-                settings.Append("BROADCAST=" + ServerAddress + "\r\n");
-                settings.Append("IFACENAME=" + Interface + "\r\n");
-            } else
-            {
-                settings.Append("HOST=" + ServerAddress + "\r\n");
-                settings.Append("INTERFACE=" + Interface + "\r\n");
+                sdvig -= 4;
+                ptr += 1;
             }
-            
-            settings.Append("SERVER=" + ServerName + "\r\n");
-            settings.Append("USERID=" + UserId + "\r\n");
-            settings.Append("PASSWORD=" + Password + "\r\n");
-            settings.Append("LOGGING=" + Logging + "\r\n");
-            settings.Append("LOGFOLDER=" + LogFolder + "\r\n");
-            settings.Append("LANGUAGE=" + Language + "\r\n");
 
-            int attempt = 5;
-            while (attempt > 0)
+            newSdvig = sdvig;
+            newPtr = ptr;
+
+            return length;
+        }
+
+        public static unsafe string GetString(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
+        {
+            int[] stringLength = new int[1];
+            Marshal.Copy(IntPtr.Add(new IntPtr(ptr), sdvig), stringLength, 0, 1);
+
+            int length = stringLength[0];
+
+            ptr += 1; // shift to the int length / сдвигаем на длинну длинны инта
+
+            string result = Marshal.PtrToStringAnsi(IntPtr.Add(new IntPtr(ptr), sdvig), stringLength[0]);
+
+            while (length % 4 != 0)
             {
-                if (AstsServer.IsConnected)
+                length--;
+                sdvig++;
+            }
+
+            while (sdvig >= 4)
+            {
+                sdvig -= 4;
+                ptr += 1;
+            }
+
+            ptr += length / 4;
+
+            newSdvig = sdvig;
+
+            newPtr = ptr;
+
+            return result;
+        }
+
+        public static unsafe string GetStringWhenWeKnownLength(int* ptr, out int* newPtr, int sdvig, out int newSdvig, int length)
+        {
+            string result;
+
+            if (sdvig == 0)
+            {
+                result = Marshal.PtrToStringAnsi(new IntPtr(ptr), length);
+            }
+            else
+            {
+                result = Marshal.PtrToStringAnsi(IntPtr.Add(new IntPtr(ptr), sdvig), length);
+            }
+
+            while (length % 4 != 0)
+            {
+                length--;
+                sdvig++;
+            }
+
+            while (sdvig >= 4)
+            {
+                sdvig -= 4;
+                ptr += 1;
+            }
+
+            ptr += length / 4;
+
+            newSdvig = sdvig;
+
+            newPtr = ptr;
+
+            return result;
+        }
+
+        public static unsafe AstsEnumType GetOneType(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
+        {
+            AstsEnumType type = new AstsEnumType();
+
+            type.Name = GetString(ptr, out ptr, sdvig, out sdvig);
+            type.Header = GetString(ptr, out ptr, sdvig, out sdvig);
+            type.Description = GetString(ptr, out ptr, sdvig, out sdvig);
+            type.Lenght = GetInt(ptr, out ptr, sdvig);
+
+            int numType = GetInt(ptr, out ptr, sdvig);
+            if (numType == 0)
+            {
+                type.Type = AstsEnumKind.EkCheck;
+            }
+            else if (numType == 1)
+            {
+                type.Type = AstsEnumKind.EkGroup;
+            }
+            else if (numType == 2)
+            {
+                type.Type = AstsEnumKind.EkCombo;
+            }
+
+            int constCount = GetInt(ptr, out ptr, sdvig);
+
+            type.Consts = new List<AstsEnumConst>();
+
+            for (int i = 0; i < constCount; i++)
+            {
+                AstsEnumConst newConst = new AstsEnumConst();
+                newConst.Value = GetString(ptr, out ptr, sdvig, out sdvig);
+                newConst.LongDescription = GetString(ptr, out ptr, sdvig, out sdvig);
+                newConst.ShorDescription = GetString(ptr, out ptr, sdvig, out sdvig);
+
+                type.Consts.Add(newConst);
+            }
+
+            newPtr = ptr;
+            newSdvig = sdvig;
+            return type;
+        }
+
+        public static unsafe List<AstsEnumType> GetAllTypes(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
+        {
+            GetInt(ptr, out ptr, sdvig);
+            int typesCount = GetInt(ptr, out ptr, sdvig);
+
+            List<AstsEnumType> types = new List<AstsEnumType>();
+
+            for (int i = 0; i < typesCount; i++)
+            {
+                types.Add(GetOneType(ptr, out ptr, sdvig, out sdvig));
+            }
+
+            newPtr = ptr;
+            newSdvig = sdvig;
+            return types;
+        }
+
+        public static unsafe List<AstsTable> GetAllTables(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
+        {
+            int tableCount = GetInt(ptr, out ptr, sdvig);
+
+            List<AstsTable> tables = new List<AstsTable>();
+
+            for (int i = 0; i < tableCount; i++)
+            {
+                tables.Add(GetOneTable(ptr, out ptr, sdvig, out sdvig));
+            }
+
+            newPtr = ptr;
+            newSdvig = sdvig;
+            return tables;
+        }
+
+        public static unsafe AstsTable GetOneTable(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
+        {
+            AstsTable table = new AstsTable();
+
+            table.Name = GetString(ptr, out ptr, sdvig, out sdvig);
+            table.Header = GetString(ptr, out ptr, sdvig, out sdvig);
+            table.Description = GetString(ptr, out ptr, sdvig, out sdvig);
+            table.IndexInSystem = GetInt(ptr, out ptr, sdvig);
+
+            int numType = GetInt(ptr, out ptr, sdvig);
+            if (numType == 1)
+            {
+                table.Flag = AstsTableFlags.TfUpdateable;
+            }
+            else if (numType == 2)
+            {
+                table.Flag = AstsTableFlags.TfClearOnUpdate;
+            }
+            else if (numType == 4)
+            {
+                table.Flag = AstsTableFlags.TfOrderbook;
+            }
+
+            table.FieldsIn = GetTableFields(ptr, out ptr, sdvig, out sdvig, true);
+            table.FieldsOut = GetTableFields(ptr, out ptr, sdvig, out sdvig, false);
+
+            newPtr = ptr;
+            newSdvig = sdvig;
+            return table;
+        }
+
+        public static unsafe List<AstsTableField> GetTableFields(int* ptr, out int* newPtr, int sdvig, out int newSdvig, bool neadDefoltValue)
+        {
+
+            int count = GetInt(ptr, out ptr, sdvig);
+
+            List<AstsTableField> fields = new List<AstsTableField>();
+
+            for (int i = 0; i < count; i++)
+            {
+                AstsTableField field = new AstsTableField();
+                field.Name = GetString(ptr, out ptr, sdvig, out sdvig);
+
+                field.Header = GetString(ptr, out ptr, sdvig, out sdvig);
+                field.Description = GetString(ptr, out ptr, sdvig, out sdvig);
+
+                field.Lenght = GetInt(ptr, out ptr, sdvig);
+
+                int type = GetInt(ptr, out ptr, sdvig);
+
+                if (type == 0)
                 {
+                    field.FieldType = AstsTableFieldType.FtChar;
+                }
+                else if (type == 1)
+                {
+                    field.FieldType = AstsTableFieldType.FtInteger;
+                }
+                else if (type == 2)
+                {
+                    field.FieldType = AstsTableFieldType.FtFixed;
+                }
+                else if (type == 3)
+                {
+                    field.FieldType = AstsTableFieldType.FtFloat;
+                }
+                else if (type == 4)
+                {
+                    field.FieldType = AstsTableFieldType.FtDate;
+                }
+                else if (type == 5)
+                {
+                    field.FieldType = AstsTableFieldType.FtTime;
+                }
+                else if (type == 6)
+                {
+                    field.FieldType = AstsTableFieldType.FtFloatPoint;
+                }
+                field.CountDecimal = GetInt(ptr, out ptr, sdvig);
+
+                int atribute = GetInt(ptr, out ptr, sdvig);
+
+                if (atribute == 1)
+                {
+                    field.FieldFlag = AstsTableFieldFlags.FfKey;
+                }
+                if (atribute == 2)
+                {
+                    field.FieldFlag = AstsTableFieldFlags.FfSecCode;
+                }
+                if (atribute == 4)
+                {
+                    field.FieldFlag = AstsTableFieldFlags.FfNotNull;
+                }
+                if (atribute == 8)
+                {
+                    field.FieldFlag = AstsTableFieldFlags.FfVarBlock;
+                }
+                field.TypeEnums = GetString(ptr, out ptr, sdvig, out sdvig);
+
+                if (neadDefoltValue)
+                {
+                    field.DefoltValue = GetString(ptr, out ptr, sdvig, out sdvig);
+                }
+                fields.Add(field);
+            }
+
+
+            newPtr = ptr;
+            newSdvig = sdvig;
+            return fields;
+        }
+
+        public static unsafe List<AstsTransaction> GetAllTrans(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
+        {
+            int count = GetInt(ptr, out ptr, sdvig);
+
+            List<AstsTransaction> transactions = new List<AstsTransaction>();
+
+            for (int i = 0; i < count; i++)
+            {
+                transactions.Add(GetOneTrans(ptr, out ptr, sdvig, out sdvig));
+            }
+
+            newPtr = ptr;
+            newSdvig = sdvig;
+            return transactions;
+        }
+
+        public static unsafe AstsTransaction GetOneTrans(int* ptr, out int* newPtr, int sdvig, out int newSdvig)
+        {
+            AstsTransaction type = new AstsTransaction();
+
+            type.Name = GetString(ptr, out ptr, sdvig, out sdvig);
+            type.Header = GetString(ptr, out ptr, sdvig, out sdvig);
+            type.Description = GetString(ptr, out ptr, sdvig, out sdvig);
+            type.IndexInSystem = GetInt(ptr, out ptr, sdvig);
+
+            type.Fields = GetTableFields(ptr, out ptr, sdvig, out sdvig, true);
+
+            newPtr = ptr;
+            newSdvig = sdvig;
+            return type;
+        }
+
+        public static unsafe UniversalTable ReadTable(int* ptr, out int* newPtr, int sdvig, out int newSdvig, string nameTable, List<AstsTable> tables)
+        {
+            string lines = new string('-', 230);
+            AstsTable tableStruct = new AstsTable();
+
+            foreach (var item in tables)
+            {
+                if (item.Name == nameTable)
+                {
+                    tableStruct = item;
                     break;
                 }
-
-                AstsServer.Connect(settings);
-                Thread.Sleep(1 % (attempt + 1) * 1000);
-                attempt--;
             }
-        }
 
-        public void Disconnect()
-        {
-            AstsServer.Disconnect();
-        }
+            int refOnTable = GetInt(ptr, out ptr, sdvig);
 
-        private void ExecuteStructure()
-        {
-            AstsServer.ExecuteStructure();
-            Thread myThread = new Thread(GetUpdates);
-            myThread.Start();
-        }
+            UniversalTable table = new UniversalTable(tableStruct.Name);
 
-        public string ReadTrades()
-        {
-            if (isReadingTable["TRADES"])
+            table.Ref = refOnTable;
+
+            int integ = GetInt(ptr, out ptr, sdvig);
+            int countRow = 0;
+
+            countRow = GetInt(ptr, out ptr, sdvig);
+
+            for (int i = 0; i < countRow; i++)
             {
-                return "Already reading TRADES table";
-            }
-            checkConnection();
+                int fieldCount = GetIntFromByte(ptr, out ptr, sdvig, out sdvig);
+                int dataLength = GetInt(ptr, out ptr, sdvig);
 
-            isReadingTable["TRADES"] = true;
-            Thread thread = new Thread(WriteTrades);
-            thread.Start();
+                List<AstsTableField> fields = new List<AstsTableField>();
 
-            return "OK";
-        }
-
-        private void WriteTrades()
-        {
-            Console.WriteLine("starting read TRADES table...");
-            int tableDescriptor;
-            var table = OpenTableNonString("TRADES", null, out tableDescriptor);
-            var trades = TradeTable.ParseTradesFromUniversalTable(table);
-            if (trades.Rows != null && trades.Rows.Count != 0)
-            {
-                var partitions = trades.Rows.partition(500);
-                foreach (var partition in partitions)
+                if (fieldCount == 0)
                 {
-                    TradeTable tradeTable = new TradeTable(table.Name, table.Ref);
-                    tradeTable.Rows = (List<TradeRow>)partition;
-                    var jsonStr = JsonConvert.SerializeObject(tradeTable);
-                    Kafka.Write("BROKERAGE-KASE-ASTS-ALLOCATIONS", "TRADES", jsonStr);
-                }
-
-                Console.WriteLine("TRADES table was written to Kafka succesfully");
-                isReadingTable["TRADES"] = false;
-            }
-            else
-            {
-                Console.WriteLine("TRADES table is empty");
-                isReadingTable["TRADES"] = false;
-            }
-        }
-
-        public string ReadOrders()
-        {
-            if (isReadingTable["ORDERS"])
-            {
-                return "Already reading ORDERS table";
-            }
-            checkConnection();
-
-            isReadingTable["ORDERS"] = true;
-            Thread thread = new Thread(WriteOrders);
-            thread.Start();
-
-            return "OK";
-        }
-
-        private void WriteOrders()
-        {
-            Console.WriteLine("starting read ORDERS table...");
-            int tableDescriptor;
-            var table = OpenTableNonString("ORDERS", null, out tableDescriptor);
-            var orders = OrderTable.ParseOrdersFromUniversalTable(table);
-            if (orders.Rows != null && orders.Rows.Count != 0)
-            {
-                var partitions = orders.Rows.partition(500);
-                foreach (var partition in partitions)
-                {
-                    OrderTable orderTable = new OrderTable(table.Name, table.Ref);
-                    orderTable.Rows = (List<OrderRow>)partition;
-                    var jsonStr = JsonConvert.SerializeObject(orderTable);
-                    Kafka.Write("BROKERAGE-KASE-ASTS-ALLOCATIONS", "ORDERS", jsonStr);
-                }
-
-                Console.WriteLine("ORDERS table was written to Kafka succesfully");
-                isReadingTable["ORDERS"] = false;
-            }
-            else
-            {
-                Console.WriteLine("ORDERS table is empty");
-                isReadingTable["ORDERS"] = false;
-            }
-        }
-
-        public string ReadNegdeals()
-        {
-            if (isReadingTable["NEGDEALS"])
-            {
-                return "Already reading NEGDEALS table";
-            }
-            checkConnection();
-
-            isReadingTable["NEGDEALS"] = true;
-            Thread myThread = new Thread(WriteNegdeals);
-            myThread.Start();
-
-            return "OK";
-        }
-
-        public void WriteNegdeals()
-        {
-            Console.WriteLine("starting read NEGDEALS table...");
-            int tableDescriptor;
-            var table = OpenTableNonString("NEGDEALS", null, out tableDescriptor);
-            var negdeals = NegdealTable.ParseNegdealsFromUniversalTable(table);
-            if (negdeals.Rows != null && negdeals.Rows.Count != 0)
-            {
-                var partitions = negdeals.Rows.partition(500);
-                foreach (var partition in partitions)
-                {
-                    NegdealTable negdealTable = new NegdealTable(table.Name, table.Ref);
-                    negdealTable.Rows = (List<NegdealRow>)partition;
-                    var jsonStr = JsonConvert.SerializeObject(negdealTable);
-                    Kafka.Write("BROKERAGE-KASE-ASTS-ALLOCATIONS", "NEGDEALS", jsonStr);
-                }
-
-                Console.WriteLine("NEGDEALS table was written to Kafka succesfully");
-                isReadingTable["NEGDEALS"] = false;
-            }
-            else
-            {
-                Console.WriteLine("NEGDEALS table is empty");
-                isReadingTable["NEGDEALS"] = false;
-            }
-        }
-
-        public unsafe UniversalTable OpenTableNonString(string name, string par, out int descriptor)
-        {
-            UniversalTable table;
-            int sdvig;
-
-            mut.WaitOne();
-            descriptor = AstsServer.OpenTable(name, par, out AstsServer.ptr);
-            mut.ReleaseMutex();
-
-            table = ReadTable(AstsServer.ptr, out AstsServer.ptr, 0, out sdvig, name, AstsServer.tables);
-
-            return table;
-        }
-
-        public int CloseTable(int tableDescriptor)
-        {
-            mut.WaitOne();
-            var table = AstsServer.CloseTable(tableDescriptor);
-            mut.ReleaseMutex();
-            return table;
-        }
-
-        public unsafe void GetOrderBook(SymbolDictionary d)
-        {
-            int tableDescriptor;
-            UniversalTable table;
-            int sdvig;
-
-            string name = d.symbol;
-            if (name == "SHY US EQUITY"){
-                return;
-            }
-            string par = d.boardCode;
-            while (name.Length < 12)
-            {
-                name += " ";
-            }
-            par += name + "10";
-
-            table = OpenTableNonString("EXT_ORDERBOOK", par, out tableDescriptor);
-
-            var books = Book.ParseBooksFromUniversalTable(table.Rows);
-
-            if (books.Count > 1)
-            {
-                var jsonStr = JsonConvert.SerializeObject(books);
-                Kafka.Write("BROKERAGE-KASE-ORDERBOOK", d.externalId, jsonStr);
-            }
-
-            CloseTable(tableDescriptor);
-        }
-
-        public unsafe void GetSecurity(string[] Boards, string KafkaTopic, bool isDailyReport)
-        {
-            int tableDescriptor;
-            UniversalTable table;
-            int sdvig;
-            //= { "EQBD", "EQBR", "TQBD", "TQBR", "TQKR", "TQKD", "TQOG" };
-            
-            string par;
-            SecurityTable res = new SecurityTable("", 0);
-            res.Rows = new List<SecurityRow>();
-
-            foreach (string board in Boards){
-                par = "    " + board;
-
-                table = OpenTableNonString("SECURITIES", par, out tableDescriptor);
-                if (table.Rows.Count == 0){
-                    continue;
-                }
-
-                
-                if (isDailyReport)
-                {
-                    var securitiesFromUniversalTable = SecurityTable.ParseDailySecuritiesFromUniversalTable(table);
-                    foreach (var row in securitiesFromUniversalTable.RowsDictionary)
-                    {
-                        res.Rows.Add(row.Value);
-                    }   
+                    fields = tableStruct.FieldsOut;
+                    fieldCount = fields.Count();
                 }
                 else
                 {
-                    var securities = SecurityTable.ParseSecuritiesFromUniversalTable(table);
-                    foreach(var row in securities.RowsDictionary)
+                    for (int i2 = 0; i2 < fieldCount; i2++)
                     {
-                        res.Rows.Add(row.Value);
+                        fields.Add(tableStruct.FieldsOut[GetIntFromByte(ptr, out ptr, sdvig, out sdvig)]);
                     }
                 }
 
-                CloseTable(tableDescriptor);
-            }
+                UniversalRow row = new UniversalRow();
 
-            if (res.Rows.Count > 1)
-            {
-                var jsonStr = JsonConvert.SerializeObject(res.Rows);
-                Kafka.Write(KafkaTopic, "SECURITIES", jsonStr);
-            }
-        }
-
-        public unsafe void GetUpdates()
-        {
-            while (true)
-            {
-                GetSecurity(PublicBoards, SecuritiesKafkaTopic, false);
-                GetSecurity(DailyBoards, DailyKafkaTopic, true);
-                var dictionaries = GetDictionaries(Config["SPM:Host"]);
-                foreach (var d in dictionaries)
+                for (int i2 = 0; i2 < fields.Count; i2++)
                 {
-                    GetOrderBook(d);
-                }
-               
-                Thread.Sleep(15000);
-            }
-        }
+                    AstsTableField field = fields[i2];
 
-        private void checkConnection()
-        {
-            AstsServer.ConnectionStatus();
-            if (!AstsServer.IsConnected)
-            {
-                Connect();
+                    UniversalField fieldNew = new UniversalField();
+
+                    fieldNew.Name = field.Name;
+                    fieldNew.Value = GetStringWhenWeKnownLength(ptr, out ptr, sdvig, out sdvig, field.Lenght);
+                    fieldNew.Decimals = field.CountDecimal;
+                    row.Fields.Add(fieldNew);
+                }
+
+                table.Rows.Add(row);
             }
+
+            newSdvig = sdvig;
+            newPtr = ptr;
+
+            return table;
         }
     }
 }
-
