@@ -1,7 +1,10 @@
-System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
-   at System.Collections.Generic.List`1.get_Item(Int32 index)
-   at ASTS_BRIDGE.Models.Decoder.ReadTable(Int32* ptr, Int32*& newPtr, Int32 sdvig, Int32& newSdvig, String nameTable, List`1 tables) in C:\Users\00058157\RiderProjects\ASTS\kase-asts-read-tables\ASTS BRIDGE\Models\Decoder.cs:line 386
-   at ASTS_BRIDGE.Models.Server.OpenTableNonString(String name, String par, Int32& descriptor) in C:\Users\00058157\RiderProjects\ASTS\kase-asts-read-tables\ASTS BRIDGE\Models\Server.cs:line 274
-   at ASTS_BRIDGE.Models.Server.GetSecurity(String[] Boards, String KafkaTopic, Boolean isDailyReport) in C:\Users\00058157\RiderProjects\ASTS\kase-asts-read-tables\ASTS BRIDGE\Models\Server.cs:line 331
-   at ASTS_BRIDGE.Models.Server.GetUpdates() in C:\Users\00058157\RiderProjects\ASTS\kase-asts-read-tables\ASTS BRIDGE\Models\Server.cs:line 368
-   at System.Threading.Thread.StartCallback()
+ PublicBoards = Configuration.GetSection("PublicBoards").Get<string[]>();
+            DailyBoards = Configuration.GetSection("DailyBoards").Get<string[]>();
+cannot parse in from appsettings.Development.json 
+ "PublicBoards": {
+    "PublicBoards": ["EQBD", "EQBR", "TQBD", "TQBR", "TQKR", "TQKD", "TQOG"] 
+  },
+  "DailyBoards": {
+    "DailyBoards": ["TQBR"]
+  }
+fix it
