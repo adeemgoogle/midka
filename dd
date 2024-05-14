@@ -1,28 +1,16 @@
-Unhandled exception: NuGet.Protocol.Core.Types.FatalProtocolException: Не удалось извлечь результаты из канала V2 по адресу "http://nexus.query.consul/repository/nuget-hosted/FindPackagesById()?id='coverlet.console'&semVerLevel=
-2.0.0" со следующим сообщением: Response status code does not indicate success: 504 (Gateway Timeout).
- ---> System.Net.Http.HttpRequestException: Response status code does not indicate success: 504 (Gateway Timeout).
-   at System.Net.Http.HttpResponseMessage.EnsureSuccessStatusCode()
-   at NuGet.Protocol.HttpSource.<>c__DisplayClass15_0`1.<<GetAsync>b__0>d.MoveNext()
---- End of stack trace from previous location ---
-   at NuGet.Common.ConcurrencyUtilities.ExecuteWithFileLockedAsync[T](String filePath, Func`2 action, CancellationToken token)
-   at NuGet.Common.ConcurrencyUtilities.ExecuteWithFileLockedAsync[T](String filePath, Func`2 action, CancellationToken token)
-   at NuGet.Protocol.HttpSource.GetAsync[T](HttpSourceCachedRequest request, Func`2 processAsync, ILogger log, CancellationToken token)
-   at NuGet.Protocol.V2FeedParser.LoadXmlAsync(String uri, String cacheKey, Boolean ignoreNotFounds, SourceCacheContext sourceCacheContext, ILogger log, CancellationToken token)
-   --- End of inner exception stack trace ---
-   at NuGet.Protocol.V2FeedParser.LoadXmlAsync(String uri, String cacheKey, Boolean ignoreNotFounds, SourceCacheContext sourceCacheContext, ILogger log, CancellationToken token)
-   at NuGet.Protocol.V2FeedParser.QueryV2FeedAsync(String relativeUri, String id, Int32 max, Boolean ignoreNotFounds, SourceCacheContext sourceCacheContext, ILogger log, CancellationToken token)
-   at NuGet.Protocol.V2FeedParser.FindPackagesByIdAsync(String id, Boolean includeUnlisted, Boolean includePrerelease, SourceCacheContext sourceCacheContext, ILogger log, CancellationToken token)
-   at NuGet.Protocol.PackageMetadataResourceV2Feed.GetMetadataAsync(String packageId, Boolean includePrerelease, Boolean includeUnlisted, SourceCacheContext sourceCacheContext, ILogger log, CancellationToken token)
-   at Microsoft.DotNet.Cli.NuGetPackageDownloader.NuGetPackageDownloader.GetPackageMetadataAsync(PackageSource source, String packageIdentifier, Boolean includePrerelease, Boolean includeUnlisted, CancellationToken cancellationT
-oken)
-   at Microsoft.DotNet.Cli.NuGetPackageDownloader.NuGetPackageDownloader.GetMatchingVersionInternalAsync(String packageIdentifier, IEnumerable`1 packageSources, VersionRange versionRange, CancellationToken cancellationToken)    
-   at Microsoft.DotNet.Cli.NuGetPackageDownloader.NuGetPackageDownloader.GetBestPackageVersionAsync(PackageId packageId, VersionRange versionRange, PackageSourceLocation packageSourceLocation)
-   at Microsoft.DotNet.Cli.ToolPackage.ToolPackageDownloader.<>c__DisplayClass8_0.<InstallPackage>b__0()
-   at Microsoft.DotNet.Cli.TransactionalAction.Run[T](Func`1 action, Action commit, Action rollback)
-   at Microsoft.DotNet.Tools.Tool.Install.ToolInstallGlobalOrToolPathCommand.<>c__DisplayClass19_0.<Execute>b__1()
-   at Microsoft.DotNet.Tools.Tool.Install.ToolInstallGlobalOrToolPathCommand.RunWithHandlingInstallError(Action installAction)
-   at Microsoft.DotNet.Tools.Tool.Install.ToolInstallGlobalOrToolPathCommand.Execute()
-   at System.CommandLine.Invocation.InvocationPipeline.Invoke(ParseResult parseResult)
-   at Microsoft.DotNet.Cli.Program.ProcessArgs(String[] args, TimeSpan startupTime, ITelemetry telemetryClient)
+ public string ReadTrades()
+ {
+     if (isReadingTable["BOOK"])
+     {
+         return "Already reading BOOK table";
+     }
+     checkConnection();
 
-fix it
+     isReadingTable["BOOK"] = true;
+     Thread thread = new Thread(WriteTrades);
+     thread.Start();
+
+     return "OK";
+ }
+
+write Xunit test for this function
