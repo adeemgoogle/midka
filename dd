@@ -1,2 +1,51 @@
 
 Ошибка	CS0246	Не удалось найти тип или имя пространства имен "TradeReader" (возможно, отсутствует директива using или ссылка на сборку).
+using Xunit;
+using System.Collections.Generic;
+using System.Threading;
+
+public class TradeReaderTests
+{
+    [Fact]
+    public void ReadTrades_AlreadyReadingTable_ReturnsErrorMessage()
+    {
+        // Arrange
+        var tradeReader = new TradeReader();
+        tradeReader.IsReadingTable["BOOK"] = true;
+
+        // Act
+        var result = tradeReader.ReadTrades();
+
+        // Assert
+        Assert.Equal("Already reading BOOK table", result);
+    }
+
+    [Fact]
+    public void ReadTrades_NotAlreadyReadingTable_ReturnsOK()
+    {
+        // Arrange
+        var tradeReader = new TradeReader();
+
+        // Act
+        var result = tradeReader.ReadTrades();
+
+        // Assert
+        Assert.Equal("OK", result);
+    }
+
+    [Fact]
+    public void ReadTrades_StartsThread()
+    {
+        // Arrange
+        var tradeReader = new TradeReader();
+        var mockThread = new Mock<Thread>();
+
+        // Act
+        tradeReader.ReadTrades();
+
+        // Assert
+        mockThread.Verify(t => t.Start(), Times.Once);
+    }
+
+    // You can add more test cases to cover other scenarios
+}
