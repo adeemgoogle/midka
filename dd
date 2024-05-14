@@ -386,3 +386,79 @@ namespace ASTS_BRIDGE.Models
         }
     }
 }
+
+using NUnit.Framework;
+using Moq;
+using ASTS_BRIDGE.Models;
+using Microsoft.Extensions.Configuration;
+
+namespace ASTS_BRIDGE.Tests
+{
+    [TestFixture]
+    public class ServerTests
+    {
+        [Test]
+        public void ReadTrades_AlreadyReadingTradesTable_ReturnsErrorMessage()
+        {
+            // Arrange
+            var configuration = MockConfiguration();
+            var server = new Server(configuration.Object);
+            server.isReadingTable["TRADES"] = true;
+
+            // Act
+            string result = server.ReadTrades();
+
+            // Assert
+            Assert.AreEqual("Already reading TRADES table", result);
+        }
+
+        [Test]
+        public void ReadOrders_AlreadyReadingOrdersTable_ReturnsErrorMessage()
+        {
+            // Arrange
+            var configuration = MockConfiguration();
+            var server = new Server(configuration.Object);
+            server.isReadingTable["ORDERS"] = true;
+
+            // Act
+            string result = server.ReadOrders();
+
+            // Assert
+            Assert.AreEqual("Already reading ORDERS table", result);
+        }
+
+        [Test]
+        public void ReadNegdeals_AlreadyReadingNegdealsTable_ReturnsErrorMessage()
+        {
+            // Arrange
+            var configuration = MockConfiguration();
+            var server = new Server(configuration.Object);
+            server.isReadingTable["NEGDEALS"] = true;
+
+            // Act
+            string result = server.ReadNegdeals();
+
+            // Assert
+            Assert.AreEqual("Already reading NEGDEALS table", result);
+        }
+
+        // Additional tests for other methods can be added similarly
+
+        private Mock<IConfiguration> MockConfiguration()
+        {
+            var configuration = new Mock<IConfiguration>();
+            configuration.Setup(c => c["Asts:ServerAddress"]).Returns("example.server");
+            configuration.Setup(c => c["Asts:ServerName"]).Returns("example_server");
+            configuration.Setup(c => c["Asts:Service"]).Returns("example_service");
+            configuration.Setup(c => c["Asts:UserId"]).Returns("example_user");
+            configuration.Setup(c => c["Asts:Password"]).Returns("example_password");
+            configuration.Setup(c => c["Asts:Interface"]).Returns("example_interface");
+            configuration.Setup(c => c["Asts:Language"]).Returns("example_language");
+            configuration.Setup(c => c["Asts:Logging"]).Returns("example_logging");
+            configuration.Setup(c => c["Asts:LogFolder"]).Returns("example_log_folder");
+            configuration.Setup(c => c["Kafka:Topic"]).Returns("example_securities_topic");
+            configuration.Setup(c => c["Kafka:TopicDaily"]).Returns("example_daily_topic");
+            return configuration;
+        }
+    }
+}
