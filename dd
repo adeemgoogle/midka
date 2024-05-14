@@ -1,1 +1,37 @@
+using Xunit;
 
+public class TradeReaderTests
+{
+    private TradeReader tradeReader;
+
+    public TradeReaderTests()
+    {
+        tradeReader = new TradeReader();
+    }
+
+    [Fact]
+    public void ReadTrades_AlreadyReadingBTable_ReturnsErrorMessage()
+    {
+        // Arrange
+        tradeReader.SetIsReadingTable("B", true);
+
+        // Act
+        string result = tradeReader.ReadTrades();
+
+        // Assert
+        Assert.Equal("Already reading B table", result);
+    }
+
+    [Fact]
+    public void ReadTrades_NotAlreadyReadingBTable_StartsReadingBTableAndReturnsOK()
+    {
+        // Arrange
+        tradeReader.SetIsReadingTable("B", false);
+
+        // Act
+        string result = tradeReader.ReadTrades();
+
+        // Assert
+        Assert.Equal("OK", result);
+    }
+}
