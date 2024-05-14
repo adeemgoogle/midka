@@ -1,1 +1,25 @@
+using Microsoft.Extensions.Configuration;
+using Moq;
 
+private IConfiguration CreateMockConfiguration()
+{
+    var configuration = new ConfigurationBuilder()
+        .AddInMemoryCollection(new Dictionary<string, string>
+        {
+            { "Asts:ServerAddress", "example.server" },
+            { "Asts:ServerName", "example_server" },
+            { "Asts:Service", "example_service" },
+            { "Asts:UserId", "example_user" },
+            { "Asts:Password", "example_password" },
+            { "Asts:Interface", "example_interface" },
+            { "Asts:Language", "example_language" },
+            { "Asts:Logging", "example_logging" },
+            { "Asts:LogFolder", "example_log_folder" },
+            { "Kafka:Topic", "example_securities_topic" },
+            { "Kafka:TopicDaily", "example_daily_topic" },
+            { "Environment", "Development" } // Setting up the environment
+        })
+        .Build();
+
+    return configuration;
+}
