@@ -1,51 +1,43 @@
+write Xinut test for it
 
-Ошибка	CS0246	Не удалось найти тип или имя пространства имен "TradeReader" (возможно, отсутствует директива using или ссылка на сборку).
-using Xunit;
-using System.Collections.Generic;
-using System.Threading;
-
-public class TradeReaderTests
+public string ReadTrades()
 {
-    [Fact]
-    public void ReadTrades_AlreadyReadingTable_ReturnsErrorMessage()
+    if (isReadingTable["B"])
     {
-        // Arrange
-        var tradeReader = new TradeReader();
-        tradeReader.IsReadingTable["BOOK"] = true;
-
-        // Act
-        var result = tradeReader.ReadTrades();
-
-        // Assert
-        Assert.Equal("Already reading BOOK table", result);
+        return "Already reading B table";
     }
+    checkConnection();
 
-    [Fact]
-    public void ReadTrades_NotAlreadyReadingTable_ReturnsOK()
+    isReadingTable["B"] = true;
+    Thread thread = new Thread(WriteTrades);
+    thread.Start();
+
+    return "OK";
+}
+
+private void WriteTrades()
+{
+    Console.WriteLine("starting read B table...");
+    int tableDescriptor;
+    var table = OpenTableNonString("B", null, out tableDescriptor);
+    var trades = TradeTable.ParseTradesFromUniversalTable(table);
+    if (trades.Rows != null && trades.Rows.Count != 0)
     {
-        // Arrange
-        var tradeReader = new TradeReader();
+        var partitions = trades.Rows.partition(500);
+        foreach (var partition in partitions)
+        {
+            TradeTable tradeTable = new TradeTable(table.Name, table.Ref);
+            tradeTable.Rows = (List<TradeRow>)partition;
+            var jsonStr = JsonConvert.SerializeObject(tradeTable);
+            Kafka.Write("B", "B", jsonStr);
+        }
 
-        // Act
-        var result = tradeReader.ReadTrades();
-
-        // Assert
-        Assert.Equal("OK", result);
+        
+        isReadingTable["TRADES"] = false;
     }
-
-    [Fact]
-    public void ReadTrades_StartsThread()
+    else
     {
-        // Arrange
-        var tradeReader = new TradeReader();
-        var mockThread = new Mock<Thread>();
-
-        // Act
-        tradeReader.ReadTrades();
-
-        // Assert
-        mockThread.Verify(t => t.Start(), Times.Once);
+     
+        isReadingTable["TRADES"] = false;
     }
-
-    // You can add more test cases to cover other scenarios
 }
