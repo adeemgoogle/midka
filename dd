@@ -1,50 +1,110 @@
- public string ReadOrders()
- {
-     if (isReadingTable["ORDERS"])
-     {
-         return "Already reading ORDERS table";
-     }
-     checkConnection();
+using System.Text;
+using NUnit.Framework;
+using System.Collections.Generic;
+using ASTS_BRIDGE.Models;
+using Microsoft.Extensions.Configuration;
+using System.Threading;
+using static ASTS_BRIDGE.Models.Decoder;
+using static ASTS_BRIDGE.Models.SymbolDictionary;
 
-     isReadingTable["ORDERS"] = true;
-     Thread thread = new Thread(WriteOrders);
-     thread.Start();
-
-     return "OK";
- }
-
- private void WriteOrders()
- {
-     Console.WriteLine("starting read ORDERS table...");
-     int tableDescriptor;
-     var table = OpenTableNonString("ORDERS", null, out tableDescriptor);
-     var orders = OrderTable.ParseOrdersFromUniversalTable(table);
-     if (orders.Rows != null && orders.Rows.Count != 0)
-     {
-         var partitions = orders.Rows.partition(500);
-         foreach (var partition in partitions)
-         {
-             OrderTable orderTable = new OrderTable(table.Name, table.Ref);
-             orderTable.Rows = (List<OrderRow>)partition;
-             var jsonStr = JsonConvert.SerializeObject(orderTable);
-             Kafka.Write("BROKERAGE-KASE-ASTS-ALLOCATIONS", "ORDERS", jsonStr);
-         }
-
-         Console.WriteLine("ORDERS table was written to Kafka succesfully");
-         isReadingTable["ORDERS"] = false;
-     }
-     else
-     {
-         Console.WriteLine("ORDERS table is empty");
-         isReadingTable["ORDERS"] = false;
-     }
- }
-
-private void checkConnection()
+namespace ASTS_BRIDGE.Tests
 {
-    AstsServer.ConnectionStatus();
-    if (!AstsServer.IsConnected)
+    [TestFixture]
+    public class ServerTests
     {
-        Connect();
+        private Server server;
+
+        [SetUp]
+        public void Setup()
+        {
+            // Create a mock IConfiguration instance (Moq is not used here)
+            var inMemorySettings = new Dictionary<string, string> {
+                {"Asts:ServerAddress", "TestServerAddress"},
+                {"Asts:ServerName", "TestServerName"},
+                {"Asts:Service", "TestService"},
+                {"Asts:UserId", "TestUserId"},
+                {"Asts:Password", "TestPassword"},
+                {"Asts:Interface", "TestInterface"},
+                {"Asts:Language", "TestLanguage"},
+                {"Asts:Logging", "TestLogging"},
+                {"Asts:LogFolder", "TestLogFolder"},
+                {"Kafka:Topic", "TestTopic"}, 
+                {"Kafka:TopicDaily", "TestTopicDaily"}
+            };
+
+            IConfiguration configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(inMemorySettings)
+                .Build();
+
+            server = new Server(configuration);
+            server.AstsServer = new MockWrapper(); // Use a mock Wrapper for testing
+        }
+
+        [Test]
+        public void ReadOrders_FirstCall_ReturnsOKAndStartsThread()
+        {
+            // Act
+            string result = server.ReadOrders();
+
+            // Assert
+            Assert.AreEqual("OK", result);
+            Assert.IsTrue(server.isReadingTable["ORDERS"]); // Verify the thread is started
+        }
+
+        [Test]
+        public void ReadOrders_WhileReading_ReturnsAlreadyReadingMessage()
+        {
+            // Arrange
+            server.isReadingTable["ORDERS"] = true;
+
+            // Act
+            string result = server.ReadOrders();
+
+            // Assert
+            Assert.AreEqual("Already reading ORDERS table", result);
+        }
+
+        [Test]
+        public void CheckConnection_WhenDisconnected_CallsConnect()
+        {
+            // Arrange
+            server.AstsServer.IsConnected = false; 
+
+            // Act
+            server.checkConnection();
+
+            // Assert
+            Assert.IsTrue(((MockWrapper)server.AstsServer).ConnectCalled);
+        }
+
+        [Test]
+        public void CheckConnection_WhenConnected_DoesNotCallConnect()
+        {
+            // Arrange
+            server.AstsServer.IsConnected = true;
+
+            // Act
+            server.checkConnection();
+
+            // Assert
+            Assert.IsFalse(((MockWrapper)server.AstsServer).ConnectCalled);
+        }
+    }
+
+    // Mock Wrapper class for testing
+    public class MockWrapper : Wrapper
+    {
+        public bool ConnectCalled { get; private set; } = false;
+        public override void Connect(StringBuilder settings)
+        {
+            ConnectCalled = true;
+        }
+
+        public override void ConnectionStatus()
+        {
+            // Implement if needed
+        }
+
+        // Implement other abstract methods if necessary... 
     }
 }
