@@ -1,19 +1,23 @@
-CreateNewAstsServer_Linux_CreatesAstsServer
-   Источник: UnitTest1.cs строка 63
-   Длительность: 18 мс
-
-  Сообщение: 
-System.NotSupportedException : Unsupported expression: a => a.IsConnected
-Non-overridable members (here: Wrapper.get_IsConnected) may not be used in setup / verification expressions.
+ Сообщение: 
+System.ArgumentException : Type must not be a pointer type (Parameter 'type')
 
   Трассировка стека: 
-Guard.IsOverridable(MethodInfo method, Expression expression) строка 99
-MethodExpectation.ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) строка 236
-ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) строка 347
-ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) строка 170
-Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) строка 728
+TypeUtils.ValidateType(Type type, String paramName, Boolean allowByRef, Boolean allowPointer)
+Expression.Constant(Object value, Type type)
+SubtreeEvaluator.Evaluate(Expression e) строка 161
+SubtreeEvaluator.Visit(Expression exp) строка 127
+SubtreeEvaluator.Eval(Expression exp) строка 116
+Evaluator.PartialEval(Expression expression, Func`2 fnCanBeEvaluated) строка 47
+Evaluator.PartialEval(Expression expression) строка 57
+ExpressionExtensions.PartialEval(Expression expression) строка 460
+SetupWithOutParameterSupport.GetOutValues(IReadOnlyList`1 arguments, ParameterInfo[] parameters) строка 134
+SetupWithOutParameterSupport.ctor(Expression originalExpression, Mock mock, MethodExpectation expectation) строка 65
+MethodCall.ctor(Expression originalExpression, Mock mock, Condition condition, MethodExpectation expectation) строка 133
+<>c__DisplayClass59_0.<Setup>b__0(Mock targetMock, Expression originalExpression, MethodExpectation part) строка 564
+Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression originalExpression, Stack`1 parts, Func`4 setupLast) строка 761
+Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) строка 729
 Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) строка 562
 Mock`1.Setup[TResult](Expression`1 expression) строка 645
-ServerTests.CreateNewAstsServer_Linux_CreatesAstsServer() строка 66
+ServerTests.OpenTableNonString_CallsOpenTableAndReadTable() строка 166
 RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
 MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
