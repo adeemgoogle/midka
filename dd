@@ -1,3 +1,32 @@
+
+[Test]
+public void ReadNegdeals_WhenNotReading_StartsReadingAndReturnsOK()
+{
+    // Arrange
+    _server.isReadingTable["NEGDEALS"] = false;
+
+    // Создаем частичную заглушку для Server
+    var serverMock = Mock.Of<Server>(_ => _.checkConnection() == null); // Заменяем checkConnection пустой реализацией
+    
+    // Устанавливаем WrapperMock с IsConnected = true 
+    var wrapperMock = new WrapperMock(_server.AstsServer);
+    Mock.Get(wrapperMock).Setup(w => w.IsConnected).Returns(true);
+    _server.AstsServer = wrapperMock;
+
+    // Act
+    var result = serverMock.ReadNegdeals();
+
+    // Assert
+    Assert.AreEqual("OK", result);
+    Assert.IsTrue(serverMock.isReadingTable["NEGDEALS"]);
+
+    // Убеждаемся, что Connect() не был вызван
+    Mock.Get(wrapperMock).Verify(w => w.Connect(It.IsAny<StringBuilder>()), Times.Never);
+} 
+
+
+һһһһһһһһһһһһһһ
+
 public string ReadNegdeals()
 {
     if (isReadingTable["NEGDEALS"])
