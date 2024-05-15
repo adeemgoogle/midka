@@ -1,3 +1,19 @@
+public string ReadNegdeals()
+{
+    if (isReadingTable["NEGDEALS"])
+    {
+        return "Already reading NEGDEALS table";
+    }
+    checkConnection();
+
+    isReadingTable["NEGDEALS"] = true;
+    Thread myThread = new Thread(WriteNegdeals);
+    myThread.Start();
+
+    return "OK";
+}
+
+
 public bool IsConnected
 {
     get
