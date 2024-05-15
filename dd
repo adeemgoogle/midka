@@ -1,1 +1,30 @@
- public abstract unsafe int OpenTable(string table, string? par, out int* ptr)
+  [Test]
+  public void ReadNegdeals_WhenNotReading_StartsReadingAndReturnsOK()
+  {
+      // Arrange
+      _server.isReadingTable["NEGDEALS"] = false;
+      _mockAstsServer.Setup(a => a.IsConnected).Returns(true);
+
+      // Act
+      var result = _server.ReadNegdeals();
+
+      // Assert
+      Assert.AreEqual("OK", result);
+      Assert.IsTrue(_server.isReadingTable["NEGDEALS"]);
+  }
+fix it
+ Сообщение: 
+System.NotSupportedException : Unsupported expression: a => a.IsConnected
+Non-overridable members (here: Wrapper.get_IsConnected) may not be used in setup / verification expressions.
+
+  Трассировка стека: 
+Guard.IsOverridable(MethodInfo method, Expression expression) строка 99
+MethodExpectation.ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) строка 236
+ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) строка 347
+ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) строка 170
+Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) строка 728
+Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) строка 562
+Mock`1.Setup[TResult](Expression`1 expression) строка 645
+ServerTests.ReadNegdeals_WhenNotReading_StartsReadingAndReturnsOK() строка 149
+RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
