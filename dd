@@ -1,6 +1,19 @@
+ Disconnect_DisconnectsAstsServer
+   Источник: UnitTest1.cs строка 70
+   Длительность: < 1 мс
 
-Ошибка	CS7036	Отсутствует аргумент, соответствующий требуемому параметру "ptr" из "Wrapper.OpenTable(string, string?, out int*)".	170	Активные
+  Сообщение: 
+System.NotSupportedException : Unsupported expression: ... => ....Get<string[]>()
+Extension methods (here: ConfigurationBinder.Get) may not be used in setup / verification expressions.
 
-Ошибка	CS1503	Аргумент 1: не удается преобразовать из "System.Collections.Generic.Dictionary<string, int>" в "System.Collections.Generic.List<ASTS_BRIDGE.Models.AstsTable>".	171	Активные
-Серьезность	Код	Описание	Проект	Файл	Строка	Состояние подавления
-Ошибка	CS7036	Отсутствует аргумент, соответствующий требуемому параметру "ptr" из "Wrapper.OpenTable(string, string?, out int*)".	177	Активные
+  Трассировка стека: 
+Guard.IsOverridable(MethodInfo method, Expression expression) строка 87
+MethodExpectation.ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) строка 236
+ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) строка 256
+ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) строка 170
+Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) строка 728
+Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) строка 562
+Mock`1.Setup[TResult](Expression`1 expression) строка 645
+ServerTests.SetUp() строка 36
+InvokeStub_ServerTests.SetUp(Object, Object, IntPtr*)
+MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
