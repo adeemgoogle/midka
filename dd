@@ -1,4 +1,8 @@
 
+Серьезность	Код	Описание	Проект	Файл	Строка	Состояние подавления
+Ошибка	CS0122	"Server.checkConnection()" недоступен из-за его уровня защиты.		128	Активные
+
+
 [Test]
 public void ReadNegdeals_WhenNotReading_StartsReadingAndReturnsOK()
 {
