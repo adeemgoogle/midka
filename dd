@@ -1,4 +1,13 @@
- private void Connect()
+public bool IsConnected
+{
+    get
+    {
+        return _isConnected;
+    }
+}
+protected bool _isConnected;
+ 
+private void Connect()
  {
      StringBuilder settings = new StringBuilder();
 
