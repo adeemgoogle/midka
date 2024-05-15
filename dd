@@ -1,3 +1,46 @@
-dotnet add package coverlet.msbuild
-dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
-dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=../coverage/
+ private void Connect()
+ {
+     StringBuilder settings = new StringBuilder();
+
+     if (Service != null)
+     {
+         settings.Append("SERVICE=" + Service + "\r\n");
+         settings.Append("BROADCAST=" + ServerAddress + "\r\n");
+         settings.Append("IFACENAME=" + Interface + "\r\n");
+     } else
+     {
+         settings.Append("HOST=" + ServerAddress + "\r\n");
+         settings.Append("INTERFACE=" + Interface + "\r\n");
+     }
+     
+     settings.Append("SERVER=" + ServerName + "\r\n");
+     settings.Append("USERID=" + UserId + "\r\n");
+     settings.Append("PASSWORD=" + Password + "\r\n");
+     settings.Append("LOGGING=" + Logging + "\r\n");
+     settings.Append("LOGFOLDER=" + LogFolder + "\r\n");
+     settings.Append("LANGUAGE=" + Language + "\r\n");
+
+     int attempt = 5;
+     while (attempt > 0)
+     {
+         if (AstsServer.IsConnected)
+         {
+             break;
+         }
+
+         AstsServer.Connect(settings);
+         Thread.Sleep(1 % (attempt + 1) * 1000);
+         attempt--;
+     }
+ }
+
+private void checkConnection()
+{
+    AstsServer.ConnectionStatus();
+    if (!AstsServer.IsConnected)
+    {
+        Connect();
+    }
+}
+
+mock rthis function
