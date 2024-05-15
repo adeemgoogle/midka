@@ -1,42 +1,38 @@
- public bool IsConnected
- {
-     get
-     {
-         return _isConnected;
-     }
- }
- protected bool _isConnected;
+// Tests/WrapperMock.cs
+public class WrapperMock : Wrapper
+{
+    public WrapperMock(Wrapper originalWrapper)
+    {
+        _originalWrapper = originalWrapper;
+    }
 
- public void ReadTrades_WhenNotReading_StartsReadingAndReturnsOK()
- {
-     // Arrange
-     _server.isReadingTable["TRADES"] = false;
-     _mockAstsServer.Setup(a => a.IsConnected).Returns(true);
+    private Wrapper _originalWrapper;
 
-     // Act
-     var result = _server.ReadTrades();
+    public virtual bool IsConnected => _originalWrapper.IsConnected;
 
-     // Assert
-     Assert.AreEqual("OK", result);
-     Assert.IsTrue(_server.isReadingTable["TRADES"]);
- }
+    // Перенаправляем все остальные методы к исходному Wrapper
+    // ... 
+}
 
-fix  ReadOrders_WhenNotReading_StartsReadingAndReturnsOK
-   Источник: UnitTest1.cs строка 93
-   Длительность: < 1 мс
 
-  Сообщение: 
-System.NotSupportedException : Unsupported expression: a => a.IsConnected
-Non-overridable members (here: Wrapper.get_IsConnected) may not be used in setup / verification expressions.
 
-  Трассировка стека: 
-Guard.IsOverridable(MethodInfo method, Expression expression) строка 99
-MethodExpectation.ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) строка 236
-ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) строка 347
-ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) строка 170
-Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) строка 728
-Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) строка 562
-Mock`1.Setup[TResult](Expression`1 expression) строка 645
-ServerTests.ReadOrders_WhenNotReading_StartsReadingAndReturnsOK() строка 121
-RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
-MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+[Test]
+public void ReadOrders_WhenNotReading_StartsReadingAndReturnsOK()
+{
+    // Arrange
+    _server.isReadingTable["ORDERS"] = false;
+    
+    // Создаем обертку вокруг Wrapper и настраиваем IsConnected
+    var wrapperMock = new WrapperMock(_server.AstsServer);
+    Mock.Get(wrapperMock).Setup(w => w.IsConnected).Returns(true);
+
+    // "Подменяем" AstsServer на обертку
+    _server.AstsServer = wrapperMock; 
+
+    // Act
+    var result = _server.ReadOrders();
+
+    // Assert
+    Assert.AreEqual("OK", result);
+    Assert.IsTrue(_server.isReadingTable["ORDERS"]);
+}
