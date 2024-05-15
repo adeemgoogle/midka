@@ -1,3 +1,95 @@
+using NUnit.Framework;
+using Moq;
+using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using ASTS_BRIDGE.Models;
+using System.Text;
+
+namespace ASTS_BRIDGE.Tests
+{
+    [TestFixture]
+    public class ServerTests
+    {
+        private Mock<IConfiguration> _configMock;
+        private Server _server;
+
+        [SetUp]
+        public void Setup()
+        {
+            // Настройка мока IConfiguration
+            _configMock = new Mock<IConfiguration>();
+            _configMock.SetupGet(c => c["Asts:ServerAddress"]).Returns("test_address");
+            _configMock.SetupGet(c => c["Asts:ServerName"]).Returns("test_name");
+            _configMock.SetupGet(c => c["Asts:Service"]).Returns("test_service");
+            _configMock.SetupGet(c => c["Asts:UserId"]).Returns("test_user");
+            _configMock.SetupGet(c => c["Asts:Password"]).Returns("test_password");
+            _configMock.SetupGet(c => c["Asts:Interface"]).Returns("test_interface");
+            _configMock.SetupGet(c => c["Asts:Language"]).Returns("test_language");
+            _configMock.SetupGet(c => c["Asts:Logging"]).Returns("test_logging");
+            _configMock.SetupGet(c => c["Asts:LogFolder"]).Returns("test_logfolder");
+            _configMock.SetupGet(c => c["Kafka:Topic"]).Returns("test_topic");
+            _configMock.SetupGet(c => c["SPM:Host"]).Returns("test_spmhost");
+            _configMock.Setup(c => c.GetSection("PublicBoards").Get<string[]>()).Returns(new[] { "board1", "board2" });
+            _configMock.Setup(c => c.GetSection("DailyBoards").Get<string[]>()).Returns(new[] { "daily1", "daily2" });
+
+            // Создание экземпляра класса Server
+            _server = new Server(_configMock.Object);
+        }
+
+        [Test]
+        public void Connect_ShouldSetConnectionParameters()
+        {
+            // Arrange
+            _server.AstsServer = new Mock<Wrapper>().Object;
+            _server.AstsServer.IsConnected = false;
+
+            // Act
+            _server.Connect();
+
+            // Assert
+            // Проверка параметров подключения (используя мок AstsServer)
+        }
+
+        [Test]
+        public void ReadTrades_ShouldStartReadingTradesTable()
+        {
+            // Arrange
+            _server.AstsServer = new Mock<Wrapper>().Object;
+            _server.AstsServer.IsConnected = true;
+
+            // Act
+            string result = _server.ReadTrades();
+
+            // Assert
+            Assert.AreEqual("OK", result);
+            Assert.IsTrue(_server.isReadingTable["TRADES"]);
+        }
+
+        // Аналогично для ReadOrders, ReadNegdeals 
+
+        [Test]
+        public void OpenTableNonString_ShouldOpenTable()
+        {
+            // Arrange
+            string tableName = "test_table";
+            string par = "test_par";
+            _server.AstsServer = new Mock<Wrapper>().Object;
+            _server.AstsServer.Setup(s => s.OpenTable(tableName, par, out It.Ref<int>.IsAny)).Returns(1); 
+
+            // Act
+            int descriptor;
+            UniversalTable table = _server.OpenTableNonString(tableName, par, out descriptor);
+
+            // Assert
+            // Проверка результата 
+        }
+
+        // Аналогично для CloseTable, GetOrderBook, GetSecurity, checkConnection
+    }
+}
+Use code with caution.
+C#
+xUnit тесты для класса Server
 using Xunit;
 using Moq;
 using Microsoft.Extensions.Configuration;
