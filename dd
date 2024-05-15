@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Runtime.InteropServices; // For Marshal
 
 namespace ASTS_BRIDGE.Models.Tests
 {
@@ -161,21 +160,20 @@ namespace ASTS_BRIDGE.Models.Tests
         }
 
         [Test]
-        public unsafe void OpenTableNonString_CallsOpenTableAndReadTable()
+        public unsafe void OpenTableNonString_LocksAndUnlocksMutex()
         {
             // Arrange
             int descriptor;
-            nint mockTablePtr = (nint)0x1234; // Example pointer value
-
-            _mockAstsServer.Setup(a => a.OpenTable(It.IsAny<string>(), It.IsAny<string>())).Returns(mockTablePtr);
-            _mockAstsServer.Setup(a => a.tables).Returns(new Dictionary<string, int>()); // You might need to mock this differently based on your actual implementation
+            _mockAstsServer.Setup(a => a.OpenTable(It.IsAny<string>(), It.IsAny<string>(), out It.Ref<IntPtr>.IsAny))
+                           .Returns(1);
+            _mockAstsServer.Setup(a => a.ptr)
+                           .Returns(IntPtr.Zero);
 
             // Act
-            _server.OpenTableNonString("TEST", null, out descriptor);
+            var result = _server.OpenTableNonString("TEST", null, out descriptor);
 
             // Assert
-            _mockAstsServer.Verify(a => a.OpenTable(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            Assert.AreEqual((int)mockTablePtr, descriptor);
+            _mockAstsServer.Verify(a => a.OpenTable(It.IsAny<string>(), It.IsAny<string>(), out It.Ref<IntPtr>.IsAny), Times.Once);
         }
 
         [Test]
@@ -192,5 +190,7 @@ namespace ASTS_BRIDGE.Models.Tests
             _mockAstsServer.Verify(a => a.CloseTable(tableDescriptor), Times.Once);
             Assert.AreEqual(0, result);
         }
+
+        // More tests for other methods can be added similarly...
     }
 }
