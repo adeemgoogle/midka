@@ -1,24 +1,76 @@
-public override void Connect(StringBuilder startParam)
+using ASTS_BRIDGE.Models;
+using System.Text;
+
+public class WrapperMock : Wrapper
 {
-    if (IsConnected == false)
+    
+    public List<AstsEnumType>? types;
+
+    public List<AstsTable>? tables;
+
+    public List<AstsTransaction>? transactions;
+
+    public unsafe int* ptr;
+
+    public bool IsConnected
     {
-        StringBuilder stringBuilder = new StringBuilder(256);
-
-        int idx = MteConnect(startParam, stringBuilder);
-
-        if (idx >= 0)
+        get
         {
-            _isConnected = true;
-            _procNum = idx;
-            Console.WriteLine("Connected successfully");
-        }
-        else
-        {
-            _isConnected = false;
-            SendErrorFromAsts(idx);
+            return _isConnected;
         }
     }
+    protected bool _isConnected;
+
+    public int Idx
+    {
+        get { return _procNum; }
+    }
+    protected int _procNum;
+    
+
+    public WrapperMock()
+    {
+        _isConnected = false;
+    }
+
+    public override void Connect(StringBuilder startParam)
+    {
+        if (_isConnected)
+        {
+
+
+        }
+    }
+
+    public override void ConnectionStatus()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Disconnect()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void ExecuteStructure()
+    {
+        throw new NotImplementedException();
+    }
+
+    public override unsafe int OpenTable(string table, string? par, out int* ptr)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override int CloseTable(int descriptor)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void SendErrorFromAsts(int numberError)
+    {
+        throw new NotImplementedException();
+    }
+
+    
 }
-
-
-how to mock it?
