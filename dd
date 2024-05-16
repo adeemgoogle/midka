@@ -1,36 +1,36 @@
+this is my test 
+        [Test]
+        public void ReadOrdersWhenNotReadingStartsReadingAndReturnsOK()
+        {
+            // Arrange
+            _server.isReadingTable["ORDERS"] = false;
+            _mockAstsServer.Setup(a => a.IsConnected).Returns(true);
 
-Серьезность	Код	Описание	Проект	Файл	Строка	Состояние подавления
-Ошибка	CS0122	"Server.checkConnection()" недоступен из-за его уровня защиты.		128	Активные
+            // Act
+            var result = _server.ReadOrders();
 
+            // Assert
+            Assert.AreEqual("OK", result);
+            Assert.IsTrue(_server.isReadingTable["ORDERS"]);
+        }
+this is my error
+ Сообщение: 
+System.NotSupportedException : Unsupported expression: a => a.IsConnected
+Non-overridable members (here: Wrapper.get_IsConnected) may not be used in setup / verification expressions.
 
-[Test]
-public void ReadNegdeals_WhenNotReading_StartsReadingAndReturnsOK()
-{
-    // Arrange
-    _server.isReadingTable["NEGDEALS"] = false;
+  Трассировка стека: 
+Guard.IsOverridable(MethodInfo method, Expression expression) строка 99
+MethodExpectation.ctor(LambdaExpression expression, MethodInfo method, IReadOnlyList`1 arguments, Boolean exactGenericTypeArguments, Boolean skipMatcherInitialization, Boolean allowNonOverridable) строка 236
+ExpressionExtensions.<Split>g__Split|5_0(Expression e, Expression& r, MethodExpectation& p, Boolean assignment, Boolean allowNonOverridableLastProperty) строка 347
+ExpressionExtensions.Split(LambdaExpression expression, Boolean allowNonOverridableLastProperty) строка 170
+Mock.SetupRecursive[TSetup](Mock mock, LambdaExpression expression, Func`4 setupLast, Boolean allowNonOverridableLastProperty) строка 728
+Mock.Setup(Mock mock, LambdaExpression expression, Condition condition) строка 562
+Mock`1.Setup[TResult](Expression`1 expression) строка 645
+ServerTests.ReadOrdersWhenNotReadingStartsReadingAndReturnsOK() строка 97
+RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)
+MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
 
-    // Создаем частичную заглушку для Server
-    var serverMock = Mock.Of<Server>(_ => _.checkConnection() == null); // Заменяем checkConnection пустой реализацией
-    
-    // Устанавливаем WrapperMock с IsConnected = true 
-    var wrapperMock = new WrapperMock(_server.AstsServer);
-    Mock.Get(wrapperMock).Setup(w => w.IsConnected).Returns(true);
-    _server.AstsServer = wrapperMock;
-
-    // Act
-    var result = serverMock.ReadNegdeals();
-
-    // Assert
-    Assert.AreEqual("OK", result);
-    Assert.IsTrue(serverMock.isReadingTable["NEGDEALS"]);
-
-    // Убеждаемся, что Connect() не был вызван
-    Mock.Get(wrapperMock).Verify(w => w.Connect(It.IsAny<StringBuilder>()), Times.Never);
-} 
-
-
-һһһһһһһһһһһһһһ
-
+this is my real code 
 public string ReadNegdeals()
 {
     if (isReadingTable["NEGDEALS"])
@@ -45,53 +45,6 @@ public string ReadNegdeals()
 
     return "OK";
 }
-
-
-public bool IsConnected
-{
-    get
-    {
-        return _isConnected;
-    }
-}
-protected bool _isConnected;
- 
-private void Connect()
- {
-     StringBuilder settings = new StringBuilder();
-
-     if (Service != null)
-     {
-         settings.Append("SERVICE=" + Service + "\r\n");
-         settings.Append("BROADCAST=" + ServerAddress + "\r\n");
-         settings.Append("IFACENAME=" + Interface + "\r\n");
-     } else
-     {
-         settings.Append("HOST=" + ServerAddress + "\r\n");
-         settings.Append("INTERFACE=" + Interface + "\r\n");
-     }
-     
-     settings.Append("SERVER=" + ServerName + "\r\n");
-     settings.Append("USERID=" + UserId + "\r\n");
-     settings.Append("PASSWORD=" + Password + "\r\n");
-     settings.Append("LOGGING=" + Logging + "\r\n");
-     settings.Append("LOGFOLDER=" + LogFolder + "\r\n");
-     settings.Append("LANGUAGE=" + Language + "\r\n");
-
-     int attempt = 5;
-     while (attempt > 0)
-     {
-         if (AstsServer.IsConnected)
-         {
-             break;
-         }
-
-         AstsServer.Connect(settings);
-         Thread.Sleep(1 % (attempt + 1) * 1000);
-         attempt--;
-     }
- }
-
 private void checkConnection()
 {
     AstsServer.ConnectionStatus();
@@ -101,4 +54,40 @@ private void checkConnection()
     }
 }
 
-mock rthis function
+  private void Connect()
+  {
+      StringBuilder settings = new StringBuilder();
+
+      if (Service != null)
+      {
+          settings.Append("SERVICE=" + Service + "\r\n");
+          settings.Append("BROADCAST=" + ServerAddress + "\r\n");
+          settings.Append("IFACENAME=" + Interface + "\r\n");
+      } else
+      {
+          settings.Append("HOST=" + ServerAddress + "\r\n");
+          settings.Append("INTERFACE=" + Interface + "\r\n");
+      }
+      
+      settings.Append("SERVER=" + ServerName + "\r\n");
+      settings.Append("USERID=" + UserId + "\r\n");
+      settings.Append("PASSWORD=" + Password + "\r\n");
+      settings.Append("LOGGING=" + Logging + "\r\n");
+      settings.Append("LOGFOLDER=" + LogFolder + "\r\n");
+      settings.Append("LANGUAGE=" + Language + "\r\n");
+
+      int attempt = 5;
+      while (attempt > 0)
+      {
+          if (AstsServer.IsConnected)
+          {
+              break;
+          }
+
+          AstsServer.Connect(settings);
+          Thread.Sleep(1 % (attempt + 1) * 1000);
+          attempt--;
+      }
+  }
+
+fix my test error but do not change my real code 
