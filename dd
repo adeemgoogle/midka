@@ -1,8 +1,3 @@
-DateTime? minCurLasttime = row.GetAsDateTime("", "MIN_CURR_LAST_TIME");
-if (minCurLasttime != null)
-{
-    securityRow.minCurLasttime = minCurLasttime;
-}
-
+securityRow.updated = DateTime.Now;
 
 i need here convert to ISO8601
