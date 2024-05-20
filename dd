@@ -87,3 +87,39 @@ namespace ASTS_BRIDGE.Models.Tests
         }
     }
 }
+------------------
+
+public class Kafka
+{
+    private static IProducer<string?, string> ProducerBuilder;
+
+    public static void Init(IConfiguration Config)
+    {
+        var config = new ConsumerConfig
+        {
+            BootstrapServers = Config["Kafka:BootstrapServers"],
+            SecurityProtocol = SecurityProtocol.SaslSsl,
+            SaslMechanism = SaslMechanism.ScramSha256,
+            SaslUsername = Config["Kafka:SaslUsername"],
+            SaslPassword = Config["Kafka:SaslPassword"],
+            EnableSslCertificateVerification = false,
+        };
+
+        ProducerBuilder = new ProducerBuilder<string?, string>(config).Build();
+    }
+
+    public static bool Write(string topic, string? key, string jsonStr)
+    {
+        try
+        {
+            var msg = new Message<string?, string> { Key = key, Value = jsonStr };
+            var dr = ProducerBuilder.ProduceAsync(topic, msg);
+        }
+        catch (ProduceException<Null, string>)
+        {
+            return false;
+        }
+        return true;
+    }
+Серьезность	Код	Описание	Проект	Файл	Строка	Состояние подавления
+Ошибка	CS0117	"Kafka" не содержит определение для "Instance".	
