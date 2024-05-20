@@ -1,103 +1,89 @@
-MATDATE	Дата погашения	DATE	8	 
-COUPONVALUE	Величина купона	FLOAT	17	Величина купона, выраженная в процентах
-COUPONPERIOD	Длительность купона	INTEGER	4	Длительность купона, выраженная в днях
-NEXTCOUPON	Дата окончания купона	DATE	8	 
-ISSUESIZE	Объем выпуска	INTEGER	16	Количество ценных бумаг в выпуске
-PREVWAPRICE	Средневзв. пред. дня	PRICE	9	Значение средневзвешенной цены предыдущего торгового дня
-YIELDATPREVWAPRICE	Средневзв. доходность пред. дня	FIXED	9.2	Доходность к средневзвешенной цене предыдущего торгового дня
-REPO2PRICE	Цена второй части РЕПО	PRICE	9	Поле не используется. Устаревшее.
-CURRENCYID	Валюта расчетов	CHAR	4	Валюта расчетов по инструменту
-BUYBACKPRICE	Цена базовая для расчета доходности	PRICE	9	Если указана, то расчет доходности производится по этой цене. При заполнении BUYBACKPRICE обязательно заполняется поле BUYBACKDATE
-BUYBACKDATE	Дата, к которой рассчитывается доходность	DATE	8	Если указана, то расчет доходности производится с использованием этой даты
-QUOTEBASIS	Тип цены	TQuoteBasis	1	 
-ISIN	ISIN	CHAR	12	Международный идентификационный код ценной бумаги
-LATNAME	Англ. наименование	CHAR	30	Наименование финансового инструмента на английском языке
-REGNUMBER	Регистрационный номер	CHAR	30	Номер государственной регистрации
-PREVLEGALCLOSEPRICE	Цена закрытия предыдущего дня	PRICE	9	Официальная цена закрытия предыдущего дня, рассчитываемая в соответствии с правилами торгов как средневзвешенная цена сделок за последние 10 минут торговой сессии, включая сделки послеторгового периода или аукциона закрытия
-PREVADMITTEDQUOTE	Признаваемая котировка предыдущего дня	PRICE	9	Признаваемая котировка предыдущего дня, цена за одну ценную бумагу
-SECTYPE	Тип ценной бумаги	CHAR	1	Тип ценной бумаги
-ACTIVATIONDATE	Дата активации	DATE	8	Дата активации заявки - дата, при наступлении которой возможно заключение сделки(ок) на основании данной заявки. До наступления даты активации поданные по инструменту заявки накапливаются в торговой системе и имеют статус T.
-PREVLOTSIZE	Предыдущий размер лота	INTEGER	8	Предыдущее значение размера лота
-LOTSIZECHANGEDATE	Дата последнего изменения размера лота	DATE	8	 
-ORIGINTRADINGSTATUS	Состояние сессии	TTradingStatus	1	Индикатор состояния торговой сессии по инструменту. Во время перерыва показывает действительное состояние торговой сесии (никогда не принимает значение "Перерыв").
-ISSUESIZEPLACED	Объем в обращении	INTEGER	16	Количество размещенных ценных бумаг, находящихся в обращении
-FULLCOVEREDFLAG	Запрет необеспеченных торгов	TYesNo	1	 
-ASSET	Актив	CHAR	12	 
-LISTLEVEL	Уровень листинга	INTEGER	1	 
-COMMENTS	Комментарии	CHAR	128	 
-DIVIDENDVALUE	Величина дивидендов	FIXED	16.2	Величина дивидендов, выраженная в валюте расчетов
-DIVIDENDDATE	Дата закрытия реестра	DATE	8	Дата фиксации списка лиц, имеющих право на получение дивидендов
-SUBORDBOND	Субординированность	TYesNo	1	Признак субординированности (обязательства удовлетворяются после удовлетворения требований всех иных кредиторов)
-LOTDIVIDER	Коэффициент дробления	INTEGER	8	Коэффициент дробления ценной бумаги в одном стандартном лоте
-GCPOOLID	Идентификатор пула	CHAR	12	 
-BID	Спрос	PRICE	9	Лучшая котировка на покупку
-BIDDEPTH	Лотов на покупку по лучшей	INTEGER	16	Объем заявок на покупку по лучшей котировке, выраженный в лотах
-BIDDEPTHT	Совокупный спрос	INTEGER	16	Объем всех заявок на покупку в очереди Торговой Системы, выраженный в лотах
-NUMBIDS	Заявок на покупку	INTEGER	6	Количество заявок на покупку в очереди Торговой системы
-OFFER	Предложение	PRICE	9	Лучшая котировка на продажу
-OFFERDEPTH	Лотов на продажу по лучшей	INTEGER	16	Объем заявок на продажу по лучшей котировке, выраженный в лотах
-OFFERDEPTHT	Совокупное предложение	INTEGER	16	Объем всех заявок на продажу в очереди Торговой Системы, выраженный в лотах
-NUMOFFERS	Заявок на продажу	INTEGER	6	Количество заявок на продажу в очереди Торговой системы
-OPEN	Первая	PRICE	9	Цена первой сделки
-HIGH	Максимум	PRICE	9	Максимальная цена сделки
-LOW	Минимум	PRICE	9	Минимальная цена сделки
-LAST	Последняя	PRICE	9	Цена последней сделки
-CHANGE	К последней пред. дня	PRICE	9	Изменение цены последней сделки по отношению к цене последней сделки предыдущего торгового
-QTY	Лотов в последней	INTEGER	16	Объем последней сделки, в лотах
-TIME	Время последней	TIME	6	Время заключения последней сделки
-VOLTODAY	Количество за сегодня	INTEGER	16	Объем совершенных сделок, выраженный в единицах ценных бумаг
-VALTODAY	Объем за сегодня	INTEGER	16	Объем совершенных сделок, выраженный в валюте расчетов
-VALUE	Объем в последней	FIXED	16.2	Объем последней сделки, выраженный в валюте расчетов
-WAPRICE	Средневзв.	PRICE	9	Средневзвешенная цена
-HIGHBID	Лучший спрос	PRICE	9	Наибольшая цена спроса в течение торговой сессии
-LOWOFFER	Лучшее предложение	PRICE	9	Наименьшая цена предложения в течение торговой сессии
-NUMTRADES	Сделок за сегодня	INTEGER	9	Количество сделок за торговый день
-YIELDATWAPRICE	Средневзв. доходность	FIXED	9.2	Доходность по средневзвешенной цене
-PRICEMINUSPREVWAPRICE	К средневзв. пред. дня	PRICE	10	Цена последней сделки к средневзвешенной цене предыдущего дня
-CLOSEPRICE	Цена послеторгового периода	PRICE	9	Цена послеторгового периода
-CLOSEYIELD	Доходность по цене послеторгового периода	FIXED	9.2	Доходность по цене послеторгового периода
-LASTBID	Спрос сессии	PRICE	9	Лучшая котировка на покупку на момент завершения нормального периода торгов
-LASTOFFER	Предложение сессии	PRICE	9	Лучшая котировка на продажу на момент завершения нормального периода торгов
-LASTSETTLECODE	Код расчетов в последней	CHAR	12	Код расчетов по последней сделке
-BASEPRICE	Базовый курс СВОП	PRICE	9	Базовый курс может быть указан во прямых заявках по инструментам СВОП
-MARKETPRICE	Рыночная цена предыдущего дня	PRICE	9	Рыночная цена ценной бумаги по результатам торгов предыдущего дня, за одну ценную бумагу
-MARKETPRICETODAY	Рыночная цена	PRICE	9	Рыночная цена по результатам торгов сегодняшнего дня, за одну ценную бумагу
-DURATION	Дюрация	FIXED	7.2	 
-SETTLECODE	Код расчетов	CHAR	12	Код расчетов по умолчанию для данного инструмента
-LOPENPRICE	Цена открытия	PRICE	9	Не используется
-LCURRENTPRICE	Текущая цена	PRICE	9	Официальная текущая цена, рассчитываемая как средневзвешенная цена сделок заключенных за последние 10 минут
-LCLOSEPRICE	Цена закрытия	PRICE	9	Официальная цена закрытия, рассчитываемая в соответствии с правилами торгов как средневзвешенная цена сделок за последние 10 минут торговой сессии, включая сделки послеторгового периода или аукциона закрытия
-MARKETPRICE2	Рыночная цена 2	PRICE	9	Рыночная цена 2, рассчитываемая в соответствии с методикой ФСФР
-ADMITTEDQUOTE	Признаваемая котировка	PRICE	9	Признаваемая котировка, рассчитываемая в соответствии с методикой ФСФР
-AMOUNTTODAY	Сумма за сегодня	INTEGER	16	Объем совершенных сделок включая НКД, выраженный в валюте расчетов
-OPENPERIODPRICE	Цена предторгового периода	PRICE	9	Цена предторгового периода или аукциона открытия
-COUNTERPRICE	Цена контрагента	PRICE	9	Цена контрагента за одну ценную бумагу. Если для бумаги указана цена контрагента, то заявки с признаком "по цене конрагента" удовлетворяются по этой цене
-MIN_CURR_LAST	Минимальная текущая цена	PRICE	9	Минимальная из двух цен : Официальной текущей цены и цены последней сделки, вошедшей в расчёт официальной текущей цены.
-MIN_CURR_LAST_TIME	Время изм. мин. тек. цены	TIME	6	Время изменения минимальной текущей цены
-CLOSING_AUCTION_PRICE	Цена АЗ	PRICE	9	Цена аукциона закрытия. В течение аукциона отображает ожидаемую цену аукциона с учетом всех зарегистрированных на текущий момент заявок. После завершения аукциона отображает цену состоявшегося аукциона.
-CLOSING_AUCTION_VOLUME	Количество АЗ	INTEGER	16	Количество в сделках аукциона закрытия. Ожидаемое (состоявшееся) количество лотов в сделках по указанной цене послеторгового аукциона.
-DPVALINDICATORBUY	Заявок на покупку (АКП)	TDPValIndicator	1	Индикатор наличия заявок на покупку в аукционе Крупных Пакетов
-DPVALINDICATORSELL	Заявок на продажу (АКП)	TDPValIndicator	1	Индикатор наличия заявок на продажу в аукционе Крупных Пакетов
-SETTLEDATE1	Дата расчетов 1	DATE	8	Дата расчетов по сделке или первой части сделки РЕПО/своп
-NFAPRICE	Цена НФА	PRICE	9	Цена Ценового центра НФА
-SETTLEDATE2	Дата расчетов 2	DATE	8	Дата расчетов второй части сделки РЕПО/своп
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Moq;
+using Newtonsoft.Json;
+using NUnit.Framework;
 
----------------
-CODE[1]
-}
-string primarydist = row.GetAsString("PRIMARYDIST");
-if (primarydist != null)
+namespace ASTS_BRIDGE.Models.Tests
 {
-    securityRow.primarydist = primarydist;
+    [TestFixture]
+    public class ServerTests
+    {
+        private Mock<IConfiguration> _mockConfiguration;
+        private Mock<Wrapper> _mockAstsServer;
+        private Mock<Kafka> _mockKafka;
+        private Server _server;
+        
+        [SetUp]
+        public void SetUp()
+        {
+            _mockConfiguration = new Mock<IConfiguration>();
+            _mockAstsServer = new Mock<Wrapper>();
+            _mockKafka = new Mock<Kafka>();
+            
+            // Setup configuration values
+            _mockConfiguration.Setup(c => c["Asts:ServerAddress"]).Returns("testAddress");
+            _mockConfiguration.Setup(c => c["Asts:ServerName"]).Returns("testName");
+            _mockConfiguration.Setup(c => c["Asts:Service"]).Returns("testService");
+            _mockConfiguration.Setup(c => c["Asts:UserId"]).Returns("testUserId");
+            _mockConfiguration.Setup(c => c["Asts:Password"]).Returns("testPassword");
+            _mockConfiguration.Setup(c => c["Asts:Interface"]).Returns("testInterface");
+            _mockConfiguration.Setup(c => c["Asts:Language"]).Returns("testLanguage");
+            _mockConfiguration.Setup(c => c["Asts:Logging"]).Returns("testLogging");
+            _mockConfiguration.Setup(c => c["Asts:LogFolder"]).Returns("testLogFolder");
+            _mockConfiguration.Setup(c => c["Kafka:Topic"]).Returns("testKafkaTopic");
+            _mockConfiguration.Setup(c => c["Kafka:TopicDaily"]).Returns("testKafkaTopicDaily");
+            _mockConfiguration.Setup(c => c.GetSection("PublicBoards").Get<string[]>()).Returns(new[] { "Board1", "Board2" });
+            _mockConfiguration.Setup(c => c.GetSection("DailyBoards").Get<string[]>()).Returns(new[] { "DailyBoard1", "DailyBoard2" });
+
+            // Create instance of Server
+            _server = new Server(_mockConfiguration.Object);
+            _server.AstsServer = _mockAstsServer.Object;
+            Kafka.Instance = _mockKafka.Object;
+        }
+
+        [Test]
+        public void WriteOrders_WhenOrdersAreAvailable_WritesToKafka()
+        {
+            // Arrange
+            var table = new UniversalTable
+            {
+                Name = "ORDERS",
+                Ref = "OrdersRef",
+                Rows = new List<UniversalRow> { new UniversalRow() }
+            };
+            
+            _mockAstsServer.Setup(m => m.OpenTable("ORDERS", null, out It.Ref<int>.IsAny)).Returns(table);
+            _mockAstsServer.Setup(m => m.CloseTable(It.IsAny<int>())).Returns(0);
+
+            // Act
+            _server.WriteOrders();
+
+            // Assert
+            _mockAstsServer.Verify(m => m.OpenTable("ORDERS", null, out It.Ref<int>.IsAny), Times.Once);
+            _mockKafka.Verify(k => k.Write("BROKERAGE-KASE-ASTS-ALLOCATIONS", "ORDERS", It.IsAny<string>()), Times.AtLeastOnce);
+        }
+
+        [Test]
+        public void WriteOrders_WhenNoOrdersAvailable_LogsEmptyTable()
+        {
+            // Arrange
+            var table = new UniversalTable
+            {
+                Name = "ORDERS",
+                Ref = "OrdersRef",
+                Rows = new List<UniversalRow>()
+            };
+
+            _mockAstsServer.Setup(m => m.OpenTable("ORDERS", null, out It.Ref<int>.IsAny)).Returns(table);
+
+            // Act
+            _server.WriteOrders();
+
+            // Assert
+            _mockAstsServer.Verify(m => m.OpenTable("ORDERS", null, out It.Ref<int>.IsAny), Times.Once);
+            // Check the logs or console output for the "ORDERS table is empty" message
+        }
+    }
 }
-
------
-CODE[2]
-public string status { get; set; }
-public string key { get; set; }
-public decimal bid { get; set; }
-public decimal bidDepth { get; set; }
-public decimal ask { get; set; }
-
-
-выше предоставленную табдицу сделай как CODE[1] b CODE[2]
