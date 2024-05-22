@@ -1,3 +1,9 @@
-securityRow.updated = DateTime.Now;
+Активный тестовый запуск прерван. Причина: Сбой хост-процесса теста : Unhandled exception. System.NullReferenceException: Object reference not set to an instance of an object.
+   at ASTS_BRIDGE.Models.Decoder.ReadTable(Int32* ptr, Int32*& newPtr, Int32 sdvig, Int32& newSdvig, String nameTable, List`1 tables) in C:\Users\00058157\Desktop\asts\ASTS BRIDGE\Models\Decoder.cs:line 345
+   at ASTS_BRIDGE.Models.Server.OpenTableNonString(String name, String par, Int32& descriptor) in C:\Users\00058157\Desktop\asts\ASTS BRIDGE\Models\Server.cs:line 281
+   at ASTS_BRIDGE.Models.Server.WriteOrders() in C:\Users\00058157\Desktop\asts\ASTS BRIDGE\Models\Server.cs:line 207
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
+--- End of stack trace from previous location ---
+   at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
 
-i need here convert to ISO8601
+how to fix it
