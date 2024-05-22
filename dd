@@ -7,3 +7,98 @@
    at System.Threading.ExecutionContext.RunInternal(ExecutionContext executionContext, ContextCallback callback, Object state)
 
 how to fix it
+
+using Moq;
+using NUnit.Framework;
+using System.Collections.Generic;
+using ASTS_BRIDGE.Models;
+
+namespace ASTS_BRIDGE.Tests
+{
+    [TestFixture]
+    public class ServerTests
+    {
+        private Mock<IConfiguration> _mockConfiguration;
+        private Mock<Wrapper> _mockAstsServer;
+        private Mock<IKafka> _mockKafka;
+        private Server _server;
+
+        [SetUp]
+        public void SetUp()
+        {
+            _mockConfiguration = new Mock<IConfiguration>();
+            _mockAstsServer = new Mock<Wrapper>();
+            _mockKafka = new Mock<IKafka>();
+
+            // Setup configuration values
+            _mockConfiguration.Setup(c => c["Asts:ServerAddress"]).Returns("testAddress");
+            _mockConfiguration.Setup(c => c["Asts:ServerName"]).Returns("testName");
+            _mockConfiguration.Setup(c => c["Asts:Service"]).Returns("testService");
+            _mockConfiguration.Setup(c => c["Asts:UserId"]).Returns("testUserId");
+            _mockConfiguration.Setup(c => c["Asts:Password"]).Returns("testPassword");
+            _mockConfiguration.Setup(c => c["Asts:Interface"]).Returns("testInterface");
+            _mockConfiguration.Setup(c => c["Asts:Language"]).Returns("testLanguage");
+            _mockConfiguration.Setup(c => c["Asts:Logging"]).Returns("testLogging");
+            _mockConfiguration.Setup(c => c["Asts:LogFolder"]).Returns("testLogFolder");
+            _mockConfiguration.Setup(c => c["Kafka:Topic"]).Returns("testKafkaTopic");
+            _mockConfiguration.Setup(c => c["Kafka:TopicDaily"]).Returns("testKafkaTopicDaily");
+            _mockConfiguration.Setup(c => c.GetSection("PublicBoards").Get<string[]>()).Returns(new[] { "Board1", "Board2" });
+            _mockConfiguration.Setup(c => c.GetSection("DailyBoards").Get<string[]>()).Returns(new[] { "DailyBoard1", "DailyBoard2" });
+
+            // Create instance of Server
+            _server = new Server(_mockConfiguration.Object, _mockKafka.Object);
+            _server.AstsServer = _mockAstsServer.Object;
+        }
+
+        [Test]
+        public void WriteOrders_WhenOrdersAreAvailable_WritesToKafka()
+        {
+            // Arrange
+            var table = new UniversalTable
+            {
+                Name = "ORDERS",
+                Ref = "OrdersRef",
+                Rows = new List<UniversalRow> { new UniversalRow() }
+            };
+            int descriptor = 123; // expected descriptor value
+
+            _mockAstsServer
+                .Setup(m => m.OpenTableNonString("ORDERS", null, out descriptor))
+                .Returns(table)
+                .Callback<string, string, out int>((name, par, out int d) => { d = descriptor; });
+
+            // Act
+            _server.WriteOrders();
+
+            // Assert
+            _mockAstsServer.Verify(m => m.OpenTableNonString("ORDERS", null, out descriptor), Times.Once);
+            _mockKafka.Verify(k => k.Write("BROKERAGE-KASE-ASTS-ALLOCATIONS", "ORDERS", It.IsAny<string>()), Times.AtLeastOnce);
+        }
+
+        [Test]
+        public void WriteOrders_WhenNoOrdersAvailable_LogsEmptyTable()
+        {
+            // Arrange
+            var table = new UniversalTable
+            {
+                Name = "ORDERS",
+                Ref = "OrdersRef",
+                Rows = new List<UniversalRow>()
+            };
+            int descriptor = 123; // expected descriptor value
+
+            _mockAstsServer
+                .Setup(m => m.OpenTableNonString("ORDERS", null, out descriptor))
+                .Returns(table)
+                .Callback<string, string, out int>((name, par, out int d) => { d = descriptor; });
+
+            // Act
+            _server.WriteOrders();
+
+            // Assert
+            _mockAstsServer.Verify(m => m.OpenTableNonString("ORDERS", null, out descriptor), Times.Once);
+            // Check the logs or console output for the "ORDERS table is empty" message
+        }
+    }
+}
+
