@@ -1,154 +1,61 @@
-[JsonProperty("id")]
-public string Id { get; set; }
+using GraphQL;
+using GraphQL.Types;
+using Microsoft.AspNetCore.Mvc;
+using Sentry;
+using Serilog;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using TradePointAPI.Models.DTO;
 
-/// <summary>
-/// Branch unique id/number
-/// </summary>
-[JsonProperty("branch_num")]
-public string Number { get; set; }
+namespace TradePointAPI.Controllers
+{
+    [Route("")]
+    public class QueryController : Controller
+    {
+        private readonly ISchema _schema;
+        private readonly IDocumentExecuter _documentExecuter;
 
-/// <summary>
-/// Trade point name
-/// </summary>
-[JsonProperty("name")]
-public string Name { get; set; }
+        public QueryController(ISchema schema, IDocumentExecuter documentExecuter)
+        {
+            _schema = schema;
+            _documentExecuter = documentExecuter;
+        }
 
-/// <summary>
-/// Trade point type code
-/// </summary>
-[JsonProperty("type")]
-public string Type { get; set; }
+        [HttpPost]
+        public async Task<IActionResult> Post([FromBody] QueryDTO query)
+        {
+            if (query == null) { throw new ArgumentNullException(nameof(query)); }
+            var inputs = query.Variables?.ToString().ToInputs(); 
+            var execOptions = new ExecutionOptions()
+            {
+                Schema = _schema,
+                Query = query.Query,
+                Inputs = inputs
+            };
 
-/// <summary>
-/// Filial of bank from reference
-/// </summary>
-[JsonProperty("filial")]
-public string Filial { get; set; }
+            try
+            {
+                var res = await _documentExecuter.ExecuteAsync(execOptions).ConfigureAwait(false);
 
-/// <summary>
-/// Code of the locality (village / town) from "KATO" reference
-/// </summary>
-[JsonProperty("locality")]
-public string Locality { get; set; }
+                if (res.Errors?.Count > 0)
+                {
+                    foreach (var err in res.Errors)
+                    {
+                        Log.Error("Not Found {err} query {query}", err.Message, query.Query);
+                    }
+                    return BadRequest(res);
+                }
 
-//***
-/// <summary>
-/// Code of the locality (village / town) from "KATO" reference
-/// </summary>
-[JsonProperty("kato")]
-public string KatoCode { get; set; }
+                Log.Information("Found {res} query {query}", res.ToString(), query.Query);
+                return Ok(res);
 
-/// <summary>
-/// Name of street/microdistrict, house number
-/// </summary>
-[JsonProperty("address")]
-public string Adress { get; set; }
-
-/// <summary>
-/// Name of street/microdistrict, house number on kaz
-/// </summary>
-[JsonProperty("adressKaz")]
-public string AdressKaz { get; set; }
-
-/// <summary>
-/// Branch number/government office name/trade center name
-/// </summary>
-[JsonProperty("location")]
-public string Location { get; set; }
-
-/// <summary>
-/// Currence exchange availability
-/// </summary>
-[JsonProperty("curr_exch_fl")]
-public bool CurrencyExchangeFlag { get; set; }
-
-/// <summary>
-/// Legal entity ("jurik") servicing availability
-/// </summary>
-[JsonProperty("jur_fl")]
-public bool CorporateEntityFlag { get; set; }
-
-/// <summary>
-/// Person servicing availability
-/// </summary>
-[JsonProperty("person_fl")]
-public bool PersonEntityFlag { get; set; }
-
-
-/// <summary>
-/// Western Union services avalability
-/// </summary>
-[JsonProperty("westUn_fl")]
-public bool WesternUnionFlag { get; set; }
-
-/// <summary>
-/// Money Gramm services availability
-/// </summary>
-[JsonProperty("money_gramm_fl")]
-public bool MoneyGrammFlag { get; set; }
-
-/// <summary>
-/// Safe depositary room availability
-/// </summary>
-[JsonProperty("deposit_fl")]
-public bool DepositoryFlag { get; set; }
-
-/// <summary>
-/// Pay terminal availability
-/// </summary>
-[JsonProperty("terminal_fl")]
-public bool TerminalFlag { get; set; }
-
-/// <summary>
-/// Premium Halyk zone availability
-/// </summary>
-[JsonProperty("premZone_fl")]
-public bool PremiumZoneFlag { get; set; }
-
-/// <summary>
-/// true = if all-day available, otherwise - false
-/// </summary>
-[JsonProperty("allDay_fl")]
-public bool AllDayFlag { get; set; }
-
-/// <summary>
-/// Weekdays working schedule
-/// </summary>
-[JsonProperty("weekday_time")]
-public WorkTime WeekdayTime { get; set; }
-
-/// <summary>
-/// Saturday working schedule
-/// </summary>
-[JsonProperty("sat_work_time")]
-public WorkTime SaturdayWorkTime { get; set; }
-
-/// <summary>
-/// Sunday working schedule
-/// </summary>
-[JsonProperty("sun_work_time")]
-public WorkTime SundayWorkTime { get; set; }
-
-/// <summary>
-/// Geolocation by utilising longitude and latitude
-/// </summary>
-[JsonProperty("geo_location")]
-public GeoLocation GetLocation { get; set; }
-
-/// <summary>
-/// Timestamp of the data row
-/// </summary>
-[JsonProperty("timestamp")]
-public DateTime Timestamp { get; set; }
-
-/// <summary>
-/// Address information in terms of branch
-/// </summary>
-[JsonProperty("address")]
-public Address Address { get; set; }
-
-/// <summary>
-/// Availability flag of embossers in branch
-/// </summary>
-[JsonProperty("embosser")]
-public bool Embosser { get; set; }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("exception {ex} query {query}", ex.Message, query.Query);
+                return BadRequest(ex);
+            }
+        }
+    }
+}
