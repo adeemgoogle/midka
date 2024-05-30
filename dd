@@ -1,15 +1,90 @@
-public class Program
+public class Startup
 {
-    private static void Main(string[] args)
+    public IConfiguration Configuration { get; }
+
+    public static Server? Server { get; set; }
+
+    public Startup(IConfiguration configuration, IHostEnvironment env)
     {
-       CreateHostBuilder(args).Build().Run();      
+        Console.WriteLine(env.EnvironmentName);
+        configuration = new ConfigurationBuilder()
+        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+        .AddJsonFile($"appsettings.{env.EnvironmentName}.json")
+        .Build();
+        Configuration = configuration;
+        Server = new Server(Configuration);
+    }
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddControllers();
+
+        services.AddCors(options =>
+        {
+            options.AddDefaultPolicy(builder =>
+            {
+                builder.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+            {
+                Version = "v1",
+                Title = "Brokerage - KASE ASTS Bridge Client API",
+                Description = "Сервис для коннекта с ASTS Bridge KASE"
+            });
+        });
+
     }
 
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime)
+    {
+        applicationLifetime.ApplicationStarted.Register(OnStarted);
+        applicationLifetime.ApplicationStopping.Register(OnStopping);
 
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseRouting();
+        app.UseAuthorization();
+        app.UseCors(builder =>
+        {
+            builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+        });
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Brokerage - KASE ASTS Bridge Client API V1");
+        });
+    }
+
+    private void OnStarted()
+    {
+        bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        string os = isWindows switch
+        {
+            true => "Windows",
+            false => "Linux"
+        };
+
+        Server.CreateNewAstsServer(os);
+    }
+
+    private void OnStopping()
+    {
+        Server.Disconnect();
+    }
 }
