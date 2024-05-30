@@ -1,6 +1,3 @@
-System.AggregateException: "Some services are not able to be constructed (Error while validating the service descriptor 'ServiceType: ASTS_BRIDGE.Models.GetSecurityJob Lifetime: Singleton ImplementationType: ASTS_BRIDGE.Models.GetSecurityJob': Unable to resolve service for type 'ASTS_BRIDGE.Models.Server' while attempting to activate 'ASTS_BRIDGE.Models.GetSecurityJob'.) (Error while validating the service descriptor 'ServiceType: Microsoft.Extensions.Hosting.IHostedService Lifetime: Singleton ImplementationType: QuartzHostedService': Unable to resolve service for type 'Quartz.ISchedulerFactory' while attempting to activate 'QuartzHostedService'.)"          
-InvalidOperationException: Error while validating the service descriptor 'ServiceType: ASTS_BRIDGE.Models.GetSecurityJob Lifetime: Singleton ImplementationType: ASTS_BRIDGE.Models.GetSecurityJob': Unable to resolve service for type 'ASTS_BRIDGE.Models.Server' while attempting to activate 'ASTS_BRIDGE.Models.GetSecurityJob'.
-
 using ASTS_BRIDGE.Models;
 using Microsoft.EntityFrameworkCore;
 using Quartz;
@@ -49,14 +46,14 @@ public class Startup
                     Description = "Сервис для коннекта с ASTS Bridge KASE"
             });
         });
-
+            
             services.AddSingleton<IJobFactory, SingletonJobFactory>();
             services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+            services.AddSingleton<Server>(provider => Startup.Server);
 
-
-            services.AddSingleton<GetSecurityJob>();
+            services.AddTransient<GetSecurityJob>();
             services.AddSingleton(new JobSchedule(
-                jobType: typeof(GetSecurityJob), cronExpression: "0 58 16 * * ?"));
+                jobType: typeof(GetSecurityJob), cronExpression: "0 21 17 * * ?"));
             services.AddHostedService<QuartzHostedService>();
         // Register Quartz services
         /*services.AddQuartz(q =>
@@ -180,7 +177,7 @@ public class QuartzHostedService : IHostedService
 
         var trigger = TriggerBuilder.Create()
             .WithIdentity("dailyJobTrigger", "group1")
-            .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(16, 58))
+            .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(17, 21))
             .Build();
 
         await _scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -214,5 +211,3 @@ public class GetSecurityJob : IJob
         return Task.CompletedTask;
     }
 }
-
-fix it
