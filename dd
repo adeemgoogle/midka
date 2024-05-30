@@ -1,3 +1,114 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+
+public class Startup
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddControllers();
+
+        services.AddSingleton<IJobFactory, SingletonJobFactory>();
+        services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+        // Register the service
+        services.AddSingleton<MyService>();
+
+        // Add our job
+        services.AddSingleton<MyDailyJob>();
+        services.AddSingleton(new JobSchedule(
+            jobType: typeof(MyDailyJob),
+            cronExpression: "0 0 18 * * ?")); // runs every day at 18:00
+
+        services.AddHostedService<QuartzHostedService>();
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseRouting();
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+    }
+}
+
+public class JobSchedule
+{
+    public Type JobType { get; }
+    public string CronExpression { get; }
+
+    public JobSchedule(Type jobType, string cronExpression)
+    {
+        JobType = jobType;
+        CronExpression = cronExpression;
+    }
+}
+
+public class SingletonJobFactory : IJobFactory
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public SingletonJobFactory(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+    {
+        return _serviceProvider.GetRequiredService(bundle.JobDetail.JobType) as IJob;
+    }
+
+    public void ReturnJob(IJob job) { }
+}
+
+public class QuartzHostedService : IHostedService
+{
+    private readonly ISchedulerFactory _schedulerFactory;
+    private readonly IJobFactory _jobFactory;
+    private IScheduler _scheduler;
+
+    public QuartzHostedService(ISchedulerFactory schedulerFactory, IJobFactory jobFactory)
+    {
+        _schedulerFactory = schedulerFactory;
+        _jobFactory = jobFactory;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        _scheduler.JobFactory = _jobFactory;
+
+        var job = JobBuilder.Create<MyDailyJob>()
+            .WithIdentity("dailyJob", "group1")
+            .Build();
+
+        var trigger = TriggerBuilder.Create()
+            .WithIdentity("dailyJobTrigger", "group1")
+            .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(18, 0))
+            .Build();
+
+        await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await _scheduler.Start(cancellationToken);
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (_scheduler != null)
+        {
+            await _scheduler.Shutdown(cancellationToken);
+        }
+    }
+}
+
+
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 using Quartz.Spi;
