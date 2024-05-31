@@ -1,44 +1,187 @@
-using Confluent.Kafka;
+using ASTS_BRIDGE.Models;
+using Microsoft.EntityFrameworkCore;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+using System.Runtime.InteropServices;
 
-namespace ASTS_BRIDGE.Models
+namespace ASTS_BRIDGE
 {
+public class Startup
+{
+    public IConfiguration Configuration { get; }
 
-    public interface IKafka
+    public static Server? Server { get; set; }
+
+    public Startup(IConfiguration configuration, IHostEnvironment env)
     {
-        void Init(IConfiguration configuration);
-        bool Write(string topic, string? key, string value);
+        Console.WriteLine(env.EnvironmentName);
+        configuration = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile($"appsettings.{env.EnvironmentName}.json")
+            .Build();
+        Configuration = configuration;
+        Server = new Server(Configuration);
     }
-    public class Kafka : IKafka
+    public void ConfigureServices(IServiceCollection services)
     {
-        private static IProducer<string?, string> ProducerBuilder;
+        services.AddControllers();
 
-        public void Init(IConfiguration Config)
+        services.AddCors(options =>
         {
-            var config = new ConsumerConfig
+            options.AddDefaultPolicy(builder =>
             {
-                BootstrapServers = Config["Kafka:BootstrapServers"],
-                SecurityProtocol = SecurityProtocol.SaslSsl,
-                SaslMechanism = SaslMechanism.ScramSha256,
-                SaslUsername = Config["Kafka:SaslUsername"],
-                SaslPassword = Config["Kafka:SaslPassword"],
-                EnableSslCertificateVerification = false,
+                builder.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
+        services.AddSwaggerGen(c =>
+        {
+            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+            {
+                Version = "v1",
+                Title = "Brokerage - KASE ASTS Bridge Client API",
+                    Description = "Сервис для коннекта с ASTS Bridge KASE"
+            });
+        });
+            
+            
+        
+    }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime)
+    {
+        applicationLifetime.ApplicationStarted.Register(OnStarted);
+        applicationLifetime.ApplicationStopping.Register(OnStopping);
+
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseRouting();
+        app.UseAuthorization();
+        app.UseCors(builder =>
+        {
+                builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Brokerage - KASE ASTS Bridge Client API V1");
+        });
+    }
+
+    private void OnStarted()
+    {
+        bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            string os = isWindows switch
+            {
+                true => "Windows",
+                false => "Linux"
             };
 
-            ProducerBuilder = new ProducerBuilder<string?, string>(config).Build();
-        }
+            Server.CreateNewAstsServer(os);
+    }
 
-        public bool Write(string topic, string? key, string jsonStr)
-        {
-            try
-            {
-                var msg = new Message<string?, string> { Key = key, Value = jsonStr };
-                var dr = ProducerBuilder.ProduceAsync(topic, msg);
-            }
-            catch (ProduceException<Null, string>)
-            {
-                return false;
-            }
-            return true;
+    private void OnStopping()
+    {
+            Server.Disconnect();
         }
+    }
+}
+public class JobSchedule
+{
+    public Type JobType { get; }
+    public string CronExpression { get; }
+
+    public JobSchedule(Type jobType, string cronExpression)
+    {
+        JobType = jobType;
+        CronExpression = cronExpression;
+    }
+}
+
+public class SingletonJobFactory : IJobFactory
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public SingletonJobFactory(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+    {
+        return _serviceProvider.GetRequiredService(bundle.JobDetail.JobType) as IJob;
+    }
+
+    public void ReturnJob(IJob job) { }
+}
+
+public class QuartzHostedService : IHostedService
+{
+    private readonly ISchedulerFactory _schedulerFactory;
+    private readonly IJobFactory _jobFactory;
+    private IScheduler _scheduler;
+
+    public QuartzHostedService(ISchedulerFactory schedulerFactory, IJobFactory jobFactory)
+    {
+        _schedulerFactory = schedulerFactory;
+        _jobFactory = jobFactory;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        //_scheduler.JobFactory = null;
+
+        var job = JobBuilder.Create<GetSecurityJob>()
+            .WithIdentity("dailyJob", "group1")
+            .Build();
+
+        var trigger = TriggerBuilder.Create()
+            .WithIdentity("dailyJobTrigger", "group1")
+            .WithCronSchedule("0 56 13 * * ?")
+            .Build();
+
+        await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+        await _scheduler.Start(cancellationToken);
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (_scheduler != null)
+        {
+            await _scheduler.Shutdown(cancellationToken);
+        }
+    }
+}
+public class GetSecurityJob : IJob
+{
+    private Server _server;
+
+    public GetSecurityJob(Server server)
+    {
+        _server = server ?? throw new ArgumentNullException(nameof(server));
+    }
+
+    public Task Execute(IJobExecutionContext context)
+    {
+        string[] boards = _server.DailyBoards;
+        string KafkaTopic = _server.DailyKafkaTopic;
+        bool isDailyReport = true;
+        _server.GetSecurity(boards, KafkaTopic, isDailyReport);
+        Console.WriteLine("Cron is worked");
+        return Task.CompletedTask;
     }
 }
