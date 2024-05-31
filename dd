@@ -47,13 +47,13 @@ public class Startup
             });
         });
             
-            services.AddSingleton<IJobFactory, SingletonJobFactory>();
-            services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
-            services.AddSingleton<Server>(provider => Startup.Server);
+            services.AddTransient<IJobFactory, SingletonJobFactory>();
+            services.AddTransient<ISchedulerFactory, StdSchedulerFactory>();
+            services.AddTransient<Server>(provider => Startup.Server);
 
             services.AddTransient<GetSecurityJob>();
             services.AddSingleton(new JobSchedule(
-                jobType: typeof(GetSecurityJob), cronExpression: "0 21 17 * * ?"));
+                jobType: typeof(GetSecurityJob), cronExpression: "13 10 * * ?"));
             services.AddHostedService<QuartzHostedService>();
         // Register Quartz services
         /*services.AddQuartz(q =>
@@ -177,7 +177,7 @@ public class QuartzHostedService : IHostedService
 
         var trigger = TriggerBuilder.Create()
             .WithIdentity("dailyJobTrigger", "group1")
-            .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(17, 21))
+            .WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(10, 11))
             .Build();
 
         await _scheduler.ScheduleJob(job, trigger, cancellationToken);
@@ -211,3 +211,5 @@ public class GetSecurityJob : IJob
         return Task.CompletedTask;
     }
 }
+
+this code writes every 1 sec. But I need only at 11.30. how to fix it?
