@@ -10,3 +10,31 @@
 this code send me �����������
 ������������ 
 how to fix it?
+
+string secnameUtf8 = row.GetAsString("SECNAME");
+if (secnameUtf8 != null)
+{
+    // List of encodings to try
+    Encoding[] encodings = { Encoding.UTF8, Encoding.GetEncoding("windows-1251"), Encoding.Default };
+
+    // Iterate over the encodings and try to decode the string
+    string secname = null;
+    foreach (Encoding encoding in encodings)
+    {
+        try
+        {
+            byte[] bytes = encoding.GetBytes(secnameUtf8);
+            secname = encoding.GetString(bytes);
+            // If decoding succeeds, break out of the loop
+            break;
+        }
+        catch (DecoderFallbackException)
+        {
+            // If decoding fails, continue to the next encoding
+            continue;
+        }
+    }
+
+    // Use the decoded string
+    securityRow.secName = secname;
+}
