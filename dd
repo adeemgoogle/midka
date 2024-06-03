@@ -1,7 +1,2 @@
-docker build -t asts1
-ERROR: "docker buildx build" requires exactly 1 argument.
-See 'docker buildx build --help'.
-
-Usage:  docker buildx build [OPTIONS] PATH | URL | -
-
-Start a build
+Unhandled exception. System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex.
+   at System.Threading.WaitHandle.WaitOneNoCheck(Int32 millisecondsTimeout)
