@@ -53,6 +53,27 @@ string TryDecodeWithEncodings(string text)
 }
 
 
+string secnameUtf8 = row.GetAsString("SECNAME");
+
+if (secnameUtf8 != null)
+{
+  // Try to identify original encoding (replace with your logic)
+  string originalEncoding = "windows-1251"; // Replace with actual encoding
+
+  try
+  {
+    // Targeted conversion based on identified encoding
+    Encoding encoding = Encoding.GetEncoding(originalEncoding);
+    string secname = encoding.GetString(Encoding.Default.GetBytes(secnameUtf8));
+    securityRow.secName = secname;
+  }
+  catch (DecoderFallbackException ex)
+  {
+    // Handle decoding errors (e.g., log error or replace problematic characters)
+    Console.WriteLine($"Failed to decode SECNAME: {ex.Message}");
+    // Consider using Iconv for character replacement here
+  }
+}
 
 
 
