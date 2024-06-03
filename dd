@@ -10,6 +10,47 @@
 this code send me �����������
 ������������ 
 how to fix it?
+string secnameUtf8 = row.GetAsString("SECNAME");
+
+if (secnameUtf8 != null)
+{
+  // Try multiple encodings to handle potential unknown origin
+  string secname = TryDecodeWithEncodings(secnameUtf8);
+
+  if (secname != null)
+  {
+    securityRow.secName = secname;
+  }
+  else
+  {
+    // Handle cases where decoding fails (e.g., log error or use a replacement value)
+    Console.WriteLine("Failed to decode SECNAME with common encodings.");
+  }
+}
+
+// Function to try multiple encodings
+string TryDecodeWithEncodings(string text)
+{
+  // Try UTF-8 first (common assumption)
+  string result = Encoding.UTF8.GetString(Encoding.Default.GetBytes(text));
+  if (result != null) return result;
+
+  // Try other common encodings if UTF-8 fails
+  foreach (var encoding in new Encoding[] { Encoding.GetEncoding("windows-1251"), Encoding.ASCII })
+  {
+    try
+    {
+      result = encoding.GetString(Encoding.Default.GetBytes(text));
+      if (result != null) return result;
+    }
+    catch (DecoderFallbackException)
+    {
+      // Ignore exception if encoding fails, try next one
+    }
+  }
+
+  return null; // Indicate failure to decode
+}
 
 
 
