@@ -38,3 +38,50 @@ if (secnameUtf8 != null)
     // Use the decoded string
     securityRow.secName = secname;
 }
+
+using System.IO;
+using System.Text;
+
+string secnameUtf8 = row.GetAsString("SECNAME");
+if (secnameUtf8 != null)
+{
+    string secname = DecodeStringWithFallback(secnameUtf8);
+    securityRow.secName = secname;
+}
+
+string DecodeStringWithFallback(string input)
+{
+    // List of encodings to try
+    Encoding[] encodings = { Encoding.UTF8, Encoding.Default };
+
+    foreach (Encoding encoding in encodings)
+    {
+        try
+        {
+            // Decode the string using the current encoding
+            using (MemoryStream stream = new MemoryStream(Encoding.Default.GetBytes(input)))
+            {
+                using (StreamReader reader = new StreamReader(stream, encoding))
+                {
+                    string decodedString = reader.ReadToEnd();
+                    return decodedString;
+                }
+            }
+        }
+        catch (DecoderFallbackException)
+        {
+            // If decoding fails, continue to the next encoding
+            continue;
+        }
+    }
+
+    // If none of the encodings work, return the original input
+    return input;
+}
+
+
+
+
+
+
+
