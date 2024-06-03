@@ -7,20 +7,6 @@
      securityRow.secName = secname;
  }
 
-using System.Text;
-
-string secnameUtf8 = row.GetAsString("SECNAME");
-if (secnameUtf8 != null)
-{
-    byte[] bytes = Encoding.Default.GetBytes(secnameUtf8);
-    
-    // Создаем конвертер кодировки
-    Encoding utf8 = Encoding.UTF8;
-    Encoding defaultEncoding = Encoding.Default;
-    EncodingConverter converter = new EncodingConverter(defaultEncoding, utf8);
-    
-    // Преобразуем байты в строку с использованием UTF-8
-    string secname = (string)converter.Convert(bytes, typeof(string));
-
-    securityRow.secName = secname;
-}
+this code send me �����������
+������������ 
+how to fix it?
