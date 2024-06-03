@@ -1,8 +1,4 @@
-buildx build -t asts1
-"ocker" не является внутренней или внешней
-командой, исполняемой программой или пакетным файлом.
-
-C:\Users\00058157\Desktop\asts>docker buildx build -t asts1
+docker build -t asts1
 ERROR: "docker buildx build" requires exactly 1 argument.
 See 'docker buildx build --help'.
 
