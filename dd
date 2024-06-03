@@ -1,2 +1,8 @@
-Unhandled exception. System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex.
-   at System.Threading.WaitHandle.WaitOneNoCheck(Int32 millisecondsTimeout)
+ string secnameUtf8 = row.GetAsString("SECNAME");
+ if (secnameUtf8 != null)
+ {
+     byte[] bytes = Encoding.Default.GetBytes(secnameUtf8);
+     
+     string secname = Encoding.UTF8.GetString(bytes);
+     securityRow.secName = secname;
+ }
