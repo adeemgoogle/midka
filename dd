@@ -1,65 +1,14 @@
- public unsafe void GetSecurity(string[] Boards, string KafkaTopic, bool isDailyReport)
- {
-     int tableDescriptor;
-     UniversalTable table;
-     int sdvig;
-     
-     string par;
-     SecurityTable res = new SecurityTable("", 0);
-     res.Rows = new List<SecurityRow>();
-
-     foreach (string board in Boards){
-         par = "    " + board;
-
-         table = OpenTableNonString("SECURITIES", par, out tableDescriptor);
-         if (table.Rows.Count == 0){
-             continue;
-         }
-
-         
-         if (isDailyReport)
-         {
-             var securitiesFromUniversalTable = SecurityTable.ParseDailySecuritiesFromUniversalTable(table);
-             foreach (var row in securitiesFromUniversalTable.RowsDictionary)
-             {
-                
-                 if (row.Value.secName == "KZTO") 
-                 {
-                     res.Rows.Add(row.Value);
-                 }
-                 if (row.Value.secName == "KZTK")
-                 {
-                     res.Rows.Add(row.Value);
-                 }
-                 if (row.Value.secName == "KMGZ")
-                 {
-                     res.Rows.Add(row.Value);
-                 }
-                 if (row.Value.secName == "KEGC")
-                 {
-                     res.Rows.Add(row.Value);
-                 }
-                 if (row.Value.secName == "CCBN")
-                 {
-                     res.Rows.Add(row.Value);
-                 }
-                 
-             }
-            
-         }
- if (res.Rows.Count > 1)
- {
-     var key = "SECURITIES";
-     var jsonStr = JsonConvert.SerializeObject(res.Rows);
-     if (isDailyReport)
-     {
-         var jArray = JArray.Parse(jsonStr);
-         foreach (var item in jArray)
-         {
-             _kafka.Write(KafkaTopic, key, item.ToString());
-         }
-     }
-
-
-как сделать запись в кафку 1 json = 1 сообщение в кафке.
-помоги доработать if 
+Unhandled exception. System.InvalidOperationException: Unable to configure HTTPS endpoint. No server certificate was specified, and the default developer certificate could not be found or is out of date.
+To generate a developer certificate run 'dotnet dev-certs https'. To trust the certificate (Windows and macOS only) run 'dotnet dev-certs https --trust'.
+For more information on configuring HTTPS see https://go.microsoft.com/fwlink/?linkid=848054.
+   at Microsoft.AspNetCore.Hosting.ListenOptionsHttpsExtensions.UseHttps(ListenOptions listenOptions, Action`1 configureOptions)
+   at Microsoft.AspNetCore.Hosting.ListenOptionsHttpsExtensions.UseHttps(ListenOptions listenOptions)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(IEnumerable`1 listenOptions, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.Run(IHost host)
