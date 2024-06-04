@@ -1,7 +1,19 @@
-???? ???????????
-KEGOC
-???????????
-????????????
-???????????
+Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+string secnameEncode = row.GetAsString("SECNAME");
+if (secnameEncode != null)
+{
+    byte[] utf8Byte = Encoding.UTF8.GetBytes(secnameEncode);
+    Encoding cp1251 = Encoding.GetEncoding("windows-1251");
 
-now i got this ans. Fix 
+    byte[] cp1251Bytes = Encoding.Convert(Encoding.UTF8, cp1251, utf8Byte);
+    string secname = cp1251.GetString(utf8Byte);
+    
+    securityRow.secName = secname;
+}
+
+now i got this ans пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+KEGOC
+пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+how to fix it?
