@@ -1,53 +1,8 @@
-public DateTime? GetAsDateTime(string fieldDate, string fieldTime)
-{
-    if (Fields == null)
-    {
-        return DateTime.MinValue;
-    }
-
-    UniversalField fieldD = Fields.Find(universalField => universalField.Name == fieldDate);
-    UniversalField fieldT = Fields.Find(universalField => universalField.Name == fieldTime);
-
-    if (fieldD == null && fieldT == null)
-    {
-        return DateTime.MinValue;
-    }
-
-    int hour = 0;
-    int min = 0;
-    int sec = 0;
-
-    if (fieldT != null && fieldT.Value != "        ")
-    {
-        hour = Convert.ToInt32(fieldT.Value.Substring(0, 2));
-        min = Convert.ToInt32(fieldT.Value.Substring(2, 2));
-        sec = Convert.ToInt32(fieldT.Value.Substring(4, 2));
-    }
-
-    int day = 1;
-    int month = 1;
-    int year = 1;
-
-    if (fieldD != null && fieldD.Value != "        ")
-    {
-        day = Convert.ToInt32(fieldD.Value.Substring(6, 2));
-        month = Convert.ToInt32(fieldD.Value.Substring(4, 2));
-        year = Convert.ToInt32(fieldD.Value.Substring(0, 4));
-    }
-
-    if (day == 0 && month == 0 && year == 0)
-    {
-        return DateTime.MinValue;
-    }
-
-    // Validate the date components
-    try
-    {
-        return new DateTime(year, month, day, hour, min, sec);
-    }
-    catch (ArgumentOutOfRangeException)
-    {
-        // Handle the exception or return null if the date is invalid
-        return null;
-    }
-}
+nhandled exception. System.FormatException: Input string was not in a correct format.
+   at System.Number.ThrowOverflowOrFormatException(ParsingStatus status, TypeCode type)
+   at System.Convert.ToInt32(String value)
+   at ASTS_BRIDGE.Models.UniversalRow.GetAsDateTime(String fieldDate, String fieldTime) in /src/Models/UniversalTable.cs:line 257
+   at ASTS_BRIDGE.Models.SecurityTable.ParseDailySecuritiesFromUniversalTable(UniversalTable table) in /src/Models/SecurityTable.cs:line 295
+   at ASTS_BRIDGE.Models.Server.GetSecurity(String[] Boards, String KafkaTopic, Boolean isDailyReport) in /src/Models/Server.cs:line 353
+   at ASTS_BRIDGE.Models.Server.GetUpdates() in /src/Models/Server.cs:line 403
+   at System.Threading.Thread.StartCallback()
