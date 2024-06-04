@@ -1,19 +1,28 @@
+using System;
+using System.Text;
+
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-string secnameEncode = row.GetAsString("SECNAME");
-if (secnameEncode != null)
+
+string secnameEncoded = row.GetAsString("SECNAME");
+if (secnameEncoded != null)
 {
-    byte[] utf8Byte = Encoding.UTF8.GetBytes(secnameEncode);
-    Encoding cp1251 = Encoding.GetEncoding("windows-1251");
+    // Выводим исходную строку для проверки
+    Console.WriteLine("Исходная строка: " + secnameEncoded);
 
-    byte[] cp1251Bytes = Encoding.Convert(Encoding.UTF8, cp1251, utf8Byte);
-    string secname = cp1251.GetString(utf8Byte);
-    
-    securityRow.secName = secname;
+    // Пробуем различные кодировки
+    string[] encodings = { "windows-1251", "utf-8", "iso-8859-1", "koi8-r" };
+    foreach (string encodingName in encodings)
+    {
+        try
+        {
+            Encoding encoding = Encoding.GetEncoding(encodingName);
+            byte[] bytes = Encoding.Default.GetBytes(secnameEncoded);
+            string decodedString = encoding.GetString(bytes);
+            Console.WriteLine($"Декодированная строка с кодировкой {encodingName}: {decodedString}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка при использовании кодировки {encodingName}: {ex.Message}");
+        }
+    }
 }
-
-now i got this ans пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-KEGOC
-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
-how to fix it?
