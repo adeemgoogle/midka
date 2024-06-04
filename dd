@@ -1,18 +1,1 @@
-using System.Text;
-
-Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-
-string secnameEncoded = row.GetAsString("SECNAME");
-if (secnameEncoded != null)
-{
-    // Декодируем строку из CP1251
-    Encoding cp1251 = Encoding.GetEncoding("cp1251");
-    byte[] cp1251Bytes = cp1251.GetBytes(secnameEncoded);
-
-    // Преобразуем байты CP1251 в байты UTF-8
-    byte[] utf8Bytes = Encoding.Convert(cp1251, Encoding.UTF8, cp1251Bytes);
-
-    // Преобразуем байты UTF-8 в строку UTF-8
-    string secname = Encoding.UTF8.GetString(utf8Bytes);
-    securityRow.secName = secname;
-}
+dotnet add package System.Text.Encoding.CodePages
