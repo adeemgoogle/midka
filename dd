@@ -1,2 +1,60 @@
-???вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ вЂ ??вЂ вЂ вЂ ?????? 
-how to decode it to string
+Unhandled exception. System.ArgumentOutOfRangeException: Year, Month, and Day parameters describe an un-representable DateTime.
+   at System.DateTime..ctor(Int32 year, Int32 month, Int32 day, Int32 hour, Int32 minute, Int32 second)
+   at ASTS_BRIDGE.Models.UniversalRow.GetAsDateTime(String fieldDate, String fieldTime) in /src/Models/UniversalTable.cs:line 280
+   at ASTS_BRIDGE.Models.SecurityTable.ParseDailySecuritiesFromUniversalTable(UniversalTable table) in /src/Models/SecurityTable.cs:line 165
+   at ASTS_BRIDGE.Models.Server.GetSecurity(String[] Boards, String KafkaTopic, Boolean isDailyReport) in /src/Models/Server.cs:line 353
+   at ASTS_BRIDGE.Models.Server.GetUpdates() in /src/Models/Server.cs:line 403
+
+    public DateTime? GetAsDateTime(string fieldDate, string fieldTime)
+    {
+        if (Fields == null)
+        {
+            return DateTime.MinValue;
+        }
+
+        UniversalField fieldD = Fields.Find(universalField => universalField.Name == fieldDate);
+        UniversalField fieldT = Fields.Find(universalField => universalField.Name == fieldTime);
+
+        if (fieldD == null &&
+            fieldT == null)
+        {
+            return DateTime.MinValue;
+        }
+        int hour = 0;
+        int min = 0;
+        int sec = 0;
+
+        if (fieldT != null && fieldT.Value != "        ")
+        {
+            hour = Convert.ToInt32(fieldT.Value[0].ToString() + fieldT.Value[1].ToString());
+            min = Convert.ToInt32(fieldT.Value[2].ToString() + fieldT.Value[3].ToString());
+            sec = Convert.ToInt32(fieldT.Value[4].ToString() + fieldT.Value[5].ToString());
+        }
+
+        int day = 1;
+        int month = 1;
+        int year = 1;
+
+        if (fieldD != null && fieldD.Value != "        ")
+        {
+            day = Convert.ToInt32(fieldD.Value[6].ToString() + fieldD.Value[7].ToString());
+            month = Convert.ToInt32(fieldD.Value[4].ToString() + fieldD.Value[5].ToString());
+            year = Convert.ToInt32(fieldD.Value[0].ToString() + fieldD.Value[1].ToString() + fieldD.Value[2].ToString() + fieldD.Value[3].ToString());
+        }
+        
+        DateTime? result;
+
+        if (day == 0 && month == 0 && year == 0)
+        {
+            result = DateTime.MinValue;
+            return result;
+        }
+
+        result = new DateTime(year, month, day, hour, min, sec);
+
+        return result;
+    }
+
+}
+
+
