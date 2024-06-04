@@ -1,8 +1,52 @@
-nhandled exception. System.FormatException: Input string was not in a correct format.
-   at System.Number.ThrowOverflowOrFormatException(ParsingStatus status, TypeCode type)
-   at System.Convert.ToInt32(String value)
-   at ASTS_BRIDGE.Models.UniversalRow.GetAsDateTime(String fieldDate, String fieldTime) in /src/Models/UniversalTable.cs:line 257
-   at ASTS_BRIDGE.Models.SecurityTable.ParseDailySecuritiesFromUniversalTable(UniversalTable table) in /src/Models/SecurityTable.cs:line 295
-   at ASTS_BRIDGE.Models.Server.GetSecurity(String[] Boards, String KafkaTopic, Boolean isDailyReport) in /src/Models/Server.cs:line 353
-   at ASTS_BRIDGE.Models.Server.GetUpdates() in /src/Models/Server.cs:line 403
-   at System.Threading.Thread.StartCallback()
+public DateTime? GetAsDateTime(string fieldDate, string fieldTime)
+{
+    if (Fields == null)
+    {
+        return DateTime.MinValue;
+    }
+
+    UniversalField fieldD = Fields.Find(universalField => universalField.Name == fieldDate);
+    UniversalField fieldT = Fields.Find(universalField => universalField.Name == fieldTime);
+
+    if (fieldD == null && fieldT == null)
+    {
+        return DateTime.MinValue;
+    }
+
+    int hour = 0;
+    int min = 0;
+    int sec = 0;
+
+    if (fieldT != null && !string.IsNullOrWhiteSpace(fieldT.Value) && fieldT.Value.Length >= 6)
+    {
+        if (int.TryParse(fieldT.Value.Substring(0, 2), out int parsedHour)) hour = parsedHour;
+        if (int.TryParse(fieldT.Value.Substring(2, 4), out int parsedMin)) min = parsedMin;
+        if (int.TryParse(fieldT.Value.Substring(4, 6), out int parsedSec)) sec = parsedSec;
+    }
+
+    int day = 1;
+    int month = 1;
+    int year = 1;
+
+    if (fieldD != null && !string.IsNullOrWhiteSpace(fieldD.Value) && fieldD.Value.Length >= 8)
+    {
+        if (int.TryParse(fieldD.Value.Substring(6, 2), out int parsedDay)) day = parsedDay;
+        if (int.TryParse(fieldD.Value.Substring(4, 2), out int parsedMonth)) month = parsedMonth;
+        if (int.TryParse(fieldD.Value.Substring(0, 4), out int parsedYear)) year = parsedYear;
+    }
+
+    if (day == 0 && month == 0 && year == 0)
+    {
+        return DateTime.MinValue;
+    }
+
+    // Validate the date components
+    try
+    {
+        return new DateTime(year, month, day, hour, min, sec);
+    }
+    catch (ArgumentOutOfRangeException)
+    {
+        // Handle the exception or return null if the date is invalid
+        return null;
+    }
