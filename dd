@@ -1,1 +1,34 @@
+using System;
+using Npgsql;
 
+class Program
+{
+    static void Main()
+    {
+        // Строка подключения к базе данных PostgreSQL
+        var connectionString = "Host=localhost;Port=5432;Username=myuser;Password=mypassword;Database=mydatabase";
+
+        // Создание соединения с базой данных
+        using var connection = new NpgsqlConnection(connectionString);
+        
+        try
+        {
+            // Открытие соединения
+            connection.Open();
+
+            // Создание и выполнение команды
+            using var command = new NpgsqlCommand("SELECT version();", connection);
+            using var reader = command.ExecuteReader();
+
+            // Чтение и вывод результатов
+            while (reader.Read())
+            {
+                Console.WriteLine(reader.GetString(0));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+        }
+    }
+}
