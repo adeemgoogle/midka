@@ -1,34 +1,199 @@
-using System;
-using Npgsql;
+using ASTS_BRIDGE.Models;
+using Microsoft.EntityFrameworkCore;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+using System.Runtime.InteropServices;
 
-class Program
+namespace ASTS_BRIDGE
 {
-    static void Main()
+public class Startup
+{
+    public IConfiguration Configuration { get; }
+
+    public static Server? Server { get; set; }
+
+    public Startup(IConfiguration configuration, IHostEnvironment env)
     {
-        // Строка подключения к базе данных PostgreSQL
-        var connectionString = "Host=localhost;Port=5432;Username=myuser;Password=mypassword;Database=mydatabase";
+        Console.WriteLine(env.EnvironmentName);
+        configuration = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile($"appsettings.{env.EnvironmentName}.json")
+            .Build();
+        Configuration = configuration;
+        Server = new Server(Configuration);
+    }
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddControllers();
 
-        // Создание соединения с базой данных
-        using var connection = new NpgsqlConnection(connectionString);
-        
-        try
+        services.AddCors(options =>
         {
-            // Открытие соединения
-            connection.Open();
-
-            // Создание и выполнение команды
-            using var command = new NpgsqlCommand("SELECT version();", connection);
-            using var reader = command.ExecuteReader();
-
-            // Чтение и вывод результатов
-            while (reader.Read())
+            options.AddDefaultPolicy(builder =>
             {
-                Console.WriteLine(reader.GetString(0));
-            }
-        }
-        catch (Exception ex)
+                builder.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
+
+        services.AddSwaggerGen(c =>
         {
-            Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+            c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+            {
+                Version = "v1",
+                Title = "Brokerage - KASE ASTS Bridge Client API",
+                    Description = "Сервис для коннекта с ASTS Bridge KASE"
+            });
+        });
+            services.AddSingleton<IJobFactory, SingletonJobFactory>();
+            services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+            services.AddSingleton<Server>(provider => Startup.Server);
+
+            services.AddSingleton<GetSecurityJob>();
+            services.AddSingleton(new JobSchedule(
+            jobType: typeof(GetSecurityJob), cronExpression: "0 36 9 * * ?"));
+            services.AddHostedService<QuartzHostedService>();
+
+
+        }
+
+    public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IHostApplicationLifetime applicationLifetime)
+    {
+        applicationLifetime.ApplicationStarted.Register(OnStarted);
+        applicationLifetime.ApplicationStopping.Register(OnStopping);
+
+        if (env.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+
+        app.UseRouting();
+        app.UseAuthorization();
+        app.UseCors(builder =>
+        {
+                builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
+        app.UseSwagger();
+        app.UseSwaggerUI(c =>
+        {
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Brokerage - KASE ASTS Bridge Client API V1");
+        });
+         
+        }
+
+    private void OnStarted()
+    {
+        bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            string os = isWindows switch
+            {
+                true => "Windows",
+                false => "Linux"
+            };
+
+            Server.CreateNewAstsServer(os);
+    }
+
+    private void OnStopping()
+    {
+            Server.Disconnect();
         }
     }
 }
+public class JobSchedule
+{
+    public Type JobType { get; }
+    public string CronExpression { get; }
+
+    public JobSchedule(Type jobType, string cronExpression)
+    {
+        JobType = jobType;
+        CronExpression = cronExpression;
+    }
+}
+
+public class SingletonJobFactory : IJobFactory
+{
+    private readonly IServiceProvider _serviceProvider;
+
+    public SingletonJobFactory(IServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+    {
+        return _serviceProvider.GetRequiredService(bundle.JobDetail.JobType) as IJob;
+    }
+
+    public void ReturnJob(IJob job) { }
+}
+
+public class QuartzHostedService : IHostedService
+{
+    private readonly ISchedulerFactory _schedulerFactory;
+    private readonly IJobFactory _jobFactory;
+    private IScheduler _scheduler;
+
+    public QuartzHostedService(ISchedulerFactory schedulerFactory, IJobFactory jobFactory)
+    {
+        _schedulerFactory = schedulerFactory;
+        _jobFactory = jobFactory;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+        _scheduler.JobFactory = _jobFactory;
+
+        var job = JobBuilder.Create<GetSecurityJob>()
+            .WithIdentity("dailyJob", "group1")
+            .Build();
+
+        var trigger = TriggerBuilder.Create()
+            .WithIdentity("dailyJobTrigger", "group1")
+            .WithCronSchedule("0 36 9 * * ?")
+            .Build();
+
+        _scheduler.ScheduleJob(job, trigger, cancellationToken);
+        _scheduler.Start(cancellationToken);
+        Console.WriteLine("cron created");
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (_scheduler != null)
+        {
+            await _scheduler.Shutdown(cancellationToken);
+        }
+    }
+}
+public class GetSecurityJob : IJob
+{
+    private Server _server;
+
+    public GetSecurityJob(Server server)
+    {
+        _server = server ?? throw new ArgumentNullException(nameof(server));
+    }
+
+    public Task Execute(IJobExecutionContext context)
+    {
+        string[] boards = _server.DailyBoards;
+        string KafkaTopic = _server.DailyKafkaTopic;
+        bool isDailyReport = true;
+        _server.GetSecurity(boards, KafkaTopic, isDailyReport);
+        Console.WriteLine("Cron is worked");
+        return Task.CompletedTask;
+    }
+}
+
+
+why my cron does not working?
