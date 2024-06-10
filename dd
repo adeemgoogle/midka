@@ -1,15 +1,16 @@
-Field<ListGraphType<BranchType>>(
-    "branch",
-    arguments: new QueryArguments(
-            new QueryArgument<StringGraphType> { Name = "id", Description = "Search Branch by Id" },
-            new QueryArgument<CircleInputType> { Name = "circle", Description = "Search Branches in that circle" },
-            new QueryArgument<StringGraphType> { Name = "address", Description = "address of the trade point" },
-            new QueryArgument<StringGraphType> { Name = "kato", Description = "KATO code of locality" },
-            new QueryArgument<IntGraphType> { Name = "pagingFrom", Description = "Pagination FROM value", DefaultValue = 0 },
-            new QueryArgument<IntGraphType> { Name = "pagingSize", Description = "Number of paging size", DefaultValue = 4000 },
-            new QueryArgument<BooleanGraphType> { Name = "corporateEntityFlag", Description = "Search Branches which can serve corporate entities or not", DefaultValue = null},
-            new QueryArgument<BooleanGraphType> { Name = "embosserFlag", Description = "Search Branches which have embossers or not", DefaultValue = null}
-    ),
-    resolve: GetResolveContext);
-
-объясни построчно что значит 
+Unhandled exception. System.AggregateException: One or more errors occurred. (An error occurred while sending the request.)
+ ---> System.Net.Http.HttpRequestException: An error occurred while sending the request.
+ ---> System.IO.IOException: The response ended prematurely.
+   at System.Net.Http.HttpConnection.SendAsyncCore(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnection.SendAsyncCore(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Threading.Tasks.Task.ThrowIfExceptional(Boolean includeTaskCanceledExceptions)
+   at System.Threading.Tasks.Task`1.GetResultCore(Boolean waitCompletionNotification)
+   at System.Threading.Tasks.Task`1.get_Result()
+   at ASTS_BRIDGE.Models.SymbolDictionary.GetDictionaries(String spmHost) in /src/Models/SymbolDictionary.cs:line 31
+   at ASTS_BRIDGE.Models.Server.GetUpdates() in /src/Models/Server.cs:line 399
+   at System.Threading.Thread.StartCallback()
