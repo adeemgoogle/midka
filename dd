@@ -1,2 +1,43 @@
-n error occurred while connecting to db: Authentication method not supported (Received: 10)
-{"@t":"2024-06-11T06:20:27.6530367Z","@m":"Process error: ","@i":"1323b270","@l":"Error","@x":"System.NotSupportedException: Authentication method not supported (Received: 10)\r\n   at Npgsql.NpgsqlConnector.ParseServerMessage(NpgsqlBuffer buf, BackendMessageCode code, Int32 len, DataRowLoadingMode dataRowLoadingMode, Boolean isPrependedMessage)\r\n   at Npgsql.NpgsqlConnector.DoReadSingleMessage(DataRowLoadingMode dataRowLoadingMode, Boolean returnNullForAsyncMessage, Boolean isPrependedMessage)\r\n   at Npgsql.NpgsqlConnector.ReadSingleMessage(DataRowLoadingMode dataRowLoadingMode, Boolean returnNullForAsyncMessage)\r\n   at Npgsql.NpgsqlConnector.HandleAuthentication()\r\n   at Npgsql.NpgsqlConnector.Open()\r\n   at Npgsql.NpgsqlConnectorPool.GetPooledConnector(NpgsqlConnection Connection)\r\n   at Npgsql.NpgsqlConnectorPool.RequestConnector(NpgsqlConnection connection)\r\n   at Npgsql.NpgsqlConnection.Open()\r\n   at TradePointsLoader.Repository.PostgresRepository.ConnectDB(String connectionName)
+ public class PostgresRepository
+ {
+     private readonly IConfiguration _configuration;
+     public PostgresRepository(IConfiguration configuration)
+     {
+         _configuration = configuration;
+     }
+
+     public IDbConnection ConnectToDB()
+     {
+         return ConnectDB("db");
+     }
+
+     public IDbConnection ConnectDB(string connectionName)
+     {
+         var connectionString = _configuration.GetConnectionString(connectionName);
+         if (string.IsNullOrWhiteSpace(connectionString))
+         {
+             throw new ArgumentException($"Connection string '{connectionName}' is missing or empty.");
+         }
+
+         var connection = new NpgsqlConnection(connectionString);
+
+         try
+         {
+             connection.Open();
+             Console.WriteLine($"Connection to {connectionName} established successfully.");
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"An error occurred while connecting to {connectionName}: {ex.Message}");
+             throw;
+         }
+
+         return connection;
+
+     }
+ }
+
+
+в Program.cs
+ var dbConnector = new PostgresRepository(_config);
+ var connection = dbConnector.ConnectToDB();
