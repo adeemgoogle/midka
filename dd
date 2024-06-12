@@ -1,1 +1,45 @@
+package models
 
+// Branch представляет структуру филиала
+type Branch struct {
+	ID                   string       `json:"id" db:"id"`
+	Number               string       `json:"number" db:"number"`
+	Name                 string       `json:"name" db:"name"`
+	Type                 string       `json:"type" db:"type"`
+	Filial               string       `json:"filial" db:"filial"`
+	Locality             string       `json:"locality" db:"locality"`
+	Kato                 string       `json:"kato" db:"kato"`
+	Address              string       `json:"address" db:"address"`
+	AddressKaz           string       `json:"address_kaz" db:"address_kaz"`
+	Location             string       `json:"location" db:"location"`
+	CurrencyExchangeFlag bool         `json:"currency_exchange_flag" db:"currency_exchange_flag"`
+	CorporateEntityFlag  bool         `json:"corporate_entity_flag" db:"corporate_entity_flag"`
+	PersonEntityFlag     bool         `json:"person_entity_flag" db:"person_entity_flag"`
+	WesternUnionFlag     bool         `json:"western_union_flag" db:"western_union_flag"`
+	MoneyGrammFlag       bool         `json:"money_gramm_flag" db:"money_gramm_flag"`
+	DepositoryFlag       bool         `json:"depository_flag" db:"depository_flag"`
+	TerminalFlag         bool         `json:"terminal_flag" db:"terminal_flag"`
+	PremiumZoneFlag      bool         `json:"premium_zone_flag" db:"premium_zone_flag"`
+	AllDayFlag           bool         `json:"all_day_flag" db:"all_day_flag"`
+	AddressLocalKaz      string       `json:"address_local_kaz" db:"address_local_kaz"`
+	AddressLocalRu       string       `json:"address_local_ru" db:"address_local_ru"`
+	AddressCityKaz       string       `json:"address_city_kaz" db:"address_city_kaz"`
+	AddressCityRu        string       `json:"address_city_ru" db:"address_city_ru"`
+	AddressFullKaz       string       `json:"address_full_kaz" db:"address_full_kaz"`
+	AddressFullRu        string       `json:"address_full_ru" db:"address_full_ru"`
+	Lat                  float64      `json:"lat" db:"lat"`
+	Lng                  float64      `json:"lng" db:"lng"`
+	Timestamp            string       `json:"timestamp" db:"timestamp"`
+	Embosser             bool         `json:"embosser" db:"embosser"`
+	WeekdayTime          WorkTime     `json:"weekday_time" db:"-"`
+	SaturdayWorkTime     WorkTime     `json:"sat_work_time" db:"-"`
+	SundayWorkTime       WorkTime     `json:"sun_work_time" db:"-"`
+}
+
+// WorkTime представляет структуру рабочего времени
+type WorkTime struct {
+	StartTime  string `json:"start_time" db:"start_time"`
+	EndTime    string `json:"end_time" db:"end_time"`
+	LunchStart string `json:"lunch_start" db:"lunch_start"`
+	LunchEnd   string `json:"lunch_end" db:"lunch_end"`
+}
