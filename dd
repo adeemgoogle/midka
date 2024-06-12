@@ -1,1 +1,157 @@
+package main
 
+import (
+	"database/sql"
+	"fmt"
+	"log"
+	"strings"
+
+	"github.com/jmoiron/sqlx"
+)
+
+// ATM представляет структуру банкомата
+type ATM struct {
+	ID                string     `json:"id" db:"id"`
+	Filial            string     `json:"filial" db:"filial"`
+	Locality          string     `json:"locality" db:"locality"`
+	KatoCode          string     `json:"kato" db:"kato"`
+	Address           string     `json:"address" db:"address"`
+	AddressKaz        string     `json:"address_kaz" db:"address_kaz"`
+	Location          string     `json:"location" db:"location"`
+	CashInFlag        bool       `json:"cash_in_flag" db:"cashin_flag"`
+	PublicFlag        bool       `json:"public_flag" db:"public_flag"`
+	AllDayFlag        bool       `json:"all_day_flag" db:"allday_flag"`
+	WeekdayTime       WorkTime   `json:"weekday_time" db:"-"`
+	SaturdayWorkTime  WorkTime   `json:"saturday_work_time" db:"-"`
+	SundayWorkTime    WorkTime   `json:"sunday_work_time" db:"-"`
+	Currency          []string   `json:"currency" db:"-"`
+	CashInCurrency    []string   `json:"cash_in_currency" db:"-"`
+	CashInCurrencyUSD bool       `json:"cash_in_currency_usd" db:"cash_in_currency_usd"`
+	CashInCurrencyEUR bool       `json:"cash_in_currency_eur" db:"cash_in_currency_eur"`
+	CashInCurrencyRUB bool       `json:"cash_in_currency_rub" db:"cash_in_currency_rub"`
+	CashOutCurrencyUSD bool      `json:"cash_out_currency_usd" db:"cash_out_currency_usd"`
+	CashOutCurrencyEUR bool      `json:"cash_out_currency_eur" db:"cash_out_currency_eur"`
+	CashOutCurrencyRUB bool      `json:"cash_out_currency_rub" db:"cash_out_currency_rub"`
+	CurrentWork       bool       `json:"current_work" db:"current_work"`
+	GetLocation       GeoLocation `json:"geo_location" db:"-"`
+}
+
+// WorkTime представляет структуру рабочего времени
+type WorkTime struct {
+	StartTime  string `json:"start_time" db:"-"`
+	EndTime    string `json:"end_time" db:"-"`
+	LunchStart string `json:"lunch_start" db:"-"`
+	LunchEnd   string `json:"lunch_end" db:"-"`
+}
+
+// Branch представляет структуру филиала
+type Branch struct {
+	ID                   string     `json:"id" db:"id"`
+	Number               string     `json:"number" db:"number"`
+	Name                 string     `json:"name" db:"name"`
+	Type                 string     `json:"type" db:"type"`
+	Filial               string     `json:"filial" db:"filial"`
+	Locality             string     `json:"locality" db:"locality"`
+	KatoCode             string     `json:"kato" db:"kato"`
+	Address              string     `json:"address" db:"address"`
+	AddressKaz           string     `json:"address_kaz" db:"address_kaz"`
+	Location             string     `json:"location" db:"location"`
+	CurrencyExchangeFlag bool       `json:"currency_exchange_flag" db:"currency_exchange_flag"`
+	CorporateEntityFlag  bool       `json:"corporate_entity_flag" db:"corporate_entity_flag"`
+	PersonEntityFlag     bool       `json:"person_entity_flag" db:"person_entity_flag"`
+	WesternUnionFlag     bool       `json:"western_union_flag" db:"western_union_flag"`
+	MoneyGrammFlag       bool       `json:"money_gramm_flag" db:"money_gramm_flag"`
+	DepositoryFlag       bool       `json:"depository_flag" db:"depository_flag"`
+	TerminalFlag         bool       `json:"terminal_flag" db:"terminal_flag"`
+	PremiumZoneFlag      bool       `json:"premium_zone_flag" db:"premium_zone_flag"`
+	AllDayFlag           bool       `json:"all_day_flag" db:"all_day_flag"`
+	WeekdayTime          WorkTime   `json:"weekday_time" db:"-"`
+	SaturdayWorkTime     WorkTime   `json:"saturday_work_time" db:"-"`
+	SundayWorkTime       WorkTime   `json:"sunday_work_time" db:"-"`
+	Embosser             bool       `json:"embosser" db:"embosser"`
+	GetLocation          GeoLocation `json:"geo_location" db:"-"`
+}
+
+// GeoLocation представляет геолокацию
+type GeoLocation struct {
+	Lat float64 `json:"lat" db:"-"`
+	Lng float64 `json:"lng" db:"-"`
+}
+
+func GetATMs(db *sqlx.DB) ([]ATM, error) {
+	var atms []ATM
+	query := `
+		select
+			ANLN1 as id,
+			GSBER_TEXT as filial,
+			KATO as locality,
+			ADDR_RU || P_ADDR_RU || ADDR_RUS as address,
+			ADDR_KAZ || P_ADDR_KAZ || ADDR6 as address_kaz,
+			LOCATION_COMMENT as location,
+			case when SIGN_CASH = '1' then true else false end as cashin_flag,
+			case when SIGN_PUBLIC = '1' then true else false end as public_flag,
+			case when SIGN_ALL_DAY = '1' then true else false end as allday_flag,
+			TIME_WORK_B as start_time,
+			TIME_WORK_E as end_time,
+			TIME_WORK_OB as lunch_start,
+			TIME_WORK_OE as lunch_end,
+			TIME_SUB_B as sat_start_time,
+			TIME_SUB_E as sat_end_time,
+			TIME_SUB_OB as sat_lunch_start,
+			TIME_SUB_OE as sat_lunch_end,
+			TIME_VOS_B as sun_start_time,
+			TIME_VOS_E as sun_end_time,
+			TIME_VOS_OB as sun_lunch_start,
+			TIME_VOS_OE as sun_lunch_end,
+			RECEPT_CUR as cashin_currency,
+			ISSUE_CUR as currency,
+			WIDTH as lat,
+			HEIGHT as lng
+		from
+			sapprd.zwd_0033_main
+		where
+			DEAKT <> 'X'
+	`
+	err := db.Select(&atms, query)
+	if err != nil {
+		return nil, err
+	}
+	return atms, nil
+}
+
+func GetBranches(db *sqlx.DB) ([]Branch, error) {
+	var branches []Branch
+	query := `
+		select
+			NOMER as id,
+			"NAME" as name,
+			TYPE_KP as type,
+			GSBER_TEXT as filial,
+			KATO as locality,
+			ADRESS_KP as address,
+			ADRES4 || ADRES5 || ADRES6 as address_kaz,
+			"LOCATION" as location,
+			case when SWAP = '1' then true else false end as currency_exchange_flag,
+			case when SERVICE like '%ЮЛ%' then true else false end as corporate_entity_flag,
+			case when SERVICE like '%ФЛ%' then true else false end as person_entity_flag,
+			case when WESTERN = '1' then true else false end as western_union_flag,
+			case when MONEY_GRAMM = '1' then true else false end as money_gramm_flag,
+			case when DEPOSITORIES = 'нет' then false else true end as depository_flag,
+			case when PAY_TERMINAL = '1' then true else false end as terminal_flag,
+			case when PREMIUM_HALYK = ' ' then false else true end as premium_zone_flag,
+			false as all_day_flag,
+			TO_NUMBER(NVL(TRIM(EMBOSSER), 0)) as embosser,
+			TIME_WORK_B as start_time,
+			TIME_WORK_E as end_time,
+			TIME_WORK_OB as lunch_start,
+			TIME_WORK_OE as lunch_end,
+			TIME_SUB_B as sat_start_time,
+			TIME_SUB_E as sat_end_time,
+			TIME_SUB_OB as sat_lunch_start,
+			TIME_SUB_OE as sat_lunch_end,
+			TIME_VOS_B as sun_start_time,
+			TIME_VOS_E as sun_end_time,
+			TIME_VOS_OB as sun_lunch_start,
+			TIME_VOS_OE as sun_lunch_end,
+			SHIROTA as lat,
+			DOLGOTA as lng
