@@ -1,89 +1,178 @@
-create table atm
-(
-    id               varchar(255) not null primary key,
-    filial           varchar(255),
-    locality         varchar(255),
-    kato             varchar(255),
-    adress           varchar(255),
-    adress_kaz        varchar(255),
-    location         varchar(255),
-    cashin_flag       boolean,
-    public_flag       boolean,
-    allday_flag       boolean,
-    currency         character varying[],
-    cashin_currency   character varying[],
-    cash_in_currency_USD varchar(255),
-    cash_in_currency_EUR varchar(255),
-    cash_in_currency_RUB varchar(255),
-    cash_out_currency_USD varchar(255),
-    cash_out_currency_EUR varchar(255),
-    cash_out_currency_RUB varchar(255),
-    current_Work boolean,
-    geo_location geography,
-    lat DOUBLE PRECISION NOT NULL CHECK(lat > -90 and lat <= 90),
-    lng DOUBLE PRECISION NOT NULL CHECK(lng > -180 and lng <= 180)
-);
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using Nest;
+using System.ComponentModel.DataAnnotations.Schema;
 
+namespace TradePointsLoader.Models
+{
+    [ElasticsearchType(RelationName = "atm")]
+    public class ATM
+    {
+        /// <summary>
+        /// Name of the index in elasticsearch
+        /// </summary>
+        public static string IndexName = "atm";
 
+        /// <summary>
+        /// ATM unique number
+        /// </summary>
+        [JsonProperty("id")]
+        [Column("atm_id")]
+        public string Id { get; set; }
 
-create table branch
-(
-    id                   varchar(255) primary key,
-    number               varchar(255),
-    name                 varchar(255),
-    type                 varchar(255),
-    filial               varchar(255),
-    locality             varchar(255),
-    kato                 varchar(255),
-    Adress               varchar(255),
-    Adress_Kaz            varchar(255),
-    location             varchar(255),
-    Currency_Exchange_Flag bool,
-    Corporate_Entity_Flag  bool,
-    Person_Entity_Flag     bool,
-    Western_Union_Flag     bool,
-    Money_Gramm_Flag       bool,
-    Depository_Flag       bool,
-    Terminal_Flag         bool,
-    Premium_Zone_Flag      bool,
-    all_day_flag           bool,
-    address_local_kaz    varchar(255),
-    address_local_ru     varchar(255),
-    address_city_kaz     varchar(255),
-    address_city_ru      varchar(255),
-    address_full_kaz     varchar(255),
-    address_full_ru      varchar(255),
-    lat                  DOUBLE PRECISION NOT NULL CHECK (lat > -90 and lat <= 90),
-    lng                  DOUBLE PRECISION NOT NULL CHECK (lng > -180 and lng <= 180),
-    timestamp            timestamp,
-    Embosser             bool
-);
+        /// <summary>
+        /// Filial of bank from reference
+        /// </summary>
+        [JsonProperty("filial")]
+        [Column("filial")]
+        public string Filial { get; set; }
 
-create table weekday
-(
-    weekday_id varchar(30) primary key ,
-    weekday    varchar(255),
-    atm_id varchar(255) references atm(id),
-    branch_id varchar(255) references branch(id)
+        /// <summary>
+        /// Name of the locality (village / town) from "KATO" reference
+        /// </summary>
+        [JsonProperty("locality")]
+        [Column("locality")]
+        public string Locality { get; set; }
 
-);
+        /// <summary>
+        /// Code of the locality (village / town) from "KATO" reference
+        /// </summary>
+        [JsonProperty("kato")]
+        [Column("kato")]
+        public string KatoCode { get; set; }
 
-CREATE  table WorkTime (
-    Week_day_id varchar(255) references weekday(weekday_id),
-    ATM_id varchar(255) references  atm(id),
-    BRANCH_id varchar(255) references branch(id),
-    Start_time varchar(255),
-    End_time varchar(255),
-    Lunch_start varchar(255),
-    Lunch_end varchar(255),
-    Sat_work_time varchar(255),
-    Sun_work_time varchar(255)
-);
+        /// <summary>
+        /// Name of street/microdistrict, house number on rus
+        /// </summary>
+        [JsonProperty("adress")]
+        [Column("adress")]
+        public string Adress { get; set; }
 
-CREATE table KATO (
-    Id varchar primary key ,
-    Level varchar(255),
-    Name_Kaz varchar(255),
-    Name_Rus varchar(255)
-);
-это моя база создай для него insert если ты уже знаешь мою модельку. После напиши нормальный код на .net создав отдельный класс
+        /// <summary>
+        /// Name of street/microdistrict, house number on kaz
+        /// </summary>
+        [JsonProperty("adressKaz")]
+        [Column("adress_kaz")]
+        public string AdressKaz { get; set; }
+
+        /// <summary>
+        /// Branch number/government office name/trade center name
+        /// </summary>
+        [JsonProperty("location")]
+        [Column("location")]
+        public string Location { get; set; }
+
+        /// <summary>
+        /// Cash-in availability
+        /// </summary>
+        [JsonProperty("cash_in_fl")]
+        [Column("cashin_flag")]
+        public bool CashInFlag { get; set; }
+
+        /// <summary>
+        /// true - if public access available or limited access - false
+        /// </summary>
+        [JsonProperty("public_fl")]
+        [Column("public_flag")]
+        public bool PublicFlag { get; set; }
+
+        /// <summary>
+        /// true = if all-day available, otherwise - false
+        /// </summary>
+        [JsonProperty("allDay_fl")]
+        [Column("allday_flag")]
+        public bool AllDayFlag { get; set; }
+
+        /// <summary>
+        /// Weekdays working schedule
+        /// </summary>
+        [JsonProperty("weekday_time")]
+        [Column("")]
+        public WorkTime WeekdayTime { get; set; }
+
+        /// <summary>
+        /// Saturday working schedule
+        /// </summary>
+        [JsonProperty("sat_work_time")]
+        [Column("sat_work_time")]
+        public WorkTime SaturdayWorkTime { get; set; }
+
+        /// <summary>
+        /// Sunday working schedule
+        /// </summary>
+        [JsonProperty("sun_work_time")]
+        [Column("sun_work_time")]
+        public WorkTime SundayWorkTime { get; set; }
+
+        /// <summary>
+        /// Array of currency codes, which can be used to cash out
+        /// </summary>
+        [JsonProperty("currency")]
+        [Column("currency")]
+        public List<string> Currency { get; set; }
+
+        /// <summary>
+        /// Array of currency codes, which can be used to cash-in
+        /// </summary>
+        [JsonProperty("cash_in_currency")]
+        [Column("cash_in_currency")]
+        public List<string> CashInCurrency { get; set; }
+
+        /// <summary>
+        /// Cash in currency usd
+        /// </summary>
+        [JsonProperty("cash_in_currency_USD")]
+        [Column("cash_in_currency_USD")]
+        public bool CashInCurrencyUSD {get;set;}
+
+        /// <summary>
+        /// Cash in currency eur
+        /// </summary>
+        [JsonProperty("cash_in_currency_EUR")]
+        [Column("cash_in_currency_EUR")]
+        public bool CashInCurrencyEUR { get; set; }
+
+        /// <summary>
+        /// Cash in currency rub
+        /// </summary>
+        [JsonProperty("cash_in_currency_RUB")]
+        [Column("cash_in_currency_RUB")]
+        public bool CashInCurrencyRUB { get; set; }
+
+        /// <summary>
+        /// Cash out currency usd. Currency (cush-out)
+        /// </summary>
+        [JsonProperty("cash_out_currency_USD")]
+        [Column("cash_out_currency_USD")]
+        public bool CashOutCurrencyUSD { get; set; }
+
+        /// <summary>
+        /// Cash out currency usd. Currency (cush-out)
+        /// </summary>
+        [JsonProperty("cash_out_currency_EUR")]
+        [Column("cash_out_currency_EUR")]
+        public bool CashOutCurrencyEUR { get; set; }
+
+        /// <summary>
+        /// Cash out currency usd. Currency (cush-out)
+        /// </summary>
+        [JsonProperty("cash_out_currency_RUB")]
+        [Column("cash_out_currency_RUB")]
+        public bool CashOutCurrencyRUB { get; set; }
+
+        /// <summary>
+        /// Current work
+        /// </summary>
+        [JsonProperty("currentWork")]
+        [Column("current_Work")]
+        public bool CurrentWork { get; set; }
+
+        /// <summary>
+        /// Geolocation by utilising longitude and latitude
+        /// </summary>
+        [GeoPoint(Name = "getLocation")]
+        [JsonProperty("geo_location")]
+        public GeoLocation GetLocation { get; set; }
+
+    }
+}
