@@ -1,208 +1,169 @@
-namespace TradePointsLoader.Service
-{
-    public class ElasticServiceNest
-    {
-        private readonly ElasticClient _elasticClient;
-        private readonly IConfiguration _config;
+ public class ATM
+ {
+     /// <summary>
+     /// Name of the index in elasticsearch
+     /// </summary>
+     public static string IndexName = "atm";
 
-        public ElasticServiceNest(IConfiguration configuration)
-        {
-            _config = configuration;
-            var uri = new Uri(_config.GetSection("AppSettings")["ElasticsearchUrl"]);
-            Log.Information($"Elastic search URL {_config.GetSection("AppSettings")["ElasticsearchUrl"]}");
-            var settings = new ConnectionSettings(uri)
-                .DisableDirectStreaming()
-                .RequestTimeout(TimeSpan.FromSeconds(65))
-                .OnRequestCompleted(apiCallsDetails =>
-                {
-                    if (apiCallsDetails.RequestBodyInBytes != null &&
-                        apiCallsDetails.HttpMethod == Elasticsearch.Net.HttpMethod.PUT)
-                    {
-                        var body = Encoding.UTF8.GetString(apiCallsDetails.RequestBodyInBytes);
-                        Log.Information("Mapping body {body}", body);
-                    }
-                });
+     /// <summary>
+     /// ATM unique number
+     /// </summary>
+     [JsonProperty("id")]
+     [Column("atm_id")]
+     public string Id { get; set; }
 
-            _elasticClient = new ElasticClient(settings);
-        }
+     /// <summary>
+     /// Filial of bank from reference
+     /// </summary>
+     [JsonProperty("filial")]
+     [Column("filial")]
+     public string Filial { get; set; }
 
-        /// <summary>
-        /// Data mapping process
-        /// </summary>
-        /// <param name="list"></param>
-        /// <param name="indexName"></param>
-        /// <param name="getObjId"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <exception cref="Exception"></exception>
-        public void ProcessData<T>(List<T> list, string indexName, Func<T, string> getObjId) where T : class
-        {
-            var resp = _elasticClient.Bulk(b => b
-                .Index(indexName)
-                .IndexMany(list)
-                .RequestConfiguration(rc => rc
-                    .RequestTimeout(TimeSpan.FromSeconds(65)))
-            );
+     /// <summary>
+     /// Name of the locality (village / town) from "KATO" reference
+     /// </summary>
+     [JsonProperty("locality")]
+     [Column("locality")]
+     public string Locality { get; set; }
 
-            if (!resp.IsValid)
-            {
-                SentrySdk.CaptureException(new Exception($"Data mapping response error: {resp.OriginalException}"));
-                throw new Exception($"Data mapping response error: {resp.OriginalException}");
-            }
+     /// <summary>
+     /// Code of the locality (village / town) from "KATO" reference
+     /// </summary>
+     [JsonProperty("kato")]
+     [Column("kato")]
+     public string KatoCode { get; set; }
 
-            SentrySdk.AddBreadcrumb("Process Data completed", category: indexName, level: BreadcrumbLevel.Debug);
-        }
+     /// <summary>
+     /// Name of street/microdistrict, house number on rus
+     /// </summary>
+     [JsonProperty("adress")]
+     [Column("adress")]
+     public string Adress { get; set; }
 
-        public void ProcessAlias(string newIndexName, string alias)
-        {
-            var indexNames = _elasticClient.GetIndicesPointingToAlias(alias);
+     /// <summary>
+     /// Name of street/microdistrict, house number on kaz
+     /// </summary>
+     [JsonProperty("adressKaz")]
+     [Column("adress_kaz")]
+     public string AdressKaz { get; set; }
 
-            if (indexNames.Count != 0)
-            {
-                foreach (var oldIndexName in indexNames)
-                {
-                    if (newIndexName != oldIndexName)
-                    {
-                        var assignAliasToNewIndex = _elasticClient.Indices.BulkAlias(b => b
-                            .Add(add => add
-                                .Index(newIndexName)
-                                .Alias(alias))
-                            .Remove(remove => remove
-                                .Index(oldIndexName)
-                                .Alias(alias))
-                            .Timeout(TimeSpan.FromSeconds(80)));
+     /// <summary>
+     /// Branch number/government office name/trade center name
+     /// </summary>
+     [JsonProperty("location")]
+     [Column("location")]
+     public string Location { get; set; }
 
-                        if (!assignAliasToNewIndex.IsValid)
-                        {
-                            var exp = new Exception();
-                            if (!assignAliasToNewIndex.Acknowledged)
-                            {
-                                exp = new Exception("Request was not acknowledged");
-                            }
-                            if (assignAliasToNewIndex.ServerError != null)
-                            {
-                                exp = new Exception(assignAliasToNewIndex.ServerError.Error.Reason);
-                            }
+     /// <summary>
+     /// Cash-in availability
+     /// </summary>
+     [JsonProperty("cash_in_fl")]
+     [Column("cashin_flag")]
+     public bool CashInFlag { get; set; }
 
-                            SentrySdk.CaptureException(exp);
-                            Log.Error(exp, "Failed to update alias {alias}, from {oldIndexName} to {newIndexName}", alias, oldIndexName, newIndexName);
-                            throw exp;
-                        }
+     /// <summary>
+     /// true - if public access available or limited access - false
+     /// </summary>
+     [JsonProperty("public_fl")]
+     [Column("public_flag")]
+     public bool PublicFlag { get; set; }
 
-                        Log.Information("Updated alias {alias}", alias);
+     /// <summary>
+     /// true = if all-day available, otherwise - false
+     /// </summary>
+     [JsonProperty("allDay_fl")]
+     [Column("allday_flag")]
+     public bool AllDayFlag { get; set; }
 
-                        Log.Information("Finished remapping alias {alias}", alias);
-                    }
-                }
-            }
-            else
-            {
-                var assignAlias = _elasticClient.Indices.BulkAlias(b => b
-                    .Add(add => add
-                        .Index(newIndexName)
-                        .Alias(alias))
-                    .Timeout(65));
+     /// <summary>
+     /// Weekdays working schedule
+     /// </summary>
+     [JsonProperty("weekday_time")]
+     [Column("")]
+     public WorkTime WeekdayTime { get; set; }
 
-                Log.Information($"The added index - {newIndexName} to alias - {alias} ");
-                Log.Information($"Assign alias to index: {assignAlias}");
-            }
+     /// <summary>
+     /// Saturday working schedule
+     /// </summary>
+     [JsonProperty("sat_work_time")]
+     [Column("sat_work_time")]
+     public WorkTime SaturdayWorkTime { get; set; }
 
-            var indexes = GetIndices(alias).FindAll(i => i != newIndexName);
+     /// <summary>
+     /// Sunday working schedule
+     /// </summary>
+     [JsonProperty("sun_work_time")]
+     [Column("sun_work_time")]
+     public WorkTime SundayWorkTime { get; set; }
 
-            foreach (var index in indexes)
-            {
-                Log.Information($"index to delete {index}");
-                var deleteOldIndex = _elasticClient.Indices.Delete(index, d => d.Timeout(TimeSpan.FromSeconds(80)));
-                
-                if (!deleteOldIndex.IsValid)
-                {
-                    var exp = new Exception();
-                    if (!deleteOldIndex.Acknowledged)
-                    {
-                        exp = new Exception("Request was not acknowledged");
-                    }
-                    if (deleteOldIndex.ServerError != null)
-                    {
-                        exp = new Exception(deleteOldIndex.ServerError.Error.Reason);
-                    }
-                    
-                    SentrySdk.CaptureException(exp);
-                    Log.Error(exp, "Failed to delete {oldIndexName}", index);
-                }
-            }
-            
-            SentrySdk.AddBreadcrumb("Process Alias completed", category: newIndexName, level: BreadcrumbLevel.Debug);
-        }
+     /// <summary>
+     /// Array of currency codes, which can be used to cash out
+     /// </summary>
+     [JsonProperty("currency")]
+     [Column("currency")]
+     public List<string> Currency { get; set; }
 
-        public string Init<T>(string indexName) where T : class
-        {
-            Log.Information("Initialising elasticsearch store");
-            var mapIndex = ProcessType<T>(indexName);
-            Log.Information("Initialising elasticsearch store finished");
+     /// <summary>
+     /// Array of currency codes, which can be used to cash-in
+     /// </summary>
+     [JsonProperty("cash_in_currency")]
+     [Column("cash_in_currency")]
+     public List<string> CashInCurrency { get; set; }
 
-            return mapIndex;
-        }
+     /// <summary>
+     /// Cash in currency usd
+     /// </summary>
+     [JsonProperty("cash_in_currency_USD")]
+     [Column("cash_in_currency_USD")]
+     public bool CashInCurrencyUSD {get;set;}
 
-        /// <summary>
-        /// Checks the index exists in the elastic, if not, then creates a new index
-        /// </summary>
-        /// <param name="indexName"></param>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        private string ProcessType<T>(string indexName) where T : class
-        {
-            var index = indexName + "-" + DateTime.Now.ToString("yyyy-MM-dd-HH");
-            Log.Information($"Index name for type {indexName}", index);
+     /// <summary>
+     /// Cash in currency eur
+     /// </summary>
+     [JsonProperty("cash_in_currency_EUR")]
+     [Column("cash_in_currency_EUR")]
+     public bool CashInCurrencyEUR { get; set; }
 
-            var existResp = _elasticClient.Indices.Exists(index).Exists;
-            if (existResp)
-            {
-                Log.Information($"Index {index} exists.");
-            }
-            else
-            {
-                var resp = _elasticClient.Indices.Create(index, c => c
-                    .Settings(st => st
-                        .NumberOfReplicas(3))
-                    .Timeout(TimeSpan.FromSeconds(65))
-                    .Map<T>(m => m
-                        .AutoMap()
-                        .Properties(pps => pps
-                            .GeoPoint(g => g
-                                .Name("getLocation")
-                            )
-                        )
-                    )
-                );
+     /// <summary>
+     /// Cash in currency rub
+     /// </summary>
+     [JsonProperty("cash_in_currency_RUB")]
+     [Column("cash_in_currency_RUB")]
+     public bool CashInCurrencyRUB { get; set; }
 
-                Log.Information($"Index {index} created.");
-                SentrySdk.AddBreadcrumb("Init completed", category: index, level: BreadcrumbLevel.Debug);
+     /// <summary>
+     /// Cash out currency usd. Currency (cush-out)
+     /// </summary>
+     [JsonProperty("cash_out_currency_USD")]
+     [Column("cash_out_currency_USD")]
+     public bool CashOutCurrencyUSD { get; set; }
 
-                return index;
-            }
+     /// <summary>
+     /// Cash out currency usd. Currency (cush-out)
+     /// </summary>
+     [JsonProperty("cash_out_currency_EUR")]
+     [Column("cash_out_currency_EUR")]
+     public bool CashOutCurrencyEUR { get; set; }
 
-            return index;
-        }
+     /// <summary>
+     /// Cash out currency usd. Currency (cush-out)
+     /// </summary>
+     [JsonProperty("cash_out_currency_RUB")]
+     [Column("cash_out_currency_RUB")]
+     public bool CashOutCurrencyRUB { get; set; }
 
-        private List<string> GetIndices(string indexName)
-        {
-            Regex regex = new Regex(@"^" + indexName + @"-([0-9]{4})-([0-9]{2})-([0-9]{2})-([0-9]{2})$");
-            List<string> indices = new List<string>(); 
-            var res = _elasticClient.Indices.Get(new GetIndexRequest(Indices.All));
-            if (res.IsValid)
-            {
-                foreach (var index in res.Indices)
-                {
-                    var match = regex.Match(index.Key.Name);
-                    if (match.Success)
-                    {
-                        indices.Add(index.Key.Name);
-                    }
-                }
-            }
+     /// <summary>
+     /// Current work
+     /// </summary>
+     [JsonProperty("currentWork")]
+     [Column("current_Work")]
+     public bool CurrentWork { get; set; }
 
-            return indices;
-        }
-    }
+     /// <summary>
+     /// Geolocation by utilising longitude and latitude
+     /// </summary>
+     [GeoPoint(Name = "getLocation")]
+     [JsonProperty("geo_location")]
+     public GeoLocation GetLocation { get; set; }
 
-
-распиши что делает данный код
+ }
