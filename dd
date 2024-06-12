@@ -1,47 +1,257 @@
-package models
+using Newtonsoft.Json;
+using Nest;
 
-import (
-	"github.com/olivere/elastic/v7"
-	"github.com/lib/pq"
-)
+namespace TradePointsLoader.Models
+{
+    [ElasticsearchType(RelationName = "branch")]
+    public class Branch
+    {
+        /// <summary>
+        /// Name of the index in elasticsearch
+        /// </summary>
+        public static string IndexName = "branch";
 
-// ATM represents the structure of an ATM
-type ATM struct {
-	Id                 string       `json:"id" db:"atm_id"`
-	Filial             string       `json:"filial" db:"filial"`
-	Locality           string       `json:"locality" db:"locality"`
-	KatoCode           string       `json:"kato" db:"kato"`
-	Adress             string       `json:"adress" db:"adress"`
-	AdressKaz          string       `json:"adressKaz" db:"adress_kaz"`
-	Location           string       `json:"location" db:"location"`
-	CashInFlag         bool         `json:"cash_in_fl" db:"cashin_flag"`
-	PublicFlag         bool         `json:"public_fl" db:"public_flag"`
-	AllDayFlag         bool         `json:"allDay_fl" db:"allday_flag"`
-	WeekdayTime        WorkTime     `json:"weekday_time" db:"weekday_time"`
-	SaturdayWorkTime   WorkTime     `json:"sat_work_time" db:"sat_work_time"`
-	SundayWorkTime     WorkTime     `json:"sun_work_time" db:"sun_work_time"`
-	Currency           pq.StringArray `json:"currency" db:"currency"`
-	CashInCurrency     pq.StringArray `json:"cash_in_currency" db:"cash_in_currency"`
-	CashInCurrencyUSD  bool         `json:"cash_in_currency_USD" db:"cash_in_currency_USD"`
-	CashInCurrencyEUR  bool         `json:"cash_in_currency_EUR" db:"cash_in_currency_EUR"`
-	CashInCurrencyRUB  bool         `json:"cash_in_currency_RUB" db:"cash_in_currency_RUB"`
-	CashOutCurrencyUSD bool         `json:"cash_out_currency_USD" db:"cash_out_currency_USD"`
-	CashOutCurrencyEUR bool         `json:"cash_out_currency_EUR" db:"cash_out_currency_EUR"`
-	CashOutCurrencyRUB bool         `json:"cash_out_currency_RUB" db:"cash_out_currency_RUB"`
-	CurrentWork        bool         `json:"currentWork" db:"current_Work"`
-	GetLocation        GeoLocation  `json:"geo_location" db:"geo_location"`
+        /// <summary>
+        /// Branch unique id/number
+        /// </summary>
+        [JsonProperty("id")]
+        public string Id { get; set; }
+
+        /// <summary>
+        /// Trade point name
+        /// </summary>
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// Trade point type code
+        /// </summary>
+        [JsonProperty("type")]
+        public string Type { get; set; }
+
+        /// <summary>
+        /// Filial of bank from reference
+        /// </summary>
+        [JsonProperty("filial")]
+        public string Filial { get; set; }
+
+        /// <summary>
+        /// Code of the locality (village / town) from "KATO" reference
+        /// </summary>
+        [JsonProperty("locality")]
+        public string Locality { get; set; }
+
+        /// <summary>
+        /// Code of the locality (village / town) from "KATO" reference
+        /// </summary>
+        [JsonProperty("kato")]
+        public string KatoCode { get; set; }
+
+        /// <summary>
+        /// Name of street/microdistrict, house number on rus
+        /// </summary>
+        [JsonProperty("adress")]
+        public string Adress { get; set; }
+
+        /// <summary>
+        /// Name of street/microdistrict, house number on kaz
+        /// </summary>
+        [JsonProperty("adressKaz")]
+        public string AdressKaz { get; set; }
+        
+        /// <summary>
+        /// Branch number/government office name/trade center name
+        /// </summary>
+        [JsonProperty("location")]
+        public string Location { get; set; }
+
+        /// <summary>
+        /// Currence exchange availability
+        /// </summary>
+        [JsonProperty("curr_exch_fl")]
+        public bool CurrencyExchangeFlag { get; set; }
+
+        /// <summary>
+        /// Corporate entity servicing availability
+        /// </summary>
+        [JsonProperty("jur_fl")]
+        public bool CorporateEntityFlag { get; set; }
+
+        /// <summary>
+        /// Person servicing availability
+        /// </summary>
+        [JsonProperty("person_fl")]
+        public bool PersonEntityFlag { get; set; }
+
+        /// <summary>
+        /// Western Union services avalability
+        /// </summary>
+        [JsonProperty("westUn_fl")]
+        public bool WesternUnionFlag { get; set; }
+
+        /// <summary>
+        /// Money Gramm services availability
+        /// </summary>
+        [JsonProperty("money_gramm_fl")]
+        public bool MoneyGrammFlag { get; set; }
+
+        /// <summary>
+        /// Safe depositary room availability
+        /// </summary>
+        [JsonProperty("deposit_fl")]
+        public bool DepositoryFlag { get; set; }
+
+        /// <summary>
+        /// Pay terminal availability
+        /// </summary>
+        [JsonProperty("terminal_fl")]
+        public bool TerminalFlag { get; set; }
+
+        /// <summary>
+        /// Premium Halyk zone availability
+        /// </summary>
+        [JsonProperty("premZone_fl")]
+        public bool PremiumZoneFlag { get; set; }
+
+        /// <summary>
+        /// true = if all-day available, otherwise - false
+        /// </summary>
+        [JsonProperty("allDay_fl")]
+        public bool AllDayFlag { get; set; }
+
+        /// <summary>
+        /// Address information in terms of branch
+        /// </summary>
+        [JsonProperty("address")]
+        public Address Address { get; set; }
+
+        /// <summary>
+        /// Weekdays working schedule
+        /// </summary>
+        [JsonProperty("weekday_time")]
+        public WorkTime WeekdayTime { get; set; }
+
+        /// <summary>
+        /// Saturday working schedule
+        /// </summary>
+        [JsonProperty("sat_work_time")]
+        public WorkTime SaturdayWorkTime { get; set; }
+
+        /// <summary>
+        /// Sunday working schedule
+        /// </summary>
+        [JsonProperty("sun_work_time")]
+        public WorkTime SundayWorkTime { get; set; }
+
+        /// <summary>
+        /// Current work
+        /// </summary>
+        [JsonProperty("currentWork")]
+        public bool CurrentWork { get; set; }
+        
+        /// <summary>
+        /// Availability flag of embossers in branch
+        /// </summary>
+        [JsonProperty("embosser")]
+        public bool Embosser { get; set; }
+        
+        /// <summary>
+        /// Geolocation by utilising longitude and latitude
+        /// </summary>
+        [GeoPoint(Name = "getLocation")]
+        [JsonProperty("geo_location")]
+        public GeoLocation GetLocation { get; set; }
+        
+        
+    }
 }
 
-// GeoLocation represents the geolocation structure
-type GeoLocation struct {
-	Lat float64 `json:"lat" db:"lat"`
-	Lng float64 `json:"lng" db:"lng"`
-}
+создай модельку на го но учитывай то что ты создавал раннее для Atm. то есть одинаковые поля не создавай так как вот моя база 
+create table atm
+(
+    id               varchar(255) not null primary key,
+    filial           varchar(255),
+    locality         varchar(255),
+    kato             varchar(255),
+    adress           varchar(255),
+    adress_kaz        varchar(255),
+    location         varchar(255),
+    cashin_flag       boolean,
+    public_flag       boolean,
+    allday_flag       boolean,
+    currency         character varying[],
+    cashin_currency   character varying[],
+    cash_in_currency_USD varchar(255),
+    cash_in_currency_EUR varchar(255),
+    cash_in_currency_RUB varchar(255),
+    cash_out_currency_USD varchar(255),
+    cash_out_currency_EUR varchar(255),
+    cash_out_currency_RUB varchar(255),
+    current_Work boolean,
+    geo_location geography,
+    lat DOUBLE PRECISION NOT NULL CHECK(lat > -90 and lat <= 90),
+    lng DOUBLE PRECISION NOT NULL CHECK(lng > -180 and lng <= 180)
+);
 
-// WorkTime represents the working hours structure
-type WorkTime struct {
-	StartTime  string `json:"start_time" db:"start_time"`
-	EndTime    string `json:"end_time" db:"end_time"`
-	LunchStart string `json:"lunch_start" db:"lunch_start"`
-	LunchEnd   string `json:"lunch_end" db:"lunch_end"`
-}
+
+
+create table branch
+(
+    id                   varchar(255) primary key,
+    number               varchar(255),
+    name                 varchar(255),
+    type                 varchar(255),
+    filial               varchar(255),
+    locality             varchar(255),
+    kato                 varchar(255),
+    Adress               varchar(255),
+    Adress_Kaz            varchar(255),
+    location             varchar(255),
+    Currency_Exchange_Flag bool,
+    Corporate_Entity_Flag  bool,
+    Person_Entity_Flag     bool,
+    Western_Union_Flag     bool,
+    Money_Gramm_Flag       bool,
+    Depository_Flag       bool,
+    Terminal_Flag         bool,
+    Premium_Zone_Flag      bool,
+    all_day_flag           bool,
+    address_local_kaz    varchar(255),
+    address_local_ru     varchar(255),
+    address_city_kaz     varchar(255),
+    address_city_ru      varchar(255),
+    address_full_kaz     varchar(255),
+    address_full_ru      varchar(255),
+    lat                  DOUBLE PRECISION NOT NULL CHECK (lat > -90 and lat <= 90),
+    lng                  DOUBLE PRECISION NOT NULL CHECK (lng > -180 and lng <= 180),
+    timestamp            timestamp,
+    Embosser             bool
+);
+
+create table weekday
+(
+    weekday_id varchar(30) primary key ,
+    weekday    varchar(255),
+    atm_id varchar(255) references atm(id),
+    branch_id varchar(255) references branch(id)
+
+);
+
+CREATE  table WorkTime (
+    Week_day_id varchar(255) references weekday(weekday_id),
+    ATM_id varchar(255) references  atm(id),
+    BRANCH_id varchar(255) references branch(id),
+    Start_time varchar(255),
+    End_time varchar(255),
+    Lunch_start varchar(255),
+    Lunch_end varchar(255),
+    Sat_work_time varchar(255),
+    Sun_work_time varchar(255)
+);
+
+CREATE table KATO (
+    Id varchar primary key ,
+    Level varchar(255),
+    Name_Kaz varchar(255),
+    Name_Rus varchar(255)
+);
