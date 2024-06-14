@@ -1,87 +1,51 @@
-public void AddATMs(List<ATM> atms)
+class Program
 {
-    Console.WriteLine("Adding Atms to Postgres");
-    string truncateQuery = "TRUNCATE TABLE atm";
+    private static readonly IConfiguration _config = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory).AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
 
-    string query = @"INSERT INTO atm (id, filial, locality, kato, adress, adress_kaz, location, cashin_flag, public_flag, allday_flag,
-cashin_currency, currency,  cash_in_currency_usd, cash_in_currency_eur, cash_in_currency_rub, cash_out_currency_usd, cash_out_currency_eur,  cash_out_currency_rub, current_work)
-VALUES (@id, @filial, @locality, @kato, @adress, @adress_kaz, @location, @cashin_flag, @public_flag, @allday_flag,
-@cashin_currency, @currency, @cash_in_currency_usd, @cash_in_currency_eur, @cash_in_currency_rub, @cash_out_currency_usd, @cash_out_currency_eur, @cash_out_currency_rub, @current_work )";
-    using (var connection = new NpgsqlConnection(connectionString))
+    static int Main(string[] args)
     {
-        connection.Open();
+        //Thread.CurrentThread.CurrentCulture = CultureInfo.CreateSpecificCulture("en-US"); ;
 
-        using (var truncateCommand = new NpgsqlCommand(truncateQuery, connection))
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+            .CreateLogger();
+
+        using (SentrySdk.Init(_config.GetSection("Sentry")["Dsn"]))
         {
-
-            truncateCommand.ExecuteNonQuery();
-            Console.WriteLine("Table Atm truncated");
-
-        }
-
-        foreach (var atm in atms)
-        {
-            using (var command = new NpgsqlCommand(query, connection))
+            try
             {
-                command.Parameters.AddWithValue("Id", (object)atm.Id ?? DBNull.Value);
-                command.Parameters.AddWithValue("Filial", (object)atm.Filial ?? DBNull.Value);
-                command.Parameters.AddWithValue("Locality", (object)atm.Locality ?? DBNull.Value);
-                command.Parameters.AddWithValue("Adress", (object)atm.Adress ?? DBNull.Value);
-                command.Parameters.AddWithValue("adress_kaz", (object)atm.AdressKaz ?? DBNull.Value);
-                command.Parameters.AddWithValue("Location", (object)atm.Location ?? DBNull.Value);
-                command.Parameters.AddWithValue("cashin_flag", (object)atm.CashInFlag ?? DBNull.Value);
-                command.Parameters.AddWithValue("Public_Flag", (object)atm.PublicFlag ?? DBNull.Value);
-                command.Parameters.AddWithValue("AllDay_Flag", (object)atm.AllDayFlag ?? DBNull.Value);
-                command.Parameters.AddWithValue("kato", (object)atm.KatoCode ?? DBNull.Value);
-                command.Parameters.AddWithValue("cashin_Currency", (object)string.Join(";", atm.CashInCurrency));
-                command.Parameters.AddWithValue("Currency", string.Join(";", atm.Currency));
-                command.Parameters.AddWithValue("cash_in_currency_usd", string.Join(";", atm.CashInCurrencyUSD));
-                command.Parameters.AddWithValue("cash_in_currency_eur", string.Join(";", atm.CashInCurrencyEUR));
-                command.Parameters.AddWithValue("cash_in_currency_eur", string.Join(";", atm.CashInCurrencyEUR));
-                command.Parameters.AddWithValue("cash_in_currency_rub", string.Join(";", atm.CashInCurrencyRUB));
-                command.Parameters.AddWithValue("cash_out_currency_usd", string.Join(";", atm.CashOutCurrencyUSD));
-                command.Parameters.AddWithValue("cash_out_currency_eur", string.Join(";", atm.CashOutCurrencyEUR));
-                command.Parameters.AddWithValue("cash_out_currency_rub", string.Join(";", atm.CashOutCurrencyRUB));
-                command.Parameters.AddWithValue("cash_in_currency_rub", string.Join(";", atm.CashInCurrencyRUB));
-                command.Parameters.AddWithValue("current_work", atm.CurrentWork);
-                /*command.Parameters.AddWithValue("Lat", atm.GetLocation.Lat);
-                command.Parameters.AddWithValue("Lng", atm.GetLocation.Lng);*/
 
-                command.ExecuteNonQuery();
+                var dbConnector = new PostgresService(_config);
+                var connection = dbConnector.ConnectToDB();
+
+
+                Log.Information("Loading trade points data");
+
+                KATORepository katoRep = new KATORepository(_config);
+                var katodict = katoRep.GetKATORef();
+
+                TradePointsRepository tradePointsRep = new TradePointsRepository(_config, katodict);
+                var aTMs = tradePointsRep.GetAtms();
+                var branches = tradePointsRep.GetBranches();
+                dbConnector.AddBranches(branches);
+                dbConnector.AddBranchs(branches);
+                dbConnector.AddKATO(katodict);
+                dbConnector.AddATMs(aTMs);
+                dbConnector.AddAtms(aTMs);
+
+
+
+
+                Log.Information("Process finished");
+            }
+            catch (Exception ex)
+            {
+                SentrySdk.CaptureException(ex);
+                Log.Error(ex, "Process error: ");
+                return 1;
             }
         }
-        Console.WriteLine("Atm added to database");
-        Console.WriteLine("Adding worktimeATM to Postgres");
-        string truncateQueryWorktime = "TRUNCATE TABLE worktime";
-
-
-        string queryWorktime = @"INSERT INTO worktime (id, start_time, end_time, lunch_start, lunch_end, sat_work_time, sun_work_time) 
-                        VALUES (@atm_id, @start_time, @end_time, @lunch_start, @lunch_end, @sat_work_time, @sun_work_time)";
-        using (var connectionWT = new NpgsqlConnection(connectionString))
-        {
-            connection.Open();
-            /*using (var truncateCommand = new NpgsqlCommand(truncateQueryWorktime, connectionWT))
-            {
-                truncateCommand.ExecuteNonQuery();
-                Console.WriteLine("table worktime is truncated");
-            }*/
-
-            foreach (var atm in atms)
-            {
-                using (var command = new NpgsqlCommand(queryWorktime, connectionWT))
-                {
-                    command.Parameters.AddWithValue("Id", atm.Id);
-                    command.Parameters.AddWithValue("start_time", atm.WeekdayTime?.StartTime);
-                    command.Parameters.AddWithValue("end_time", atm.WeekdayTime?.EndTime);
-                    command.Parameters.AddWithValue("lunch_start", atm.WeekdayTime?.LunchStart);
-                    command.Parameters.AddWithValue("lunch_end", atm.WeekdayTime?.LunchEnd);
-                    command.Parameters.AddWithValue("sat_work_time", atm.SaturdayWorkTime);
-                    command.Parameters.AddWithValue("sun_work_time", atm.SundayWorkTime);
-                    Console.WriteLine("added to postgres database");
-                    command.CommandText = "TRUNCATE TABLE worktime";
-                    command.ExecuteNonQuery();
-                }
-            }
-        }
+        return 0;
     }
+
 }
