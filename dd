@@ -1,1 +1,35 @@
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
+public class DatabaseHealthCheck : IHealthCheck
+{
+    private readonly string _connectionString;
+
+    public DatabaseHealthCheck(IConfiguration configuration)
+    {
+        _connectionString = configuration.GetConnectionString("DefaultConnection");
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync(cancellationToken);
+                var command = connection.CreateCommand();
+                command.CommandText = "SELECT 1";
+                await command.ExecuteScalarAsync(cancellationToken);
+            }
+            return HealthCheckResult.Healthy("Database connection is OK.");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("Database connection failed.", ex);
+        }
+    }
+}
