@@ -1,2 +1,1 @@
-Серьезность	Код	Описание	Проект	Файл	Строка	Состояние подавления
-Ошибка		System.Security.AccessControl doesn't support netcoreapp2.2. Consider updating your TargetFramework to netcoreapp3.1 or later.	TradePointsLoader\.nuget\packages\system.security.accesscontrol\6.0.0\buildTransitive\netcoreapp2.0\System.Security.AccessControl.targets	4	
+
