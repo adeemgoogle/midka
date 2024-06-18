@@ -1,21 +1,32 @@
-Application startup exception: System.InvalidOperationException: No service for type 'Microsoft.AspNetCore.Hosting.Server.IServer' has been registered.
-   at Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService(IServiceProvider provider, Type serviceType)
-   at Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService[T](IServiceProvider provider)
-   at Microsoft.AspNetCore.Hosting.Internal.WebHost.EnsureServer()
-   at Microsoft.AspNetCore.Hosting.Internal.WebHost.BuildApplication()
+var host = new WebHostBuilder()
 
+        .UseUrls("http://localhost:5000")
+        .ConfigureServices(service =>
+        {
+            service.AddHealthChecks();
+            
+        })
+        .UseStartup<Startup>()
+        .Build();
 
-try
+host.Run();
+
+как в host добавить
 {
-    var host = new WebHostBuilder()
-        
-                .UseUrls("http://localhost:5000")
-                .ConfigureServices(service =>
-                {
-                    service.AddSingleton<HelathzCheck>();
-                })
-                .UseStartup<Startup>()
-                .Build();
+    [ApiController]
+    [Route("[healthz]")]
+    public class HealthzController : ControllerBase
+    {
+        private readonly ILogger<HealthzController> _logger;
 
-    host.Run();
-}
+        public HealthzController(ILogger<HealthzController> logger)
+        {
+            _logger = logger;
+        }
+
+        [HttpGet(Name = "healthz")]
+        public IActionResult GetHealthz()
+        {
+            return new OkObjectResult("OK");
+        }
+    }
