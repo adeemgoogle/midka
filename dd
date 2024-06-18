@@ -1,35 +1,67 @@
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Configuration;
-using Npgsql;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-public class DatabaseHealthCheck : IHealthCheck
+class Program
 {
-    private readonly string _connectionString;
+    private static readonly IConfiguration _config = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory).AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
 
-    public DatabaseHealthCheck(IConfiguration configuration)
+    static async Task<int> Main(string[] args)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection");
-    }
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+            .CreateLogger();
 
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-    {
-        try
+        using (SentrySdk.Init(_config.GetSection("Sentry")["Dsn"]))
         {
-            using (var connection = new NpgsqlConnection(_connectionString))
+            try
             {
-                await connection.OpenAsync(cancellationToken);
-                var command = connection.CreateCommand();
-                command.CommandText = "SELECT 1";
-                await command.ExecuteScalarAsync(cancellationToken);
+                var services = new ServiceCollection();
+                services.AddSingleton(_config);
+                services.AddSingleton<IJobFactory, SingletonJobFactory>();
+                services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+                // Add our job
+                services.AddSingleton<MyJob>();
+                services.AddSingleton(new JobSchedule(
+                    jobType: typeof(MyJob),
+                    cronExpression: "0 55 16 * * ?")); // Run every 1 hour
+
+                services.AddHostedService<QuartzHostedService>();
+
+                var serviceProvider = services.BuildServiceProvider();
+                await serviceProvider.GetRequiredService<IHostedService>().StartAsync(CancellationToken.None);
+
+                Log.Information("cron created");
+                Console.ReadKey();
+
+                await serviceProvider.GetRequiredService<IHostedService>().StopAsync(CancellationToken.None);
+                Log.Information("Scheduler stopped.");
+
+
+
             }
-            return HealthCheckResult.Healthy("Database connection is OK.");
+            catch (Exception ex)
+            {
+                SentrySdk.CaptureException(ex);
+                Log.Error(ex, "Process error: ");
+                return 1;
+            }
         }
-        catch (Exception ex)
-        {
-            return HealthCheckResult.Unhealthy("Database connection failed.", ex);
-        }
+        CreateHostBuilder(args).Build().Run();
+
+
+        return 0;
     }
+
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+                    Host.CreateDefaultBuilder(args)
+                        .ConfigureWebHostDefaults(webBuilder =>
+                        {
+                            webBuilder.UseStartup<Startup>();
+                        });
+}
+
+Ошибка	CS0103	Имя "Host" не существует в текущем контексте.	
+
++ как узнать на каком хосте запускается если это мой appsettings.json "ConnectionStrings": {
+   "or": "string for oracle",
+   "oe1":"string for oracle",
+   "postgres":"string for oracle"
 }
