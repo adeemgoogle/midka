@@ -3,65 +3,55 @@ class Program
     private static readonly IConfiguration _config = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory).AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
 
     static async Task<int> Main(string[] args)
-    {
+    { 
         Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
-            .CreateLogger();
+    .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+    .CreateLogger();
+}
+-------------------------------------------------------------------------------------
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Hosting;
+public class Startup
+{
+    private readonly IConfiguration _configuration;
 
-        using (SentrySdk.Init(_config.GetSection("Sentry")["Dsn"]))
-        {
-            try
-            {
-                var services = new ServiceCollection();
-                services.AddSingleton(_config);
-                services.AddSingleton<IJobFactory, SingletonJobFactory>();
-                services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
-
-                // Add our job
-                services.AddSingleton<MyJob>();
-                services.AddSingleton(new JobSchedule(
-                    jobType: typeof(MyJob),
-                    cronExpression: "0 55 16 * * ?")); // Run every 1 hour
-
-                services.AddHostedService<QuartzHostedService>();
-
-                var serviceProvider = services.BuildServiceProvider();
-                await serviceProvider.GetRequiredService<IHostedService>().StartAsync(CancellationToken.None);
-
-                Log.Information("cron created");
-                Console.ReadKey();
-
-                await serviceProvider.GetRequiredService<IHostedService>().StopAsync(CancellationToken.None);
-                Log.Information("Scheduler stopped.");
-
-
-
-            }
-            catch (Exception ex)
-            {
-                SentrySdk.CaptureException(ex);
-                Log.Error(ex, "Process error: ");
-                return 1;
-            }
-        }
-        CreateHostBuilder(args).Build().Run();
-
-
-        return 0;
+    public Startup(IConfiguration configuration)
+    {
+        _configuration = configuration;
     }
 
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-                    Host.CreateDefaultBuilder(args)
-                        .ConfigureWebHostDefaults(webBuilder =>
-                        {
-                            webBuilder.UseStartup<Startup>();
-                        });
-}
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddMvc();
+        services.AddHealthChecks()
+                .AddCheck<DatabaseHealthCheck>("db");
+    }
 
-Ошибка	CS0103	Имя "Host" не существует в текущем контексте.	
+    public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+    {
+        if (env.IsDevelopment())
+        {
+            
+            app.UseCors(builder =>
+            {
+                builder
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+            });
+            app.UseMvc(routes =>
+             {
+                 routes.MapRoute(
+                     name: "default",
+                     template: "healthz/{controllers=HelathzCheck}/{action=HealthzCheck}/{id?}"
+                     );
+             });
 
-+ как узнать на каком хосте запускается если это мой appsettings.json "ConnectionStrings": {
-   "or": "string for oracle",
-   "oe1":"string for oracle",
-   "postgres":"string for oracle"
+        }
+    }   
 }
+------------------------------------------------------------------------------------
+
+напиши сюда код запуска проекта где using Microsoft.Extensions.Hosting; версия 2.1.1 
