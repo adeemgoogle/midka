@@ -1,8 +1,283 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+using Serilog;
+using Serilog.Events;
+using Sentry;
+using Serilog.Formatting.Compact;
+using TradePointsLoader.Repository;
+using TradePointsLoader.Service;
+using Microsoft.AspNetCore.Hosting;
+using TradePointsLoader.controllers;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+
+class Program
+{
+    private static readonly IConfiguration _config = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory).AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
+
+    static async Task<int> Main(string[] args)
+    {
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+            .CreateLogger();
+        try
+        {
+            var host = new WebHostBuilder()
+                .UseKestrel()
+                .UseUrls("http://localhost:8080/")
+                .UseConfiguration(_config)
+                .ConfigureServices((hostContext, service) =>
+                {
+                    service.AddHealthChecks();
+                    service.AddSingleton<HealthzController>();
+
+                })
+                .UseStartup<Startup>()
+                .ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    
+                })
+                .Build();
+             host.Run();
+            return 0;
+        }catch(Exception ex)
+        {
+            Log.Fatal(ex, "Host terminated");
+        }
+        using (SentrySdk.Init(_config.GetSection("Sentry")["Dsn"]))
+        {
+            try
+            {
+               
+                var services = new ServiceCollection();
+                services.AddSingleton(_config);
+                services.AddSingleton<IJobFactory, SingletonJobFactory>();
+                services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+
+                // Add our job
+                services.AddSingleton<MyJob>();
+                services.AddSingleton(new JobSchedule(
+                    jobType: typeof(MyJob),
+                    cronExpression: "0 55 16 * * ?")); // Run every 1 hour
+
+                services.AddHostedService<QuartzHostedService>();
+
+                var serviceProvider = services.BuildServiceProvider();
+                await serviceProvider.GetRequiredService<IHostedService>().StartAsync(CancellationToken.None);
+
+                Log.Information("cron created");
+                Console.ReadKey();
+
+                await serviceProvider.GetRequiredService<IHostedService>().StopAsync(CancellationToken.None);
+                Log.Information("Scheduler stopped.");
+
+
+
+            }
+            catch (Exception ex)
+            {
+                SentrySdk.CaptureException(ex);
+                Log.Error(ex, "Process error: ");
+                return 1;
+            }
+        }
+        
+
+        return 0;
+    }
+  
+    public class MyJob : IJob
+    {
+        private readonly IConfiguration _config;
+
+        public MyJob(IConfiguration config)
+        {
+            _config = config;
+        }
+
+        public Task Execute(IJobExecutionContext context)
+        {
+            var dbConnector = new PostgresService(_config);
+            var connection = dbConnector.ConnectToDB();
+
+            Log.Information("Loading trade points data");
+
+
+
+            KATORepository katoRep = new KATORepository(_config);
+            var katodict = katoRep.GetKATORef();
+
+            TradePointsRepository tradePointsRep = new TradePointsRepository(_config, katodict);
+            var aTMs = tradePointsRep.GetAtms();
+            var branches = tradePointsRep.GetBranches();
+
+
+            dbConnector.TruncateAtmworktime();
+            dbConnector.TruncateBRanchworktime();
+            dbConnector.TruncateBRanch();
+            dbConnector.TruncateATMS();
+            dbConnector.TruncateKato();
+            dbConnector.AddKATO(katodict);
+            dbConnector.AddBranches(branches);
+            dbConnector.AddATMs(aTMs);
+            dbConnector.AddBranchs(branches);
+            dbConnector.AddAtms(aTMs);
+
+
+            Log.Information("Process finished");
+
+            return Task.CompletedTask;
+        }
+    }
+
+
+    public class SingletonJobFactory : IJobFactory
+    {
+        private readonly IServiceProvider _serviceProvider;
+
+        public SingletonJobFactory(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+        {
+            return _serviceProvider.GetService(bundle.JobDetail.JobType) as IJob;
+        }
+
+        public void ReturnJob(IJob job) { }
+    }
+
+    public class JobSchedule
+    {
+        public JobSchedule(Type jobType, string cronExpression)
+        {
+            JobType = jobType;
+            CronExpression = cronExpression;
+        }
+
+        public Type JobType { get; }
+        public string CronExpression { get; }
+    }
+
+    public class QuartzHostedService : IHostedService
+    {
+        private readonly ISchedulerFactory _schedulerFactory;
+        private readonly IJobFactory _jobFactory;
+        private readonly IEnumerable<JobSchedule> _jobSchedules;
+        private IScheduler _scheduler;
+
+        public QuartzHostedService(
+            ISchedulerFactory schedulerFactory,
+            IJobFactory jobFactory,
+            IEnumerable<JobSchedule> jobSchedules)
+        {
+            _schedulerFactory = schedulerFactory;
+            _jobFactory = jobFactory;
+            _jobSchedules = jobSchedules;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            _scheduler.JobFactory = _jobFactory;
+
+            foreach (var jobSchedule in _jobSchedules)
+            {
+                var job = CreateJob(jobSchedule);
+                var trigger = CreateTrigger(jobSchedule);
+
+                await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+            }
+
+            await _scheduler.Start(cancellationToken);
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            if (_scheduler != null)
+            {
+                await _scheduler.Shutdown(cancellationToken);
+            }
+        }
+
+        private IJobDetail CreateJob(JobSchedule schedule)
+        {
+            var jobType = schedule.JobType;
+            return JobBuilder
+                .Create(jobType)
+                .WithIdentity(jobType.FullName)
+                .WithDescription(jobType.Name)
+                .Build();
+        }
+
+        private ITrigger CreateTrigger(JobSchedule schedule)
+        {
+            return TriggerBuilder
+                .Create()
+                .WithIdentity($"{schedule.JobType.FullName}.trigger")
+                .WithCronSchedule(schedule.CronExpression)
+                .WithDescription(schedule.CronExpression)
+                .Build();
+        }
+    }
+}
+
+
+
+-----------------------
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dapper.Oracle" Version="1.2.1" />
+    <PackageReference Include="Elasticsearch.Net" Version="7.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.HealthChecks" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="2.2.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="5.0.15" />
+    
+    <PackageReference Include="NEST" Version="7.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Npgsql" Version="4.0.0" />
+    <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.18.6" />
+    <PackageReference Include="Quartz" Version="3.5.0" />
+    <PackageReference Include="Sentry.AspNetCore" Version="1.2.0" />
+    <PackageReference Include="Serilog" Version="2.8.0" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="1.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
+--------------------------------------------
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
+using System;
 
 public class Startup
 {
@@ -22,20 +297,7 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILogger<Startup> logger)
     {
-        if (env.IsDevelopment())
-        {
-            app.UseDeveloperExceptionPage();
-        }
-        else
-        {
-            app.UseExceptionHandler("/Home/Error");
-            app.UseHsts();
-        }
 
-        logger.LogInformation("Configuring request pipeline");
-
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
 
         app.UseMvc(routes =>
         {
@@ -46,7 +308,37 @@ public class Startup
         });
 
         app.UseHealthChecks("/healthz");
-
+        Console.WriteLine("healthz");
         app.UseRequestLocalization();
     }
 }
+-----------------------------
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using TradePointsLoader.Service;
+
+namespace TradePointsLoader.controllers
+{
+    [ApiController]
+    [Route("healthz")]
+    public class HealthzController : ControllerBase
+    {
+        private readonly ILogger<HealthzController> _logger;
+
+        public HealthzController(ILogger<HealthzController> logger)
+        {
+            _logger = logger;
+        }
+
+        [HttpGet]
+        public IActionResult GetHealthz()
+        {
+            return new OkObjectResult("OK");
+        }
+    }
+
+}
+
