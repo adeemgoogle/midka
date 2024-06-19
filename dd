@@ -1,72 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
-using Quartz;
-using Quartz.Spi;
-
-namespace MyApp
+static async Task<int> Main(string[] args)
 {
-    public class QuartzHostedService : IHostedService
-    {
-        private readonly ISchedulerFactory _schedulerFactory;
-        private readonly IJobFactory _jobFactory;
-        private readonly IEnumerable<JobSchedule> _jobSchedules;
-        private IScheduler _scheduler;
+    Log.Logger = new LoggerConfiguration()
+        .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+        .CreateLogger();
+    var host = new WebHostBuilder()
 
-        public QuartzHostedService(
-            ISchedulerFactory schedulerFactory,
-            IJobFactory jobFactory,
-            IEnumerable<JobSchedule> jobSchedules)
-        {
-            _schedulerFactory = schedulerFactory;
-            _jobFactory = jobFactory;
-            _jobSchedules = jobSchedules;
-        }
-
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-            _scheduler.JobFactory = _jobFactory;
-
-            foreach (var jobSchedule in _jobSchedules)
+            .UseUrls("http://localhost:5000")
+            .ConfigureServices((hostContext, service) =>
             {
-                var job = CreateJob(jobSchedule);
-                var trigger = CreateTrigger(jobSchedule);
+               
+                service.AddHealthChecks();
+                service.AddSingleton<HealthzController>();
+                
+            })
+            .UseStartup<Startup>()
+            .Build();
 
-                await _scheduler.ScheduleJob(job, trigger, cancellationToken);
-            }
-
-            await _scheduler.Start(cancellationToken);
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            if (_scheduler != null)
-            {
-                await _scheduler.Shutdown(cancellationToken);
-            }
-        }
-
-        private IJobDetail CreateJob(JobSchedule schedule)
-        {
-            var jobType = schedule.JobType;
-            return JobBuilder
-                .Create(jobType)
-                .WithIdentity(jobType.FullName)
-                .WithDescription(jobType.Name)
-                .Build();
-        }
-
-        private ITrigger CreateTrigger(JobSchedule schedule)
-        {
-            return TriggerBuilder
-                .Create()
-                .WithIdentity($"{schedule.JobType.FullName}.trigger")
-                .WithCronSchedule(schedule.CronExpression)
-                .WithDescription(schedule.CronExpression)
-                .Build();
-        }
-    }
+    host.Run();
 }
+Application startup exception: System.InvalidOperationException: No service for type 'Microsoft.AspNetCore.Hosting.Server.IServer' has been registered.
+я хочу чтобы запустился одновременно и крон и хелзчек
