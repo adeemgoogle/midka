@@ -32,3 +32,33 @@ public class Startup
 
 
 }
+
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using TradePointsLoader.Service;
+
+namespace TradePointsLoader.controllers
+{
+    [ApiController]
+    [Route("[controller]")]
+    public class HealthzController : ControllerBase
+    {
+        private readonly ILogger<HealthzController> _logger;
+
+        public HealthzController(ILogger<HealthzController> logger)
+        {
+            _logger = logger;
+        }
+
+        [HttpGet(Name = "healthz")]
+        public IActionResult GetHealthz()
+        {
+            return new OkObjectResult("OK");
+        }
+    }
+
+}
