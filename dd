@@ -58,7 +58,6 @@ class Program
             .ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
-                logging.AddSerilog();
             });
 
     static void ConfigureServices(IServiceCollection services)
@@ -72,7 +71,7 @@ class Program
         services.AddSingleton<MyJob>();
         services.AddSingleton(new JobSchedule(
             jobType: typeof(MyJob),
-            cronExpression: "0 55 16 * * ?")); // Run every 1 hour
+            cronExpression: "0 15 15 * * ?")); // Run every 1 hour
 
         services.AddHostedService<QuartzHostedService>();
     }
@@ -110,7 +109,12 @@ class Program
                 var atms = _tradePointsRep.GetAtms();
                 var branches = _tradePointsRep.GetBranches();
 
-                _dbConnector.TruncateTables();
+                _dbConnector.TruncateBRanchworktime();
+                _dbConnector.TruncateAtmworktime();
+                _dbConnector.TruncateKato();
+                _dbConnector.TruncateBRanch();
+                _dbConnector.TruncateATMS();
+ 
                 _dbConnector.AddKATO(katodict);
                 _dbConnector.AddBranches(branches);
                 _dbConnector.AddATMs(atms);
@@ -219,66 +223,4 @@ class Program
     }
 }
 
-// Startup.cs
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
-using System;
-
-public class Startup
-{
-    private readonly IConfiguration _configuration;
-
-    public Startup(IConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
-
-    public void ConfigureServices(IServiceCollection services)
-    {
-        services.AddMvc().SetCompatibilityVersion(Microsoft.AspNetCore.Mvc.CompatibilityVersion.Version_2_2);
-        services.AddOptions();
-        services.AddHealthChecks();
-    }
-
-    public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILogger<Startup> logger)
-    {
-        app.UseMvc(routes =>
-        {
-            routes.MapRoute(
-                name: "default",
-                template: "{controller=Home}/{action=Index}/{id?}"
-            );
-        });
-
-        app.UseHealthChecks("/healthz");
-        app.UseRequestLocalization();
-    }
-}
-
-// HealthzController.cs
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-
-namespace TradePointsLoader.Controllers
-{
-    [ApiController]
-    [Route("healthz")]
-    public class HealthzController : ControllerBase
-    {
-        private readonly ILogger<HealthzController> _logger;
-
-        public HealthzController(ILogger<HealthzController> logger)
-        {
-            _logger = logger;
-        }
-
-        [HttpGet]
-        public IActionResult GetHealthz()
-        {
-            return new OkObjectResult("OK");
-        }
-    }
-}
+System.InvalidOperationException: "Unable to resolve service for type 'TradePointsLoader.Service.PostgresService' while attempting to activate 'Program+MyJob'."
