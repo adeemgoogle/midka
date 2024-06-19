@@ -19,20 +19,60 @@ public class Startup
         services.AddMvc();
         services.AddOptions();
         services.AddHealthChecks();
-        services.AddSingleton<HealthzController>();
        
     }
 
-    public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+    public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILogger<Startup> log)
     {
         
-        app.UseMvc();
-       app.UseRequestLocalization();
+        app.UseMvc(routes =>
+        {
+            routes.MapRoute(
+                 name: "default",
+             template: "{controller = Home}/{action=Index}/{id?}"
+                );
+            routes.MapRoute(
+                 name: "healthz",
+             template: "{controller = Healthz}/{action=GetHealthz}"
+                );
+        });
+        log.LogInformation("Configuring routers");
+        
+        app.UseHealthChecks("/healthz");
+        app.UseRequestLocalization();
     }
-
-
 }
 
+
+class Program
+{
+    private static readonly IConfiguration _config = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory).AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
+
+    static async Task<int> Main(string[] args)
+    {
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+            .CreateLogger();
+        try
+        {
+            var host = new WebHostBuilder()
+                .UseKestrel()
+                .UseUrls("http://localhost:5000")
+                .ConfigureServices((hostContext, service) =>
+                {
+                    service.AddHealthChecks();
+                    service.AddSingleton<HealthzController>();
+
+                })
+                .UseStartup<Startup>()
+
+                .Build();
+             host.Run();
+            return 0;
+        }catch(Exception ex)
+        {
+            Log.Fatal(ex, "Host terminated");
+        }
 
 using System;
 using System.Collections.Generic;
@@ -44,7 +84,7 @@ using TradePointsLoader.Service;
 namespace TradePointsLoader.controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("[healthz]")]
     public class HealthzController : ControllerBase
     {
         private readonly ILogger<HealthzController> _logger;
@@ -54,7 +94,7 @@ namespace TradePointsLoader.controllers
             _logger = logger;
         }
 
-        [HttpGet(Name = "healthz")]
+        [HttpGet]
         public IActionResult GetHealthz()
         {
             return new OkObjectResult("OK");
@@ -62,3 +102,9 @@ namespace TradePointsLoader.controllers
     }
 
 }
+
+
+Now listening on: http://localhost:5000
+Application started. Press Ctrl+C to shut down.
+
+настрой нормально конфигурацию маршрутизатора 
