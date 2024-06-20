@@ -1,4 +1,7 @@
-Серьезность	Код	Описание	Проект	Файл	Строка	Состояние подавления
-Ошибка	NU1605	Предупреждение как ошибка: Обнаружено понижение версии пакета Microsoft.Extensions.Logging.Abstractions с 8.0.0 на 6.0.0. Чтобы выбрать другую версию, создайте ссылку на пакет напрямую из проекта. 
- TradePointsLoader -> Microsoft.Extensions.Diagnostics.HealthChecks 8.0.0 -> Microsoft.Extensions.Logging.Abstractions (>= 8.0.0) 
- TradePointsLoader -> Microsoft.Extensions.Logging.Abstractions (>= 6.0.0)	
+TypeLoadException: Could not load type 'Microsoft.Extensions.Logging.Abstractions.Internal.NullScope' from assembly 'Microsoft.Extensions.Logging.Abstractions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.
+Microsoft.Extensions.Logging.Logger.BeginScope<TState>(TState state)
+Microsoft.AspNetCore.Mvc.Internal.ResourceInvoker.InvokeAsync()
+Microsoft.AspNetCore.Routing.EndpointMiddleware.Invoke(HttpContext httpContext)
+Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware.Invoke(HttpContext context)
