@@ -15,6 +15,7 @@ using Serilog.Formatting.Compact;
 using TradePointsLoader.Repository;
 using TradePointsLoader.Service;
 using Microsoft.AspNetCore.Hosting;
+using TradePointsLoader.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -28,49 +29,11 @@ class Program
 
     static async Task<int> Main(string[] args)
     {
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
-            .CreateLogger();
+        ConfigureLogging();
 
         try
         {
-            var host = Host.CreateDefaultBuilder(args)
-                .ConfigureAppConfiguration((context, config) =>
-                {
-                    config.AddConfiguration(_config);
-                })
-                .ConfigureServices((hostContext, services) =>
-                {
-                    // Web hosting
-                    services.AddControllers();
-                    services.AddHealthChecks();
-
-                    // Quartz services
-                    services.AddSingleton<IJobFactory, SingletonJobFactory>();
-                    services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
-                    services.AddSingleton<MyJob>();
-                    services.AddSingleton(new JobSchedule(
-                        jobType: typeof(MyJob),
-                        cronExpression: "0 0 * * * ?")); // Run every 1 hour
-                    services.AddHostedService<QuartzHostedService>();
-
-                    // Add Sentry
-                    services.AddSingleton<SentryOptions>(options => new SentryOptions
-                    {
-                        Dsn = _config.GetSection("Sentry")["Dsn"]
-                    });
-
-                    services.AddSingleton<HealthzController>();
-                })
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseKestrel()
-                        .UseUrls("http://localhost:8080/")
-                        .UseStartup<Startup>();
-                })
-                .UseSerilog()
-                .Build();
-
+            var host = CreateWebHostBuilder(args).Build();
             await host.RunAsync();
             return 0;
         }
@@ -84,135 +47,188 @@ class Program
             Log.CloseAndFlush();
         }
     }
-}
 
-public class MyJob : IJob
-{
-    private readonly IConfiguration _config;
+    static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+        new WebHostBuilder()
+            .UseKestrel()
+            .UseUrls("http://localhost:8080/")
+            .UseConfiguration(_config)
+            .ConfigureServices(ConfigureServices)
+            .UseStartup<Startup>()
+            .ConfigureLogging(logging =>
+            {
+                logging.ClearProviders();
+            });
 
-    public MyJob(IConfiguration config)
+    static void ConfigureServices(IServiceCollection services)
     {
-        _config = config;
-    }
+        services.AddHealthChecks();
+        services.AddSingleton<HealthzController>();
+        services.AddSingleton<IJobFactory, SingletonJobFactory>();
+        services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
 
-    public Task Execute(IJobExecutionContext context)
-    {
-        var dbConnector = new PostgresService(_config);
-        var connection = dbConnector.ConnectToDB();
-
-        Log.Information("Loading trade points data");
-
-        KATORepository katoRep = new KATORepository(_config);
-        var katodict = katoRep.GetKATORef();
-
-        TradePointsRepository tradePointsRep = new TradePointsRepository(_config, katodict);
-        var aTMs = tradePointsRep.GetAtms();
-        var branches = tradePointsRep.GetBranches();
-
-        dbConnector.TruncateAtmworktime();
-        dbConnector.TruncateBRanchworktime();
-        dbConnector.TruncateBRanch();
-        dbConnector.TruncateATMS();
-        dbConnector.TruncateKato();
-        dbConnector.AddKATO(katodict);
-        dbConnector.AddBranches(branches);
-        dbConnector.AddATMs(aTMs);
-        dbConnector.AddBranchs(branches);
-        dbConnector.AddAtms(aTMs);
-
-        Log.Information("Process finished");
-
-        return Task.CompletedTask;
-    }
-}
-
-public class SingletonJobFactory : IJobFactory
-{
-    private readonly IServiceProvider _serviceProvider;
-
-    public SingletonJobFactory(IServiceProvider serviceProvider)
-    {
-        _serviceProvider = serviceProvider;
-    }
-
-    public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
-    {
-        return _serviceProvider.GetService(bundle.JobDetail.JobType) as IJob;
-    }
-
-    public void ReturnJob(IJob job) { }
-}
-
-public class JobSchedule
-{
-    public JobSchedule(Type jobType, string cronExpression)
-    {
-        JobType = jobType;
-        CronExpression = cronExpression;
-    }
-
-    public Type JobType { get; }
-    public string CronExpression { get; }
-}
-
-public class QuartzHostedService : IHostedService
-{
-    private readonly ISchedulerFactory _schedulerFactory;
-    private readonly IJobFactory _jobFactory;
-    private readonly IEnumerable<JobSchedule> _jobSchedules;
-    private IScheduler _scheduler;
-
-    public QuartzHostedService(
-        ISchedulerFactory schedulerFactory,
-        IJobFactory jobFactory,
-        IEnumerable<JobSchedule> jobSchedules)
-    {
-        _schedulerFactory = schedulerFactory;
-        _jobFactory = jobFactory;
-        _jobSchedules = jobSchedules;
-    }
-
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-        _scheduler.JobFactory = _jobFactory;
-
-        foreach (var jobSchedule in _jobSchedules)
+        // Register services
+        services.AddSingleton<PostgresService>();
+        services.AddSingleton<KATORepository>();
+        services.AddSingleton(provider => 
         {
-            var job = CreateJob(jobSchedule);
-            var trigger = CreateTrigger(jobSchedule);
+            var katoRepository = provider.GetRequiredService<KATORepository>();
+            return katoRepository.GetKATORef();
+        });
+        services.AddSingleton<TradePointsRepository>();
 
-            await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+        // Add our job
+        services.AddSingleton<MyJob>();
+        services.AddSingleton(new JobSchedule(
+            jobType: typeof(MyJob),
+            cronExpression: "0 15 15 * * ?")); // Run at 15:15 every day
+
+        services.AddHostedService<QuartzHostedService>();
+    }
+
+    static void ConfigureLogging()
+    {
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+            .CreateLogger();
+    }
+
+    public class MyJob : IJob
+    {
+        private readonly IConfiguration _config;
+        private readonly PostgresService _dbConnector;
+        private readonly KATORepository _katoRep;
+        private readonly TradePointsRepository _tradePointsRep;
+
+        public MyJob(IConfiguration config, PostgresService dbConnector, KATORepository katoRep, TradePointsRepository tradePointsRep)
+        {
+            _config = config;
+            _dbConnector = dbConnector;
+            _katoRep = katoRep;
+            _tradePointsRep = tradePointsRep;
         }
 
-        await _scheduler.Start(cancellationToken);
-    }
-
-    public async Task StopAsync(CancellationToken cancellationToken)
-    {
-        if (_scheduler != null)
+        public async Task Execute(IJobExecutionContext context)
         {
-            await _scheduler.Shutdown(cancellationToken);
+            try
+            {
+                var connection = _dbConnector.ConnectToDB();
+                Log.Information("Loading trade points data");
+
+                var katodict = _katoRep.GetKATORef();
+                var atms = _tradePointsRep.GetAtms();
+                var branches = _tradePointsRep.GetBranches();
+
+                _dbConnector.TruncateBRanchworktime();
+                _dbConnector.TruncateAtmworktime();
+                _dbConnector.TruncateKato();
+                _dbConnector.TruncateBRanch();
+                _dbConnector.TruncateATMS();
+
+                _dbConnector.AddKATO(katodict);
+                _dbConnector.AddBranches(branches);
+                _dbConnector.AddATMs(atms);
+
+                Log.Information("Process finished");
+            }
+            catch (Exception ex)
+            {
+                SentrySdk.CaptureException(ex);
+                Log.Error(ex, "Error during job execution");
+            }
+
+            await Task.CompletedTask;
         }
     }
 
-    private IJobDetail CreateJob(JobSchedule schedule)
+    public class SingletonJobFactory : IJobFactory
     {
-        var jobType = schedule.JobType;
-        return JobBuilder
-            .Create(jobType)
-            .WithIdentity(jobType.FullName)
-            .WithDescription(jobType.Name)
-            .Build();
+        private readonly IServiceProvider _serviceProvider;
+
+        public SingletonJobFactory(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+        {
+            return _serviceProvider.GetService(bundle.JobDetail.JobType) as IJob;
+        }
+
+        public void ReturnJob(IJob job) { }
     }
 
-    private ITrigger CreateTrigger(JobSchedule schedule)
+    public class JobSchedule
     {
-        return TriggerBuilder
-            .Create()
-            .WithIdentity($"{schedule.JobType.FullName}.trigger")
-            .WithCronSchedule(schedule.CronExpression)
-            .WithDescription(schedule.CronExpression)
-            .Build();
+        public JobSchedule(Type jobType, string cronExpression)
+        {
+            JobType = jobType;
+            CronExpression = cronExpression;
+        }
+
+        public Type JobType { get; }
+        public string CronExpression { get; }
+    }
+
+    public class QuartzHostedService : IHostedService
+    {
+        private readonly ISchedulerFactory _schedulerFactory;
+        private readonly IJobFactory _jobFactory;
+        private readonly IEnumerable<JobSchedule> _jobSchedules;
+        private IScheduler _scheduler;
+
+        public QuartzHostedService(
+            ISchedulerFactory schedulerFactory,
+            IJobFactory jobFactory,
+            IEnumerable<JobSchedule> jobSchedules)
+        {
+            _schedulerFactory = schedulerFactory;
+            _jobFactory = jobFactory;
+            _jobSchedules = jobSchedules;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            _scheduler.JobFactory = _jobFactory;
+
+            foreach (var jobSchedule in _jobSchedules)
+            {
+                var job = CreateJob(jobSchedule);
+                var trigger = CreateTrigger(jobSchedule);
+
+                await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+            }
+
+            await _scheduler.Start(cancellationToken);
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            if (_scheduler != null)
+            {
+                await _scheduler.Shutdown(cancellationToken);
+            }
+        }
+
+        private IJobDetail CreateJob(JobSchedule schedule)
+        {
+            var jobType = schedule.JobType;
+            return JobBuilder
+                .Create(jobType)
+                .WithIdentity(jobType.FullName)
+                .WithDescription(jobType.Name)
+                .Build();
+        }
+
+        private ITrigger CreateTrigger(JobSchedule schedule)
+        {
+            return TriggerBuilder
+                .Create()
+                .WithIdentity($"{schedule.JobType.FullName}.trigger")
+                .WithCronSchedule(schedule.CronExpression)
+                .WithDescription(schedule.CronExpression)
+                .Build();
+        }
     }
 }
