@@ -1,6 +1,40 @@
- Copy everything else and build
-  14 | >>> COPY src/TradePointsLoader ./
-  15 |     WORKDIR "/src/."
-  16 |     RUN dotnet build "TradePointsLoader" -c release -o app/build
+FROM */aspnet:6.0 AS base 
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+FROM */sdk:6.0 AS build
+WORKDIR /src
+COPY nuget.config .
+COPY "src/TradePointsLoader/*.csproj" ./
+RUN dotnet restore "./TradePointsLoader.csproj"
+    
+# Copy everything else and build
+COPY loader/TradePointsLoader ./
+WORKDIR "/src/."
+RUN dotnet build "TradePointsLoader.csproj" -c release -o app/build
+
+FROM build as publish
+RUN dotnet publish "TradePointsLoader.csproj" -o /app/publish -c release --no-restore
+    
+# Build runtime image
+FROM base
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "TradePointsLoader.dll"]
+
+loaderap1\trade-points-loader\src\loader\TradePointsLoader
+внутри loader TradePointsLoader.csproj
+TradePointsLoader это просто папка с фулл проектом
+
+ > [build 6/8] COPY loader/TradePointsLoader ./:
+------
+Dockerfile:13
 --------------------
-ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref 8bf2f77f-3bb2-4573-9c09-a6182a7cbeb0::sxrbsj7h8t0owdfy47d93gme6: "/src/TradePointsLoader": not found
+  11 |
+  12 |     # Copy everything else and build
+  13 | >>> COPY loader/TradePointsLoader ./
+  14 |     WORKDIR "/src/."
+  15 |     RUN dotnet build "TradePointsLoader.csproj" -c release -o app/build
+--------------------
+ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref 8bf2f77f-3bb2-4573-9c09-a6182a7cbeb0::5ied3ufer8q1c2jfdbyq0w8mt: "/loader/TradePointsLoader": not found
