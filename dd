@@ -2,82 +2,144 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Spi;
 using Serilog;
 using Serilog.Events;
+using Sentry;
 using Serilog.Formatting.Compact;
+using TradePointsLoader.Repository;
+using TradePointsLoader.Service;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using TradePointsLoader.Controllers;
 
-namespace TradePointsLoader
+class Program
 {
-    public class Program
+    private static readonly IConfiguration _config = new ConfigurationBuilder().SetBasePath(AppDomain.CurrentDomain.BaseDirectory).AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
+
+    static async Task<int> Main(string[] args)
     {
-        private static readonly IConfiguration _config = new ConfigurationBuilder()
-            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-            .AddJsonFile("appsettings.json")
-            .AddEnvironmentVariables()
-            .Build();
-
-        public static async Task<int> Main(string[] args)
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+            .CreateLogger();
+     try
         {
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
-                .CreateLogger();
+            var host = new WebHostBuilder()
+                .UseKestrel()
+                .UseUrls("http://localhost:8080/")
+                .UseConfiguration(_config)
+                .ConfigureServices((hostContext, service) =>
+                {
+                    service.AddHealthChecks();
+                    service.AddSingleton<HealthzController>();
 
+                })
+                .UseStartup<Startup>()
+                .ConfigureLogging(logging =>
+                {
+                    logging.ClearProviders();
+                    
+                })
+                .Build();
+             host.Run();
+            return 0;
+        }catch(Exception ex)
+        {
+            Log.Fatal(ex, "Host terminated");
+        }
+        using (SentrySdk.Init(_config.GetSection("Sentry")["Dsn"]))
+        {
             try
             {
-                var host = new WebHostBuilder()
-                    .UseKestrel()
-                    .UseUrls("http://localhost:5000")
-                    .UseConfiguration(_config)
-                    .ConfigureServices(services =>
-                    {
-                        services.AddHealthChecks();
+               
+                var services = new ServiceCollection();
+                services.AddSingleton(_config);
+                services.AddSingleton<IJobFactory, SingletonJobFactory>();
+                services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
 
-                        // Quartz services
-                        services.AddSingleton<IJobFactory, SingletonJobFactory>();
-                        services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
-                        
-                        // Add our job
-                        services.AddSingleton<HealthCheckJob>();
-                        services.AddSingleton(new JobSchedule(
-                            jobType: typeof(HealthCheckJob),
-                            cronExpression: "0/5 * * * * ?")); // run every 5 seconds for example
-                        
-                        services.AddHostedService<QuartzHostedService>();
-                    })
-                    .UseStartup<Startup>()
-                    .ConfigureLogging(logging =>
-                    {
-                        logging.ClearProviders();
-                        logging.AddConsole();
-                        logging.AddDebug();
-                    })
-                    .UseSerilog()
-                    .Build();
+                // Add our job
+                services.AddSingleton<MyJob>();
+                services.AddSingleton(new JobSchedule(
+                    jobType: typeof(MyJob),
+                    cronExpression: "0 0 * * * ?")); // Run every 1 hour
 
-                await host.RunAsync();
-                return 0;
+                services.AddHostedService<QuartzHostedService>();
+
+                var serviceProvider = services.BuildServiceProvider();
+                await serviceProvider.GetRequiredService<IHostedService>().StartAsync(CancellationToken.None);
+
+                Log.Information("cron created");
+                Console.ReadKey();
+
+                await serviceProvider.GetRequiredService<IHostedService>().StopAsync(CancellationToken.None);
+                Log.Information("Scheduler stopped.");
+
+
+
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "Host terminated unexpectedly");
+                SentrySdk.CaptureException(ex);
+                Log.Error(ex, "Process error: ");
                 return 1;
             }
-            finally
-            {
-                Log.CloseAndFlush();
-            }
+        }
+        
+
+        return 0;
+    }
+  
+    public class MyJob : IJob
+    {
+        private readonly IConfiguration _config;
+
+        public MyJob(IConfiguration config)
+        {
+            _config = config;
+        }
+
+        public Task Execute(IJobExecutionContext context)
+        {
+            var dbConnector = new PostgresService(_config);
+            var connection = dbConnector.ConnectToDB();
+
+            Log.Information("Loading trade points data");
+
+
+
+            KATORepository katoRep = new KATORepository(_config);
+            var katodict = katoRep.GetKATORef();
+
+            TradePointsRepository tradePointsRep = new TradePointsRepository(_config, katodict);
+            var aTMs = tradePointsRep.GetAtms();
+            var branches = tradePointsRep.GetBranches();
+
+
+            dbConnector.TruncateAtmworktime();
+            dbConnector.TruncateBRanchworktime();
+            dbConnector.TruncateBRanch();
+            dbConnector.TruncateATMS();
+            dbConnector.TruncateKato();
+            dbConnector.AddKATO(katodict);
+            dbConnector.AddBranches(branches);
+            dbConnector.AddATMs(aTMs);
+            dbConnector.AddBranchs(branches);
+            dbConnector.AddAtms(aTMs);
+
+
+            Log.Information("Process finished");
+
+            return Task.CompletedTask;
         }
     }
 
-    // Job Factory
+
     public class SingletonJobFactory : IJobFactory
     {
         private readonly IServiceProvider _serviceProvider;
@@ -89,13 +151,12 @@ namespace TradePointsLoader
 
         public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
         {
-            return _serviceProvider.GetRequiredService(bundle.JobDetail.JobType) as IJob;
+            return _serviceProvider.GetService(bundle.JobDetail.JobType) as IJob;
         }
 
         public void ReturnJob(IJob job) { }
     }
 
-    // Job Schedule
     public class JobSchedule
     {
         public JobSchedule(Type jobType, string cronExpression)
@@ -108,25 +169,6 @@ namespace TradePointsLoader
         public string CronExpression { get; }
     }
 
-    // Health Check Job
-    public class HealthCheckJob : IJob
-    {
-        private readonly ILogger<HealthCheckJob> _logger;
-
-        public HealthCheckJob(ILogger<HealthCheckJob> logger)
-        {
-            _logger = logger;
-        }
-
-        public Task Execute(IJobExecutionContext context)
-        {
-            _logger.LogInformation("Health check job executing...");
-            // Add your health check logic here
-            return Task.CompletedTask;
-        }
-    }
-
-    // Quartz Hosted Service
     public class QuartzHostedService : IHostedService
     {
         private readonly ISchedulerFactory _schedulerFactory;
@@ -162,10 +204,13 @@ namespace TradePointsLoader
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            await _scheduler?.Shutdown(cancellationToken);
+            if (_scheduler != null)
+            {
+                await _scheduler.Shutdown(cancellationToken);
+            }
         }
 
-        private static IJobDetail CreateJob(JobSchedule schedule)
+        private IJobDetail CreateJob(JobSchedule schedule)
         {
             var jobType = schedule.JobType;
             return JobBuilder
@@ -175,7 +220,7 @@ namespace TradePointsLoader
                 .Build();
         }
 
-        private static ITrigger CreateTrigger(JobSchedule schedule)
+        private ITrigger CreateTrigger(JobSchedule schedule)
         {
             return TriggerBuilder
                 .Create()
@@ -183,56 +228,6 @@ namespace TradePointsLoader
                 .WithCronSchedule(schedule.CronExpression)
                 .WithDescription(schedule.CronExpression)
                 .Build();
-        }
-    }
-
-    public class Startup
-    {
-        private readonly IConfiguration _configuration;
-
-        public Startup(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMvc();
-            services.AddOptions();
-            services.AddHealthChecks();
-        }
-
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
-
-            logger.LogInformation("Configuring request pipeline");
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllerRoute(
-                    name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
-                
-                endpoints.MapHealthChecks("/healthz");
-            });
-
-            app.UseRequestLocalization();
         }
     }
 }
