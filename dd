@@ -1,2 +1,4 @@
-An unhandled exception occurred while processing the request.
-TypeLoadException: Could not load type 'Microsoft.Extensions.Logging.Abstractions.Internal.NullScope' from assembly 'Microsoft.Extensions.Logging.Abstractions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.
+Серьезность	Код	Описание	Проект	Файл	Строка	Состояние подавления
+Ошибка	NU1605	Предупреждение как ошибка: Обнаружено понижение версии пакета Microsoft.Extensions.Logging.Abstractions с 8.0.0 на 6.0.0. Чтобы выбрать другую версию, создайте ссылку на пакет напрямую из проекта. 
+ TradePointsLoader -> Microsoft.Extensions.Diagnostics.HealthChecks 8.0.0 -> Microsoft.Extensions.Logging.Abstractions (>= 8.0.0) 
+ TradePointsLoader -> Microsoft.Extensions.Logging.Abstractions (>= 6.0.0)	
