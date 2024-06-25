@@ -1,27 +1,2 @@
-using (var cmd = new NpgsqlCommand(query))
-{
-    using (var reader = await cmd.ExecuteReaderAsync())
-    {
-        while (await reader.ReadAsync())
-        {
-            if (reader.HasRows)
-            {
-                var row = new ATM()
-                {
-                    Id = reader["id"].ToString(),
-                    Filial = reader["Filial"].ToString(),
-                    IsActive = что сюда писать? если оно boolean.
-                    Location = reader["location"].ToString()
-                };
 
-                _Atm = row;
-            }
-        }
-        if (!reader.HasRows)
-        {
-            _Atm = null;
-        }
-    }
-}
-_connection.Close();
-return _Atm;
+Failed to create CoreCLR, HRESULT: 0x80004005
