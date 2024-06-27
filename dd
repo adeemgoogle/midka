@@ -1,2 +1,115 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Npgsql;
+using Serilog;
+using System;
+using System.Data;
+using System.Threading.Tasks;
+using TradePointAPI.Models;
+using TradePointAPI.Repositories;
 
-Failed to create CoreCLR, HRESULT: 0x80004005
+
+namespace TradePointAPI.PostgresServices
+{
+    public class PostgresService : IRepository
+    {
+        private readonly IConfiguration _config;
+        private NpgsqlConnection _connection;
+        private string connectionString;
+
+        public PostgresService(IConfiguration configuration)
+        {
+            _config = configuration;
+        }
+
+        public IDbConnection ConnectToDB()
+        {
+            return ConnectDB("db");
+        }
+
+        public IDbConnection ConnectDB(string connectionName)
+        {
+            connectionString = _config.GetConnectionString(connectionName);
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new ArgumentException($"Connection string '{connectionName}' is missing or empty.");
+            }
+
+            var connection = new NpgsqlConnection(connectionString);
+            Console.WriteLine("Here is connection string " + connectionString);
+            Console.WriteLine("POSTGRES CONNECTED");
+
+            try
+            {
+                connection.Open();
+                Console.WriteLine($"Connection to {connectionName} established successfully.");
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred while connecting to {connectionName}: {ex.Message}");
+                throw;
+            }
+
+            return connection;
+        }
+        public async Task<ATM> GetAtmById(string id)
+        {
+            
+            var query = "Select id, kato from atm where id = " + id;
+            
+            var row = await GetRowByID(query);
+            if (row == null)
+            {
+                return null;
+            }
+            return row;
+        }
+        public async Task<ATM> GetRowByID(string query)
+        {
+            var _Atm = new ATM();
+
+            using (var conn = new NpgsqlConnection(connectionString))
+            {
+                using (var cmd = new NpgsqlCommand(query))
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            if (reader.HasRows)
+                            {
+                                var row = new ATM()
+                                {
+                                    Id = reader["id"].ToString(),
+                                    KatoCode = reader["kato"].ToString()
+                                };
+                                _Atm = row;
+                            }
+                        }
+                        if (!reader.HasRows)
+                        {
+                            _Atm = null;
+                        }
+                    }
+                }
+            }
+            return _Atm;
+        }
+        public async Task<ATM> GetATMByCircle(double lat, double lng) 
+        { 
+            var _Atm = new ATM();
+            
+            var  query = "select * from atm, atmworktime where lat = " + lat + "and lng = " + lng;
+            var row = await GetRowByID(query);
+            if (row == null)
+            {
+                return null;
+            }
+            return _Atm;
+        }
+    }
+
+}
+
+сделай так чтобы было 1 подключение в целом 
