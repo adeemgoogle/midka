@@ -43,7 +43,7 @@ namespace TradePointAPI.PostgresServices
             {
                 return null;
             }
-            return row;
+            return GetMappingATM(row);
         }
 
         public async Task<ATM> GetATMByCircle(double lat, double lng)
@@ -87,5 +87,15 @@ namespace TradePointAPI.PostgresServices
             }
             return _Atm;
         }
+        private ATM GetMappingATM(ATM _atm)
+        {
+            return new ATM()
+            {
+                Id = _atm.Id,
+                KatoCode = _atm.KatoCode,
+            };
+        }
     }
 }
+
+"User error: expected an IEnumerable list though did not find one." how to fix it
