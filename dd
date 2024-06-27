@@ -1,1 +1,91 @@
+using Microsoft.Extensions.Configuration;
+using Npgsql;
+using System;
+using System.Data;
+using System.Threading.Tasks;
+using TradePointAPI.Models;
+using TradePointAPI.Repositories;
 
+namespace TradePointAPI.PostgresServices
+{
+    public class PostgresService : IRepository
+    {
+        private readonly IConfiguration _config;
+        private readonly NpgsqlConnection _connection;
+
+        public PostgresService(IConfiguration configuration)
+        {
+            _config = configuration;
+            _connection = new NpgsqlConnection(_config.GetConnectionString("db"));
+            try
+            {
+                _connection.Open();
+                Console.WriteLine("POSTGRES CONNECTED");
+                Console.WriteLine($"Connection to 'db' established successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred while connecting to 'db': {ex.Message}");
+                throw;
+            }
+        }
+
+        public IDbConnection GetConnection()
+        {
+            return _connection;
+        }
+
+        public async Task<ATM> GetAtmById(string id)
+        {
+            var query = "SELECT id, kato FROM atm WHERE id = @id";
+            var row = await GetRowByID(query, new NpgsqlParameter("id", id));
+            if (row == null)
+            {
+                return null;
+            }
+            return row;
+        }
+
+        public async Task<ATM> GetATMByCircle(double lat, double lng)
+        {
+            var query = "SELECT * FROM atm, atmworktime WHERE lat = @lat AND lng = @lng";
+            var row = await GetRowByID(query, new NpgsqlParameter("lat", lat), new NpgsqlParameter("lng", lng));
+            if (row == null)
+            {
+                return null;
+            }
+            return row;
+        }
+
+        private async Task<ATM> GetRowByID(string query, params NpgsqlParameter[] parameters)
+        {
+            var _Atm = new ATM();
+
+            using (var cmd = new NpgsqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddRange(parameters);
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        if (reader.HasRows)
+                        {
+                            var row = new ATM()
+                            {
+                                Id = reader["id"].ToString(),
+                                KatoCode = reader["kato"].ToString()
+                            };
+                            _Atm = row;
+                        }
+                    }
+                    if (!reader.HasRows)
+                    {
+                        _Atm = null;
+                    }
+                }
+            }
+            return _Atm;
+        }
+    }
+}
