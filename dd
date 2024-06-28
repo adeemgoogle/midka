@@ -1,28 +1,118 @@
+using GraphQL;
+using GraphQL.Types;
+using System;
+using TradePointAPI.Models;
+using TradePointAPI.Models.GraphQL;
+using TradePointAPI.Repositories;
+using Microsoft.Extensions.Options;
+using Serilog;
+using System.Threading.Tasks;
+using Sentry;
+using Sentry.Protocol;
+using System.Collections.Generic;
+
+namespace TradePointAPI.Queries
 {
-  atm(id: "000040720939") {
-    id
-    katoCode
-   
-  }
-}
----------
-{
-    "data": {
-        "atm": null
-    },
-    "errors": [
+    public class CircleInputType : InputObjectGraphType
+    {
+        public CircleInputType()
         {
-            "message": "User error: expected an IEnumerable list though did not find one.",
-            "locations": [
-                {
-                    "line": 2,
-                    "column": 3
-                }
-            ],
-            "path": [
-                "atm"
-            ]
+            Name = "CircleInputType";
+            Field<NonNullGraphType<FloatGraphType>>("lat");
+            Field<NonNullGraphType<FloatGraphType>>("lon");
+            Field<NonNullGraphType<StringGraphType>>("distance");
         }
-    ]
+    }
+
+    public class Circle
+    {
+        public double lat { get; set; }
+        public double lon { get; set; }
+        public string distance { get; set; }
+    }
+
+    public class TPQuery : ObjectGraphType
+    {
+        
+        private readonly IRepository _repo;
+        private readonly IHub _sentry;
+
+        public TPQuery(IRepository repository, IHub sentry)
+        {
+            _sentry = sentry;
+            _repo = repository;
+
+
+            Field<ListGraphType<ATMType>>(
+                "atm",
+                arguments: new QueryArguments(
+                        new QueryArgument<StringGraphType> { Name = "id", Description = "Search ATM by Id" }
+                        /*new QueryArgument<CircleInputType> { Name = "circle", Description = "Search ATMs in that circle" },
+                        new QueryArgument<StringGraphType> { Name = "address", Description = "address on rus/kaz of the trade point" },
+                        new QueryArgument<StringGraphType> { Name = "kato", Description = "KATO code of locality" },
+                        new QueryArgument<IntGraphType> { Name = "pagingFrom", Description = "Pagination FROM value", DefaultValue = 0 },
+                        new QueryArgument<IntGraphType> { Name = "pagingSize", Description = "Number of paging size", DefaultValue = 4000 }*/
+                ),
+                resolve: GetResolveContext) ;
+
+          
+        }
+
+        private async Task<object> GetResolveContext(ResolveFieldContext<object> context)
+        {
+            try
+            {
+             
+
+                switch (context.FieldName.Trim())
+                {
+                    case "atm":
+                        if (context.GetArgument<string>("id") != null)
+                        {
+                            var atm = _repo.GetAtmById(context.GetArgument<string>("id"));
+                            return atm;
+                        }
+
+                        return null;
+                    default:
+                        return null;
+                }
+            }
+            catch (ExecutionError err)
+            {
+                Log.Error(err, "ExecutionError error");
+                _sentry.CaptureException(err);
+                context.Errors.Add(err);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Exception error");
+                _sentry.CaptureException(ex);
+                var error = new ExecutionError(ex.Message, ex.InnerException);
+                error.Path = context.Path;
+                context.Errors.Add(error);
+                return null;
+            }
+        }
+    }
 }
-how to fix it?
+---------------
+using TradePointAPI.Repositories;
+using GraphQL.Types;
+
+namespace TradePointAPI.Models.GraphQL
+{
+    public class ATMType : ObjectGraphType<ATM>
+    {
+        public ATMType(IRepository repository)
+        {
+            Name = "ATM";
+            Description = "Банкомат";
+            Field(x => x.Id, true).Description("ID банкомата");
+            
+            Field(x => x.KatoCode, nullable: true).Description("Значение КАТО");            
+            /
+        }
+    }
+}
