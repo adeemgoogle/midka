@@ -1,4 +1,28 @@
- Executing action method TradePointAPI.Controllers.QueryController.Post (TradePointAPI) - Validation state: Valid
-{"@t":"2024-06-28T05:12:10.2109962Z","@m":"Executing action method \"TradePointAPI.Controllers.QueryController.Post (TradePointAPI)\" - Validation state: Valid","@i":"dad538d7","ActionName":"TradePointAPI.Controllers.QueryController.Post (TradePointAPI)","ValidationState":"Valid","EventId":{"Id":1},"SourceContext":"Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker","ActionId":"b0d3f2c5-240c-4dcc-81ca-caf934436dbd","RequestId":"0HN4N638VANET:00000001","RequestPath":"/","CorrelationId":null,"ConnectionId":"0HN4N638VANET"}
-{"@t":"2024-06-28T05:12:10.4287829Z","@m":"Not Found \"User error: expected an IEnumerable list though did not find one.\" query \"{\n  atm(id: \\\"22"\\\") {\n    katoCode\n    \n  }\n}\"","@i":"aeb9463a","@l":"Error","err":"User error: expected an IEnumerable list though did not find one.","query":"{\n  atm(id: \"22\") {\n    katoCode\n    \n  }\n}"}
-info: Microsoft.AspNetCore.Mvc.Internal.ControllerActionInvoker[2]
+{
+  atm(id: "000040720939") {
+    id
+    katoCode
+   
+  }
+}
+---------
+{
+    "data": {
+        "atm": null
+    },
+    "errors": [
+        {
+            "message": "User error: expected an IEnumerable list though did not find one.",
+            "locations": [
+                {
+                    "line": 2,
+                    "column": 3
+                }
+            ],
+            "path": [
+                "atm"
+            ]
+        }
+    ]
+}
+how to fix it?
