@@ -1,118 +1,165 @@
-using GraphQL;
-using GraphQL.Types;
+using Microsoft.Extensions.Configuration;
+using Npgsql;
 using System;
-using TradePointAPI.Models;
-using TradePointAPI.Models.GraphQL;
-using TradePointAPI.Repositories;
-using Microsoft.Extensions.Options;
-using Serilog;
+using System.Data;
 using System.Threading.Tasks;
-using Sentry;
-using Sentry.Protocol;
-using System.Collections.Generic;
+using TradePointAPI.Models;
+using TradePointAPI.Repositories;
 
-namespace TradePointAPI.Queries
+namespace TradePointAPI.PostgresServices
 {
-    public class CircleInputType : InputObjectGraphType
+    public class PostgresService : IRepository
     {
-        public CircleInputType()
+        private readonly IConfiguration _config;
+        private readonly NpgsqlConnection _connection;
+
+        public PostgresService(IConfiguration configuration)
         {
-            Name = "CircleInputType";
-            Field<NonNullGraphType<FloatGraphType>>("lat");
-            Field<NonNullGraphType<FloatGraphType>>("lon");
-            Field<NonNullGraphType<StringGraphType>>("distance");
-        }
-    }
-
-    public class Circle
-    {
-        public double lat { get; set; }
-        public double lon { get; set; }
-        public string distance { get; set; }
-    }
-
-    public class TPQuery : ObjectGraphType
-    {
-        
-        private readonly IRepository _repo;
-        private readonly IHub _sentry;
-
-        public TPQuery(IRepository repository, IHub sentry)
-        {
-            _sentry = sentry;
-            _repo = repository;
-
-
-            Field<ListGraphType<ATMType>>(
-                "atm",
-                arguments: new QueryArguments(
-                        new QueryArgument<StringGraphType> { Name = "id", Description = "Search ATM by Id" }
-                        /*new QueryArgument<CircleInputType> { Name = "circle", Description = "Search ATMs in that circle" },
-                        new QueryArgument<StringGraphType> { Name = "address", Description = "address on rus/kaz of the trade point" },
-                        new QueryArgument<StringGraphType> { Name = "kato", Description = "KATO code of locality" },
-                        new QueryArgument<IntGraphType> { Name = "pagingFrom", Description = "Pagination FROM value", DefaultValue = 0 },
-                        new QueryArgument<IntGraphType> { Name = "pagingSize", Description = "Number of paging size", DefaultValue = 4000 }*/
-                ),
-                resolve: GetResolveContext) ;
-
-          
-        }
-
-        private async Task<object> GetResolveContext(ResolveFieldContext<object> context)
-        {
+            _config = configuration;
+            _connection = new NpgsqlConnection(_config.GetConnectionString("db"));
             try
             {
-             
-
-                switch (context.FieldName.Trim())
-                {
-                    case "atm":
-                        if (context.GetArgument<string>("id") != null)
-                        {
-                            var atm = _repo.GetAtmById(context.GetArgument<string>("id"));
-                            return atm;
-                        }
-
-                        return null;
-                    default:
-                        return null;
-                }
-            }
-            catch (ExecutionError err)
-            {
-                Log.Error(err, "ExecutionError error");
-                _sentry.CaptureException(err);
-                context.Errors.Add(err);
-                return null;
+                _connection.Open();
+                Console.WriteLine("POSTGRES CONNECTED");
+                Console.WriteLine($"Connection to 'db' established successfully.");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Exception error");
-                _sentry.CaptureException(ex);
-                var error = new ExecutionError(ex.Message, ex.InnerException);
-                error.Path = context.Path;
-                context.Errors.Add(error);
+                Console.WriteLine($"An error occurred while connecting to 'db': {ex.Message}");
+                throw;
+            }
+        }
+
+        public IDbConnection GetConnection()
+        {
+            return _connection;
+        }
+
+        public async Task<ATM> GetAtmById(string id)
+        {
+            var query = "SELECT id, kato FROM atm WHERE id = @id";
+            var row = await GetRowByID(query, new NpgsqlParameter("id", id));
+            if (row == null)
+            {
                 return null;
             }
+            return GetMappingATM(row);
+        }
+
+        public async Task<ATM> GetATMByCircle(double lat, double lng)
+        {
+            var query = "SELECT * FROM atm, atmworktime WHERE lat = @lat AND lng = @lng";
+            var row = await GetRowByID(query, new NpgsqlParameter("lat", lat), new NpgsqlParameter("lng", lng));
+            if (row == null)
+            {
+                return null;
+            }
+            return row;
+        }
+
+        private async Task<ATM> GetRowByID(string query, params NpgsqlParameter[] parameters)
+        {
+            var _Atm = new ATM();
+
+            using (var cmd = new NpgsqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddRange(parameters);
+
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        if (reader.HasRows)
+                        {
+                            var row = new ATM()
+                            {
+                                Id = reader["id"].ToString(),
+                                KatoCode = reader["kato"].ToString(),
+                            };
+                            _Atm = row;
+                        }
+                    }
+                    if (!reader.HasRows)
+                    {
+                        _Atm = null;
+                    }
+                }
+            }
+            return _Atm;
+        }
+        private ATM GetMappingATM(ATM _atm)
+        {
+            return new ATM()
+            {
+                KatoCode = _atm.KatoCode,
+            };
         }
     }
 }
----------------
-using TradePointAPI.Repositories;
+-------------------------
+using GraphiQl;
+using GraphQL;
 using GraphQL.Types;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using TradePointAPI.Models.GraphQL;
+using TradePointAPI.Repositories;
+using Serilog;
+using Microsoft.Extensions.Logging;
+using Prometheus;
+using TradePointAPI.PostgresServices;
 
-namespace TradePointAPI.Models.GraphQL
+using TradePointAPI.Queries;
+using TaxpayerApi.Schemas;
+
+namespace TradePointAPI
 {
-    public class ATMType : ObjectGraphType<ATM>
+    public class Startup
     {
-        public ATMType(IRepository repository)
+        private readonly IConfiguration Configuration;
+
+        public Startup(IConfiguration configuration)
         {
-            Name = "ATM";
-            Description = "Банкомат";
-            Field(x => x.Id, true).Description("ID банкомата");
+            Configuration = configuration;
+        }
+
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to add services to the container.
+        /// For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        /// </summary>
+        /// <param name="services"></param>
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc();
+            services.AddOptions();
+            services.AddSingleton<IRepository, PostgresService>();
+            services.AddSingleton<IConfiguration>(Configuration);
+            services.AddSingleton<ISchema, TradePointsSchema>();
+            services.AddScoped<TPQuery>();
+            services.AddScoped<IDocumentExecuter, DocumentExecuter>();
+            services.AddTransient<ATMType>();
+            services.AddTransient<CircleInputType>();
+            services.AddHealthChecks();
+            var sp = services.BuildServiceProvider();
+            var dbConnector = new PostgresService(Configuration);
+           /* services.AddSingleton<ISchema>(new TradePointsSchema(new FuncDependencyResolver(type => sp.GetService(type))));*/
             
-            Field(x => x.KatoCode, nullable: true).Description("Значение КАТО");            
-            /
+            services.AddSingleton<IDependencyResolver>(_ => new FuncDependencyResolver(_.GetRequiredService));
+        }
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory logger)
+        {
+            logger.AddSerilog();
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            app.UseMetricServer();
+            app.UseGraphiQl();
+			app.UseHealthChecks("/healthz");
+            app.UseMvc();
         }
     }
 }
