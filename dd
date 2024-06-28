@@ -163,3 +163,64 @@ namespace TradePointAPI
         }
     }
 }
+
+
+
+using Microsoft.Extensions.Configuration;
+using Npgsql;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Threading.Tasks;
+using TradePointAPI.Models;
+using TradePointAPI.Repositories;
+
+namespace TradePointAPI.PostgresServices
+{
+    public class PostgresService : IRepository
+    {
+        private readonly IConfiguration _config;
+        private readonly NpgsqlConnection _connection;
+
+        public PostgresService(IConfiguration configuration)
+        {
+            _config = configuration;
+            _connection = new NpgsqlConnection(_config.GetConnectionString("db"));
+            try
+            {
+                _connection.Open();
+                Console.WriteLine("POSTGRES CONNECTED");
+                Console.WriteLine($"Connection to 'db' established successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred while connecting to 'db': {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Kato>> GetAllKatoAsync()
+        {
+            var query = "SELECT id, level, name FROM kato";
+            var katos = new List<Kato>();
+
+            using (var cmd = new NpgsqlCommand(query, _connection))
+            {
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var kato = new Kato
+                        {
+                            Id = reader["id"].ToString(),
+                            Level = Convert.ToInt32(reader["level"]),
+                            Name = reader["name"].ToString()
+                        };
+                        katos.Add(kato);
+                    }
+                }
+            }
+            return katos;
+        }
+    }
+}
