@@ -14,3 +14,29 @@ BEGIN
     END LOOP;
 END $$;
 
+DO $$
+DECLARE
+    col_name TEXT;
+    query TEXT := 'SELECT * FROM Atm WHERE ';
+    first_col BOOLEAN := TRUE;
+BEGIN
+    FOR col_name IN
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_name = 'Atm' AND data_type IN ('character varying', 'text')
+    LOOP
+        IF NOT first_col THEN
+            query := query || ' OR ';
+        END IF;
+        query := query || format('%I ILIKE ''%%Семей%%''', col_name);
+        first_col := FALSE;
+    END LOOP;
+
+    -- Проверяем, нашли ли мы хоть один столбец
+    IF NOT first_col THEN
+        query := query || ';';
+        EXECUTE query;
+    ELSE
+        RAISE NOTICE 'No text columns found in table Atm.';
+    END IF;
+END $$;
