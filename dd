@@ -1,1 +1,16 @@
+DO $$
+DECLARE
+    tbl_name TEXT;
+    col_name TEXT;
+    query TEXT;
+BEGIN
+    FOR tbl_name, col_name IN
+        SELECT table_name, column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND data_type = 'character varying'
+    LOOP
+        query := format('SELECT * FROM %I WHERE %I ILIKE ''%%Семей%%''', tbl_name, col_name);
+        EXECUTE query;
+    END LOOP;
+END $$;
 
