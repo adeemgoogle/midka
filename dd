@@ -224,3 +224,42 @@ namespace TradePointAPI.PostgresServices
         }
     }
 }
+public async Task<IEnumerable<Kato>> GetAllKatoAsync(int? pagingSize, int? pagingFrom)
+{
+    var query = "SELECT id, level, name FROM kato";
+    
+    if (pagingSize.HasValue && pagingFrom.HasValue)
+    {
+        query += " ORDER BY id LIMIT @Limit OFFSET @Offset";
+    }
+
+    var katos = new List<Kato>();
+
+    using (var cmd = new NpgsqlCommand(query, _connection))
+    {
+        if (pagingSize.HasValue && pagingFrom.HasValue)
+        {
+            cmd.Parameters.AddWithValue("@Limit", pagingSize.Value);
+            cmd.Parameters.AddWithValue("@Offset", pagingFrom.Value);
+        }
+
+        using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                var kato = new Kato
+                {
+                    Id = reader["id"].ToString(),
+                    Level = Convert.ToInt32(reader["level"]),
+                    Name = reader["name"].ToString()
+                };
+                katos.Add(kato);
+            }
+        }
+    }
+
+    return katos;
+}
+
+
+
