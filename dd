@@ -1,42 +1,57 @@
-DO $$
-DECLARE
-    tbl_name TEXT;
-    col_name TEXT;
-    query TEXT;
-BEGIN
-    FOR tbl_name, col_name IN
-        SELECT table_name, column_name
-        FROM information_schema.columns
-        WHERE table_schema = 'public' AND data_type = 'character varying'
-    LOOP
-        query := format('SELECT * FROM %I WHERE %I ILIKE ''%%Семей%%''', tbl_name, col_name);
-        EXECUTE query;
-    END LOOP;
-END $$;
+ public async Task<IEnumerable<Branch>> GetBranchById(string id)
+ {
+     var query = "select id,  name, type, filial, locality, kato, adress, adress_kaz, location,  currency_exchange_flag, corporate_entity_flag, person_entity_flag, western_union_flag, money_gramm_flag, depository_flag, terminal_flag, premium_zone_flag, all_day_flag from branch where id = @id";
+     var row = await GetBranchRow(query, new NpgsqlParameter("id", id));
+     if (row == null)
+     {
+         return null;
+     }
+     return row;
+ }
+ private async Task<IEnumerable<Branch>> GetBranchRow(string query, params NpgsqlParameter[] parameters)
+ {
+     var branches = new List<Branch>();
 
-DO $$
-DECLARE
-    col_name TEXT;
-    query TEXT := 'SELECT * FROM Atm WHERE ';
-    first_col BOOLEAN := TRUE;
-BEGIN
-    FOR col_name IN
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'Atm' AND data_type IN ('character varying', 'text')
-    LOOP
-        IF NOT first_col THEN
-            query := query || ' OR ';
-        END IF;
-        query := query || format('%I ILIKE ''%%Семей%%''', col_name);
-        first_col := FALSE;
-    END LOOP;
+     using (var cmd = new NpgsqlCommand(query, _connection))
+     {
+         cmd.Parameters.AddRange(parameters);
 
-    -- Проверяем, нашли ли мы хоть один столбец
-    IF NOT first_col THEN
-        query := query || ';';
-        EXECUTE query;
-    ELSE
-        RAISE NOTICE 'No text columns found in table Atm.';
-    END IF;
-END $$;
+         using (var reader = await cmd.ExecuteReaderAsync())
+         {
+             if (await reader.ReadAsync())
+             {
+                 var branch = new Branch
+                 {
+                     Id = reader["id"].ToString(),
+                     
+                     Name = reader["name"].ToString(),
+                     Type = reader["type"].ToString(),
+                     Filial = reader["filial"].ToString(),
+                     Locality = reader["locality"].ToString(),
+                     KatoCode = reader["kato"].ToString(),
+                     Adress = reader["adress"].ToString(),
+                     AdressKaz = reader["adress_kaz"].ToString(),
+                     Location = reader["location"].ToString(),
+                     CurrencyExchangeFlag = reader["currency_exchange_flag"] as bool? ?? false,
+                     CorporateEntityFlag = reader["corporate_entity_flag"] as bool? ?? false,
+                     PersonEntityFlag = reader["person_entity_flag"] as bool? ?? false,
+                     WesternUnionFlag = reader["western_union_flag"] as bool? ?? false,
+                     MoneyGrammFlag = reader["money_gramm_flag"] as bool? ?? false,
+                     DepositoryFlag = reader["depository_flag"] as bool? ?? false,
+                     TerminalFlag = reader["terminal_flag"] as bool? ?? false,
+                     PremiumZoneFlag = reader["premium_zone_flag"] as bool? ?? false,
+                     AllDayFlag = reader["allday_flag"] as bool? ?? false,
+                     Embosser = reader["embosser"] as bool? ?? false,
+                     
+                 };
+                 branches.Add(branch);
+             }
+
+         }
+
+     }
+     return branches;
+ }
+
+fix "extensions": {
+                "code": "INDEX_OUT_OF_RANGE"
