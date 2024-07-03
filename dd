@@ -1,83 +1,35 @@
-public async Task<IEnumerable<Branch>> GetBranchByCorpFlag(bool? corporate_entity_flag)
-{
-    var query = "select id FROM branch join branchworktime on branch.id = branchworktime.Branch_id where corporate_entity_flag = @corporate_entity_flag";
-    var branches = new List<Branch>();
-    using (var cmd = new NpgsqlCommand(query, _connection))
-    {
-        cmd.Parameters.AddWithValue("@corporate_entity_flag", $"{corporate_entity_flag}");
-
-        using (var reader = await cmd.ExecuteReaderAsync())
+ublic async Task<IEnumerable<ATM>> GetAtmByCircle(double? lat, double? lng, string distance)
         {
-            while (await reader.ReadAsync())
-            {
-                var branch = new Branch
-                {
-                    Id = reader["id"].ToString(),
-                   
-                };
-                branches.Add(branch);
-            }
-        }
+            var query = "Select * from atm where ST_DWithin(st_setsrid(st_makepoint(lat, lng), 4326), st_setsrid(st_makepoint(@lat, @lng), 4326), @distance) ";
+            
 
-    }
-    return branches;
+            var atms = new List<ATM>();
+
+            using (var cmd = new NpgsqlCommand(query, _connection))
+            {
+                cmd.Parameters.AddWithValue("@lat", lat.Value);
+                cmd.Parameters.AddWithValue("@lng", lng.Value);
+                cmd.Parameters.AddWithValue("@distance", distance);
+                using (var reader = await cmd.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        var atm = new ATM
+                        {
+                            Id = reader["id"].ToString(),
+}
+}
+}
+}
 }
 
- if (context.GetArgument<bool?>("corporate_entity_flag") != null)
+
+ if (context.GetArgument<Dictionary<string, object>>("circle") != null)
  {
-     var branch = _repo.GetBranchByCorpFlag(context.GetArgument<bool>("corporate_entity_flag"));
-     return branch;
+     var atm = _repo.GetAtmByCircle(context.GetArgument<double?>("lat"), context.GetArgument<double?>("lng"), context.GetArgument<string>("distance"));
+     
+     return atm;
  }
 
-Field<ListGraphType<BranchType>>(
-    "branch",
-    arguments: new QueryArguments(
-          
-          
-            new QueryArgument<BooleanGraphType> { Name = "corporateEntityFlag", Description = "Search Branches which can serve corporate entities or not", DefaultValue = null },
-          
-    ),
-    resolve: context => GetResolveContext(context).Result);
 
-не работает фильтрация
 
-public async Task<IEnumerable<Branch>> GetBranchByCorpFlag(bool? corporateEntityFlag)
-{
-    var query = @"SELECT id FROM branch 
-                  JOIN branchworktime ON branch.id = branchworktime.Branch_id";
-
-    var parameters = new List<NpgsqlParameter>();
-
-    if (corporateEntityFlag.HasValue)
-    {
-        query += " WHERE corporate_entity_flag = @corporateEntityFlag";
-        parameters.Add(new NpgsqlParameter("corporateEntityFlag", NpgsqlTypes.NpgsqlDbType.Boolean)
-        {
-            Value = corporateEntityFlag.Value
-        });
-    }
-
-    var branches = new List<Branch>();
-
-    using (var cmd = new NpgsqlCommand(query, _connection))
-    {
-        if (parameters.Any())
-        {
-            cmd.Parameters.AddRange(parameters.ToArray());
-        }
-
-        using (var reader = await cmd.ExecuteReaderAsync())
-        {
-            while (await reader.ReadAsync())
-            {
-                var branch = new Branch
-                {
-                    Id = reader["id"].ToString(),
-                    // Добавьте остальные поля при необходимости
-                };
-                branches.Add(branch);
-            }
-        }
-    }
-    return branches;
-}
