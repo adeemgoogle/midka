@@ -1,113 +1,42 @@
- public async Task<IEnumerable<Branch>> GetBranchByCorpFlag(bool corporate_entity_flag)
+public async Task<IEnumerable<Branch>> GetBranchByCorpFlag(bool? corporate_entity_flag)
+{
+    var query = "select id FROM branch join branchworktime on branch.id = branchworktime.Branch_id where corporate_entity_flag = @corporate_entity_flag";
+    var branches = new List<Branch>();
+    using (var cmd = new NpgsqlCommand(query, _connection))
+    {
+        cmd.Parameters.AddWithValue("@corporate_entity_flag", $"{corporate_entity_flag}");
+
+        using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                var branch = new Branch
+                {
+                    Id = reader["id"].ToString(),
+                   
+                };
+                branches.Add(branch);
+            }
+        }
+
+    }
+    return branches;
+}
+
+ if (context.GetArgument<bool?>("corporate_entity_flag") != null)
  {
-     var query = "select id, number, name, type, filial, locality, kato, adress, adress_kaz, location,  currency_exchange_flag, corporate_entity_flag, person_entity_flag, western_union_flag, money_gramm_flag, depository_flag, terminal_flag, premium_zone_flag, all_day_flag, address_local_kaz, address_local_ru, address_city_kaz, address_city_ru, address_full_kaz, embosser, address_full_ru,   BranchWorkTime.week_Start_time, BranchWorkTime.week_end_time, BranchWorkTime.week_lunch_Start, BranchWorkTime.week_lunch_end, BranchWorkTime.sat_start_time, BranchWorkTime.sat_end_time, BranchWorkTime.sat_lunch_Start, BranchWorkTime.sat_lunch_end, BranchWorkTime.sun_start_time, BranchWorkTime.sun_end_time, BranchWorkTime.sun_lunch_Start, BranchWorkTime.sun_lunch_end FROM branch join branchworktime on branch.id = branchworktime.Branch_id where corporate_entity_flag = @corporate_entity_flag";
-     var param = new NpgsqlParameter("corporateEntityFlag", NpgsqlTypes.NpgsqlDbType.Boolean)
-     {
-         Value = corporate_entity_flag
-     };
-
-     var row = await GetBranchRow(query, param) ;
-     if (row != null)
-     {
-         return null;
-     }
-     return row;
- }
- private async Task<IEnumerable<Branch>> GetBranchRow(string query, params NpgsqlParameter[] parameters)
- {
-     var branches = new List<Branch>();
-
-     using (var cmd = new NpgsqlCommand(query, _connection))
-     {
-         cmd.Parameters.AddRange(parameters);
-
-         using (var reader = await cmd.ExecuteReaderAsync())
-         {
-             if (await reader.ReadAsync())
-             {
-                 var branch = new Branch
-                 {
-                     Id = reader["id"].ToString(),
-                     Locality = reader["locality"].ToString(),
-                     KatoCode = reader["kato"].ToString(),
-                     Name = reader["name"].ToString(),
-                     Type = reader["type"].ToString(),
-                     Filial = reader["filial"].ToString(),
-                     Adress = reader["adress"].ToString(),
-                     AdressKaz = reader["adress_kaz"].ToString(),
-                     Location = reader["location"].ToString(),
-                     CurrencyExchangeFlag = reader["currency_exchange_flag"] as bool? ?? false,
-                     CorporateEntityFlag = reader["corporate_entity_flag"] as bool? ?? false,
-                     PersonEntityFlag = reader["person_entity_flag"] as bool? ?? false,
-                     WesternUnionFlag = reader["western_union_flag"] as bool? ?? false,
-                     MoneyGrammFlag = reader["money_gramm_flag"] as bool? ?? false,
-                     DepositoryFlag = reader["depository_flag"] as bool? ?? false,
-                     TerminalFlag = reader["terminal_flag"] as bool? ?? false,
-                     PremiumZoneFlag = reader["premium_zone_flag"] as bool? ?? false,
-                     AllDayFlag = reader["all_day_flag"] as bool? ?? false,
-                     Embosser = reader["embosser"] as bool? ?? false,
-                     Address = new Address
-                     {
-                         City = new IntLanguage
-                         {
-                             Kz = reader["address_city_kaz"].ToString(),
-                             Ru = reader["address_city_ru"].ToString(),
-                         },
-                         Local = new IntLanguage
-                         {
-                             Kz = reader["address_local_kaz"].ToString(),
-                             Ru = reader["address_local_ru"].ToString()
-                         },
-                         Full = new IntLanguage
-                         {
-                             Kz = reader["address_full_kaz"].ToString(),
-                             Ru = reader["address_full_ru"].ToString()
-                         }
-
-                     },
-                     WeekdayTime = new WorkTime
-                     {
-                         StartTime = reader["week_Start_time"].ToString(),
-                         EndTime = reader["week_end_time"].ToString(),
-                         LunchStart = reader["week_lunch_start"].ToString(),
-                         LunchEnd = reader["week_lunch_end"].ToString()
-                     },
-
-                     SaturdayWorkTime = new WorkTime
-                     {
-                         StartTime = reader["sat_start_time"].ToString(),
-                         EndTime = reader["sat_end_time"].ToString(),
-                         LunchStart = reader["sat_lunch_start"].ToString(),
-                         LunchEnd = reader["sat_lunch_end"].ToString()
-                     },
-                     SundayWorkTime = new WorkTime
-                     {
-                         StartTime = reader["sun_start_time"].ToString(),
-                         EndTime = reader["sun_end_time"].ToString(),
-                         LunchStart = reader["sun_lunch_start"].ToString(),
-                         LunchEnd = reader["sun_lunch_end"].ToString()
-                     }
-                 };
-                 branches.Add(branch);
-             }
-
-         }
-         return branches;
-
-     }
-     
+     var branch = _repo.GetBranchByCorpFlag(context.GetArgument<bool>("corporate_entity_flag"));
+     return branch;
  }
 
-fix "extensions": {
-                "code": "POSTGRES",
-                "data": {
-                    "Severity": "ERROR",
-                    "SqlState": "42883",
-                    "Code": "42883",
-                    "MessageText": "operator does not exist: @ boolean",
-                    "Hint": "No operator matches the given name and argument type. You might need to add an explicit type cast.",
-                    "Position": 847,
-                    "File": "parse_oper.c",
-                    "Line": "656",
-                    "Routine": "op_error"
-                }
+Field<ListGraphType<BranchType>>(
+    "branch",
+    arguments: new QueryArguments(
+          
+          
+            new QueryArgument<BooleanGraphType> { Name = "corporateEntityFlag", Description = "Search Branches which can serve corporate entities or not", DefaultValue = null },
+          
+    ),
+    resolve: context => GetResolveContext(context).Result);
+
+не работает фильтрация
