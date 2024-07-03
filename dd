@@ -40,3 +40,44 @@ Field<ListGraphType<BranchType>>(
     resolve: context => GetResolveContext(context).Result);
 
 не работает фильтрация
+
+public async Task<IEnumerable<Branch>> GetBranchByCorpFlag(bool? corporateEntityFlag)
+{
+    var query = @"SELECT id FROM branch 
+                  JOIN branchworktime ON branch.id = branchworktime.Branch_id";
+
+    var parameters = new List<NpgsqlParameter>();
+
+    if (corporateEntityFlag.HasValue)
+    {
+        query += " WHERE corporate_entity_flag = @corporateEntityFlag";
+        parameters.Add(new NpgsqlParameter("corporateEntityFlag", NpgsqlTypes.NpgsqlDbType.Boolean)
+        {
+            Value = corporateEntityFlag.Value
+        });
+    }
+
+    var branches = new List<Branch>();
+
+    using (var cmd = new NpgsqlCommand(query, _connection))
+    {
+        if (parameters.Any())
+        {
+            cmd.Parameters.AddRange(parameters.ToArray());
+        }
+
+        using (var reader = await cmd.ExecuteReaderAsync())
+        {
+            while (await reader.ReadAsync())
+            {
+                var branch = new Branch
+                {
+                    Id = reader["id"].ToString(),
+                    // Добавьте остальные поля при необходимости
+                };
+                branches.Add(branch);
+            }
+        }
+    }
+    return branches;
+}
