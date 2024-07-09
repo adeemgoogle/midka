@@ -1,35 +1,13 @@
-ublic async Task<IEnumerable<ATM>> GetAtmByCircle(double? lat, double? lng, string distance)
-        {
-            var query = "Select * from atm where ST_DWithin(st_setsrid(st_makepoint(lat, lng), 4326), st_setsrid(st_makepoint(@lat, @lng), 4326), @distance) ";
-            
-
-            var atms = new List<ATM>();
-
-            using (var cmd = new NpgsqlCommand(query, _connection))
-            {
-                cmd.Parameters.AddWithValue("@lat", lat.Value);
-                cmd.Parameters.AddWithValue("@lng", lng.Value);
-                cmd.Parameters.AddWithValue("@distance", distance);
-                using (var reader = await cmd.ExecuteReaderAsync())
+    "message": "Expected value of type \"TradePointAPI.Models.GraphQL.LocationType\" for \"Location\" but got: TradePointAPI.Models.Geoloactions.",
+            "locations": [
                 {
-                    while (await reader.ReadAsync())
-                    {
-                        var atm = new ATM
-                        {
-                            Id = reader["id"].ToString(),
-}
-}
-}
-}
-}
-
-
- if (context.GetArgument<Dictionary<string, object>>("circle") != null)
- {
-     var atm = _repo.GetAtmByCircle(context.GetArgument<double?>("lat"), context.GetArgument<double?>("lng"), context.GetArgument<string>("distance"));
-     
-     return atm;
- }
-
-
-
+                    "line": 32,
+                    "column": 9
+                }
+            ],
+            "path": [
+                "atm",
+                "0",
+                "geoLocation"
+            ]
+        },
