@@ -1,13 +1,10 @@
-    "message": "Expected value of type \"TradePointAPI.Models.GraphQL.LocationType\" for \"Location\" but got: TradePointAPI.Models.Geoloactions.",
-            "locations": [
-                {
-                    "line": 32,
-                    "column": 9
-                }
-            ],
-            "path": [
-                "atm",
-                "0",
-                "geoLocation"
-            ]
-        },
+fail{"@t":"2024-07-10T03:01:44.2642121Z","@m":"Connection id \"\"0HN50HIG15ESH\"\", Request id \"\"0HN50HIG15ESH:00000001\"\": An unhandled exception was thrown by the application.","@i":"560e7d32","@l":"Error","@x":"System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=3.1.32.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)\r\n   at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)\r\n   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)","ConnectionId":"0HN50HIG15ESH","TraceIdentifier":"0HN50HIG15ESH:00000001","EventId":{"Id":13,"Name":"ApplicationError"},"SourceContext":"Microsoft.AspNetCore.Server.Kestrel","RequestId":"0HN50HIG15ESH:00000001","RequestPath":"/","SpanId":"|8889d2b2-4e197b97391b9aea.","TraceId":"8889d2b2-4e197b97391b9aea","ParentId":""}
+: Microsoft.AspNetCore.Server.Kestrel[13]
+      Connection id "0HN50HIG15ESH", Request id "0HN50HIG15ESH:00000001": An unhandled exception was thrown by the application.
+System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=3.1.32.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.
+   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
+   at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
