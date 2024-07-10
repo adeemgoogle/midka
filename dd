@@ -1,152 +1,35 @@
-Microsoft.AspNetCore.Server.Kestrel[13]
-      Connection id "0HN50HR47MQQ8", Request id "0HN50HR47MQQ8:00000002": An unhandled exception was thrown by the application.
-      System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.
-         at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
-         at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
-         at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
-         at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)
-         at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)
-         at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
-{"@t":"2024-07-10T03:17:10.7438019Z","@m":"Connection id \"\"0HN50HR47MQQ8\"\", Request id \"\"0HN50HR47MQQ8:00000002\"\": An unhandled exception was thrown by the application.","@i":"560e7d32","@l":"Error","@x":"System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)\r\n   at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)\r\n   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)","ConnectionId":"0HN50HR47MQQ8","TraceIdentifier":"0HN50HR47MQQ8:00000002","EventId":{"Id":13,"Name":"ApplicationError"},"SourceContext":"Microsoft.AspNetCore.Server.Kestrel","RequestId":"0HN50HR47MQQ8:00000002","RequestPath":"/"}
-<Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-  </PropertyGroup>
+warn: Microsoft.AspNetCore.DataProtection.Repositories.EphemeralXmlRepository[50]
+Using an in-memory repository. Keys will not be persisted to storage.
+{"@t":"2024-07-10T09:32:39.8867402Z","@m":"Using an in-memory repository. Keys will not be persisted to storage.","@i":"28e83010","@l":"Warning","EventId":{"Id":50,"Name":"UsingInMemoryRepository"},"SourceContext":"Microsoft.AspNetCore.DataProtection.Repositories.EphemeralXmlRepository"}
+warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[59]
+Neither user profile nor HKLM registry available. Using an ephemeral key repository. Protected data will be unavailable when application exits.
+{"@t":"2024-07-10T09:32:39.9924978Z","@m":"Neither user profile nor HKLM registry available. Using an ephemeral key repository. Protected data will be unavailable when application exits.","@i":"54f66960","@l":"Warning","EventId":{"Id":59,"Name":"UsingEphemeralKeyRepository"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager"}
+warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
 
-  <ItemGroup>
-    <PackageReference Include="GraphiQL" Version="1.2.0" />
-    <PackageReference Include="GraphQL" Version="2.4.0" />
-    <PackageReference Include="GraphQL.Client" Version="1.0.3" />
-    <PackageReference Include="GraphQL.Server.Core" Version="3.4.0" />
-    <PackageReference Include="GraphQL.Server.Ui.Playground" Version="3.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
-    <PackageReference Include="NEST" Version="7.0.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="Npgsql" Version="4.0.0" />
-    <PackageReference Include="prometheus-net.AspNetCore" Version="3.1.4" />
-    <PackageReference Include="Sentry.AspNetCore" Version="1.2.0" />
-    <PackageReference Include="Serilog" Version="2.8.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="2.1.1" />
-    <PackageReference Include="Serilog.Formatting.Compact" Version="1.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
-  </ItemGroup>
-
-	<ItemGroup>
-		<None Update="appsettings.json">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
-
-</Project>
-
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
-using Serilog;
-using Serilog.Events;
-using Serilog.Formatting.Compact;
-
-namespace TradePointAPI
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug,
-                    formatter: new RenderedCompactJsonFormatter())
-                .CreateLogger();
-
-            Log.Information("Starting web service");
-            CreateWebHostBuilder(args).Build().Run();
-            Log.Information("Web service stopped");
-        }
-
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseKestrel()
-                .UseSentry()
-                .UseStartup<Startup>();
-    }
-}
-using GraphiQl;
-using GraphQL;
-using GraphQL.Types;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using TradePointAPI.Models.GraphQL;
-using TradePointAPI.Repositories;
-using Serilog;
-using Microsoft.Extensions.Logging;
-using Prometheus;
-using TradePointAPI.PostgresServices;
-
-using TradePointAPI.Queries;
-using TaxpayerApi.Schemas;
-using Microsoft.Extensions.Hosting;
-
-namespace TradePointAPI
-{
-    public class Startup
-    {
-        private readonly IConfiguration Configuration;
-
-        public Startup(IConfiguration configuration)
-        {
-            Configuration = configuration;
-        }
-
-        /// <summary>
-        /// This method gets called by the runtime. Use this method to add services to the container.
-        /// For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
-        /// </summary>
-        /// <param name="services"></param>
-        public void ConfigureServices(IServiceCollection services)
-        {
-            services.AddMvc();
-            services.AddOptions();
-            services.AddSingleton<IRepository, PostgresService>();
-            services.AddSingleton<IConfiguration>(Configuration);
-            services.AddSingleton<ISchema, TradePointsSchema>();
-            services.AddScoped<TPQuery>();
-            services.AddScoped<IDocumentExecuter, DocumentExecuter>();
-            services.AddTransient<ATMType>();
-            services.AddTransient<BranchType>();
-            services.AddTransient<KATOType>();
-            services.AddTransient<GeoLocationType>();
-            services.AddTransient<WorkTimeType>();
-            services.AddTransient<AddressType>();
-            services.AddTransient<IntLanguageType>();
-            services.AddTransient<CircleInputType>();
-
-            services.AddHealthChecks();
-            var sp = services.BuildServiceProvider();
-            var dbConnector = new PostgresService(Configuration);
-           /* services.AddSingleton<ISchema>(new TradePointsSchema(new FuncDependencyResolver(type => sp.GetService(type))));*/
-            
-            services.AddSingleton<IDependencyResolver>(_ => new FuncDependencyResolver(_.GetRequiredService));
-        }
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory logger)
-        {
-            
-            logger.AddSerilog();
-
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
-            
-            app.UseMetricServer();
-            app.UseGraphiQl("/graphql");
-            app.UseRouting();
-            app.UseEndpoints(endpoints => endpoints.MapControllers());
-            app.UseHealthChecks("/healthz");
-        }
-    }
-}
-
+warn: Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager[35]
+No XML encryptor configured. Key {ec75e4f4-706a-4ddb-bb0c-4d4ab884b814} may be persisted to storage in unencrypted form.
+{"@t":"2024-07-10T09:32:40.4049483Z","@m":"No XML encryptor configured. Key {ec75e4f4-706a-4ddb-bb0c-4d4ab884b814} may be persisted to storage in unencrypted form.","@i":"9ca7e61e","@l":"Warning","KeyId":"ec75e4f4-706a-4ddb-bb0c-4d4ab884b814","EventId":{"Id":35,"Name":"NoXMLEncryptorConfiguredKeyMayBePersistedToStorageInUnencryptedForm"},"SourceContext":"Microsoft.AspNetCore.DataProtection.KeyManagement.XmlKeyManager"}
+Unhandled exception. System.Net.Sockets.SocketException (13): Permission denied
+at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, String callerName)
+at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass30_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.ListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.AnyIPListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(IEnumerable`1 listenOptions, AddressBindContext context, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Hosting.WebHost.StartAsync(CancellationToken cancellationToken)
+at Microsoft.AspNetCore.Hosting.WebHostExtensions.RunAsync(IWebHost host, CancellationToken token, String startupMessage)
+at Microsoft.AspNetCore.Hosting.WebHostExtensions.RunAsync(IWebHost host, CancellationToken token, String startupMessage)
+at Microsoft.AspNetCore.Hosting.WebHostExtensions.RunAsync(IWebHost host, CancellationToken token)
+at Microsoft.AspNetCore.Hosting.WebHostExtensions.Run(IWebHost host)
+at TradePointAPI.Program.Main(String[] args) in /src/TradePointAPI/Program.cs:line 20
