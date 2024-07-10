@@ -1,10 +1,152 @@
-fail{"@t":"2024-07-10T03:01:44.2642121Z","@m":"Connection id \"\"0HN50HIG15ESH\"\", Request id \"\"0HN50HIG15ESH:00000001\"\": An unhandled exception was thrown by the application.","@i":"560e7d32","@l":"Error","@x":"System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=3.1.32.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)\r\n   at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)\r\n   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)","ConnectionId":"0HN50HIG15ESH","TraceIdentifier":"0HN50HIG15ESH:00000001","EventId":{"Id":13,"Name":"ApplicationError"},"SourceContext":"Microsoft.AspNetCore.Server.Kestrel","RequestId":"0HN50HIG15ESH:00000001","RequestPath":"/","SpanId":"|8889d2b2-4e197b97391b9aea.","TraceId":"8889d2b2-4e197b97391b9aea","ParentId":""}
-: Microsoft.AspNetCore.Server.Kestrel[13]
-      Connection id "0HN50HIG15ESH", Request id "0HN50HIG15ESH:00000001": An unhandled exception was thrown by the application.
-System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=3.1.32.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.
-   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
-   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
-   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
-   at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)
-   at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)
-   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+Microsoft.AspNetCore.Server.Kestrel[13]
+      Connection id "0HN50HR47MQQ8", Request id "0HN50HR47MQQ8:00000002": An unhandled exception was thrown by the application.
+      System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.
+         at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
+         at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+         at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)
+         at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)
+         at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)
+         at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+{"@t":"2024-07-10T03:17:10.7438019Z","@m":"Connection id \"\"0HN50HR47MQQ8\"\", Request id \"\"0HN50HR47MQQ8:00000002\"\": An unhandled exception was thrown by the application.","@i":"560e7d32","@l":"Error","@x":"System.TypeLoadException: Could not load type 'Microsoft.AspNetCore.Http.Internal.BufferingHelper' from assembly 'Microsoft.AspNetCore.Http, Version=6.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60'.\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)\r\n   at Sentry.AspNetCore.SentryMiddleware.InvokeAsync(HttpContext context)\r\n   at Microsoft.AspNetCore.HostFiltering.HostFilteringMiddleware.Invoke(HttpContext context)\r\n   at Microsoft.AspNetCore.Hosting.HostingApplication.ProcessRequestAsync(Context context)\r\n   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)","ConnectionId":"0HN50HR47MQQ8","TraceIdentifier":"0HN50HR47MQQ8:00000002","EventId":{"Id":13,"Name":"ApplicationError"},"SourceContext":"Microsoft.AspNetCore.Server.Kestrel","RequestId":"0HN50HR47MQQ8:00000002","RequestPath":"/"}
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="GraphiQL" Version="1.2.0" />
+    <PackageReference Include="GraphQL" Version="2.4.0" />
+    <PackageReference Include="GraphQL.Client" Version="1.0.3" />
+    <PackageReference Include="GraphQL.Server.Core" Version="3.4.0" />
+    <PackageReference Include="GraphQL.Server.Ui.Playground" Version="3.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Http" Version="2.2.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
+    <PackageReference Include="NEST" Version="7.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="Npgsql" Version="4.0.0" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="3.1.4" />
+    <PackageReference Include="Sentry.AspNetCore" Version="1.2.0" />
+    <PackageReference Include="Serilog" Version="2.8.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="2.1.1" />
+    <PackageReference Include="Serilog.Formatting.Compact" Version="1.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="3.1.1" />
+  </ItemGroup>
+
+	<ItemGroup>
+		<None Update="appsettings.json">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+</Project>
+
+using Microsoft.AspNetCore;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Compact;
+
+namespace TradePointAPI
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug,
+                    formatter: new RenderedCompactJsonFormatter())
+                .CreateLogger();
+
+            Log.Information("Starting web service");
+            CreateWebHostBuilder(args).Build().Run();
+            Log.Information("Web service stopped");
+        }
+
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+            WebHost.CreateDefaultBuilder(args)
+                .UseKestrel()
+                .UseSentry()
+                .UseStartup<Startup>();
+    }
+}
+using GraphiQl;
+using GraphQL;
+using GraphQL.Types;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using TradePointAPI.Models.GraphQL;
+using TradePointAPI.Repositories;
+using Serilog;
+using Microsoft.Extensions.Logging;
+using Prometheus;
+using TradePointAPI.PostgresServices;
+
+using TradePointAPI.Queries;
+using TaxpayerApi.Schemas;
+using Microsoft.Extensions.Hosting;
+
+namespace TradePointAPI
+{
+    public class Startup
+    {
+        private readonly IConfiguration Configuration;
+
+        public Startup(IConfiguration configuration)
+        {
+            Configuration = configuration;
+        }
+
+        /// <summary>
+        /// This method gets called by the runtime. Use this method to add services to the container.
+        /// For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        /// </summary>
+        /// <param name="services"></param>
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc();
+            services.AddOptions();
+            services.AddSingleton<IRepository, PostgresService>();
+            services.AddSingleton<IConfiguration>(Configuration);
+            services.AddSingleton<ISchema, TradePointsSchema>();
+            services.AddScoped<TPQuery>();
+            services.AddScoped<IDocumentExecuter, DocumentExecuter>();
+            services.AddTransient<ATMType>();
+            services.AddTransient<BranchType>();
+            services.AddTransient<KATOType>();
+            services.AddTransient<GeoLocationType>();
+            services.AddTransient<WorkTimeType>();
+            services.AddTransient<AddressType>();
+            services.AddTransient<IntLanguageType>();
+            services.AddTransient<CircleInputType>();
+
+            services.AddHealthChecks();
+            var sp = services.BuildServiceProvider();
+            var dbConnector = new PostgresService(Configuration);
+           /* services.AddSingleton<ISchema>(new TradePointsSchema(new FuncDependencyResolver(type => sp.GetService(type))));*/
+            
+            services.AddSingleton<IDependencyResolver>(_ => new FuncDependencyResolver(_.GetRequiredService));
+        }
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory logger)
+        {
+            
+            logger.AddSerilog();
+
+            if (env.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
+            
+            app.UseMetricServer();
+            app.UseGraphiQl("/graphql");
+            app.UseRouting();
+            app.UseEndpoints(endpoints => endpoints.MapControllers());
+            app.UseHealthChecks("/healthz");
+        }
+    }
+}
+
