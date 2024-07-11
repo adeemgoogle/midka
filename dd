@@ -1,1 +1,347 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+using Serilog;
+using Serilog.Events;
+using Sentry;
+using Serilog.Formatting.Compact;
+using StackExchange.Redis;
+using TradePointsLoader.Repository;
+using TradePointsLoader.Service;
+using Microsoft.AspNetCore.Hosting;
+using TradePointsLoader.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 
+namespace TradePointsLoader
+{
+    class Program
+    {
+        private static readonly IConfiguration _config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json")
+            .AddEnvironmentVariables()
+            .Build();
+
+        static async Task<int> Main(string[] args)
+        {
+            ConfigureLogging();
+
+            try
+            {
+                var host = CreateWebHostBuilder(args).Build();
+                await host.RunAsync();
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Host terminated unexpectedly");
+                return 1;
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
+        }
+
+        static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+            new WebHostBuilder()
+                .UseKestrel()
+                .UseUrls("http://*:8080")
+                .UseConfiguration(_config)
+                .ConfigureServices(ConfigureServices)
+                .UseStartup<Startup>();
+
+        static void ConfigureServices(IServiceCollection services)
+        {
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddLogging();
+            services.AddHealthChecks();
+            services.AddSingleton<HealthzController>();
+
+            // Register services
+            services.AddSingleton<PostgresService>();
+            services.AddSingleton<KATORepository>();
+            services.AddSingleton(provider =>
+            {
+                var katoRepository = provider.GetRequiredService<KATORepository>();
+                return katoRepository.GetKATORef();
+            });
+            services.AddSingleton<TradePointsRepository>();
+            services.AddSingleton<IJobFactory, SingletonJobFactory>();
+            services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+            
+            // Add our job
+            services.AddSingleton<MyJob>();
+            services.AddSingleton(new JobSchedule(
+                jobType: typeof(MyJob),
+                cronExpression: "0 0 * * * ?")); // Run every 1 hour
+
+            services.AddHostedService<QuartzHostedService>();
+
+            // Add RedisSlaveService
+            services.AddHostedService<RedisSlaveService>(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<RedisSlaveService>>();
+                var config = _config;
+                return new RedisSlaveService(
+                    logger,
+                    config["Redis:Servers"], // example: "localhost:6379,localhost:6380"
+                    config["Redis:Password"],
+                    config["Redis:ServiceName"],
+                    int.Parse(config["Redis:DB"])
+                );
+            });
+        }
+
+        static void ConfigureLogging()
+        {
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+                .CreateLogger();
+        }
+
+        public class MyJob : IJob
+        {
+            private readonly IConfiguration _config;
+
+            public MyJob(IConfiguration config)
+            {
+                _config = config;
+            }
+
+            public async Task Execute(IJobExecutionContext context)
+            {
+                try
+                {
+                    var dbConnector = new PostgresService(_config);
+                    var connection = dbConnector.ConnectToDB();
+
+                    Log.Information("Loading trade points data");
+
+                    KATORepository katoRep = new KATORepository(_config);
+                    var katodict = katoRep.GetKATORef();
+
+                    TradePointsRepository tradePointsRep = new TradePointsRepository(_config, katodict);
+                    var aTMs = tradePointsRep.GetAtms();
+                    var branches = tradePointsRep.GetBranches();
+
+                    dbConnector.TruncateAtmworktime();
+                    dbConnector.TruncateBRanchworktime();
+                    dbConnector.TruncateBRanch();
+                    dbConnector.TruncateATMS();
+                    dbConnector.TruncateKato();
+
+                    dbConnector.AddKATO(katodict);
+                    dbConnector.AddBranches(branches);
+                    dbConnector.AddATMs(aTMs);
+                    dbConnector.AddBranchs(branches);
+                    dbConnector.AddAtms(aTMs);
+
+                    Log.Information("Process finished and cron is worked");
+                }
+                catch (Exception ex)
+                {
+                    SentrySdk.CaptureException(ex);
+                    Log.Error(ex, "Error during job execution");
+                }
+
+                await Task.CompletedTask;
+            }
+        }
+
+        public class SingletonJobFactory : IJobFactory
+        {
+            private readonly IServiceProvider _serviceProvider;
+
+            public SingletonJobFactory(IServiceProvider serviceProvider)
+            {
+                _serviceProvider = serviceProvider;
+            }
+
+            public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+            {
+                return _serviceProvider.GetService(bundle.JobDetail.JobType) as IJob;
+            }
+
+            public void ReturnJob(IJob job) { }
+        }
+
+        public class JobSchedule
+        {
+            public JobSchedule(Type jobType, string cronExpression)
+            {
+                JobType = jobType;
+                CronExpression = cronExpression;
+            }
+
+            public Type JobType { get; }
+            public string CronExpression { get; }
+        }
+
+        public class QuartzHostedService : IHostedService
+        {
+            private readonly ISchedulerFactory _schedulerFactory;
+            private readonly IJobFactory _jobFactory;
+            private readonly IEnumerable<JobSchedule> _jobSchedules;
+            private IScheduler _scheduler;
+
+            public QuartzHostedService(
+                ISchedulerFactory schedulerFactory,
+                IJobFactory jobFactory,
+                IEnumerable<JobSchedule> jobSchedules)
+            {
+                _schedulerFactory = schedulerFactory;
+                _jobFactory = jobFactory;
+                _jobSchedules = jobSchedules;
+            }
+
+            public async Task StartAsync(CancellationToken cancellationToken)
+            {
+                _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+                _scheduler.JobFactory = _jobFactory;
+
+                foreach (var jobSchedule in _jobSchedules)
+                {
+                    var job = CreateJob(jobSchedule);
+                    var trigger = CreateTrigger(jobSchedule);
+
+                    await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+                }
+
+                await _scheduler.Start(cancellationToken);
+                Log.Information("cron created");
+            }
+
+            public async Task StopAsync(CancellationToken cancellationToken)
+            {
+                if (_scheduler != null)
+                {
+                    await _scheduler.Shutdown(cancellationToken);
+                }
+            }
+
+            private IJobDetail CreateJob(JobSchedule schedule)
+            {
+                var jobType = schedule.JobType;
+                return JobBuilder
+                    .Create(jobType)
+                    .WithIdentity(jobType.FullName)
+                    .WithDescription(jobType.Name)
+                    .Build();
+            }
+
+            private ITrigger CreateTrigger(JobSchedule schedule)
+            {
+                return TriggerBuilder
+                    .Create()
+                    .WithIdentity($"{schedule.JobType.FullName}.trigger")
+                    .WithCronSchedule(schedule.CronExpression)
+                    .WithDescription(schedule.CronExpression)
+                    .Build();
+            }
+        }
+    }
+
+    public class RedisSlaveService : IHostedService
+    {
+        private readonly ILogger<RedisSlaveService> _logger;
+        private readonly string[] _servers;
+        private readonly string _password;
+        private readonly string _serviceName;
+        private readonly int _db;
+        private ConnectionMultiplexer _redis;
+        private IDatabase _dbInstance;
+        private int _serverIndex;
+        private readonly IServiceProvider _serviceProvider;
+
+        public RedisSlaveService(ILogger<RedisSlaveService> logger, string servers, string password, string serviceName, int db)
+        {
+            _logger = logger;
+            _servers = servers.Split(",");
+            _password = password;
+            _serviceName = serviceName;
+            _db = db;
+            _serverIndex = 0;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            SetRedisClient();
+            await Task.Run(async () =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    if (await IsMasterDead())
+                    {
+                        await BecomeMaster();
+                        return;
+                    }
+                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                }
+            }, cancellationToken);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _redis?.Dispose();
+            return Task.CompletedTask;
+        }
+
+        private void SetRedisClient()
+        {
+            var options = new ConfigurationOptions
+            {
+                EndPoints = { _servers[_serverIndex] },
+                Password = _password,
+                DefaultDatabase = _db
+            };
+            _redis = ConnectionMultiplexer.Connect(options);
+            _dbInstance = _redis.GetDatabase();
+            _serverIndex = (_serverIndex + 1) % _servers.Length;
+        }
+
+        private async Task<bool> IsMasterDead()
+        {
+            try
+            {
+                var res = await _dbInstance.StringGetAsync(_serviceName);
+                return res.IsNullOrEmpty;
+            }
+            catch (RedisException)
+            {
+                SetRedisClient();
+                return await IsMasterDead();
+            }
+        }
+
+        private async Task BecomeMaster()
+        {
+            await Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await UpdateStatus();
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                }
+            });
+        }
+
+        private async Task UpdateStatus()
+        {
+            var id = Guid.NewGuid().ToString();
+            try
+            {
+                await _dbInstance.StringSetAsync(_serviceName, id, TimeSpan.FromSeconds(30));
+            }
+            catch (RedisException)
+            {
+                SetRedisClient();
+                await UpdateStatus();
