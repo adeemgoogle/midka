@@ -81,3 +81,110 @@ func updateStatus(ctx context.Context) {
 		updateStatus(ctx)
 	}
 }
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using StackExchange.Redis;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace SlaveService
+{
+    public class RedisSlaveService : IHostedService
+    {
+        private readonly ILogger<RedisSlaveService> _logger;
+        private readonly string[] _servers;
+        private readonly string _password;
+        private readonly string _serviceName;
+        private readonly int _db;
+        private ConnectionMultiplexer _redis;
+        private IDatabase _dbInstance;
+        private int _serverIndex;
+
+        public RedisSlaveService(ILogger<RedisSlaveService> logger, string servers, string password, string serviceName, int db)
+        {
+            _logger = logger;
+            _servers = servers.Split(",");
+            _password = password;
+            _serviceName = serviceName;
+            _db = db;
+            _serverIndex = 0;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            SetRedisClient();
+            await Task.Run(async () =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    if (await IsMasterDead())
+                    {
+                        await BecomeMaster();
+                        return;
+                    }
+                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                }
+            }, cancellationToken);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken)
+        {
+            _redis?.Dispose();
+            return Task.CompletedTask;
+        }
+
+        private void SetRedisClient()
+        {
+            var options = new ConfigurationOptions
+            {
+                EndPoints = { _servers[_serverIndex] },
+                Password = _password,
+                DefaultDatabase = _db
+            };
+            _redis = ConnectionMultiplexer.Connect(options);
+            _dbInstance = _redis.GetDatabase();
+            _serverIndex = (_serverIndex + 1) % _servers.Length;
+        }
+
+        private async Task<bool> IsMasterDead()
+        {
+            try
+            {
+                var res = await _dbInstance.StringGetAsync(_serviceName);
+                return res.IsNullOrEmpty;
+            }
+            catch (RedisException)
+            {
+                SetRedisClient();
+                return await IsMasterDead();
+            }
+        }
+
+        private async Task BecomeMaster()
+        {
+            await Task.Run(async () =>
+            {
+                while (true)
+                {
+                    await UpdateStatus();
+                    await Task.Delay(TimeSpan.FromSeconds(10));
+                }
+            });
+        }
+
+        private async Task UpdateStatus()
+        {
+            var id = Guid.NewGuid().ToString();
+            try
+            {
+                await _dbInstance.StringSetAsync(_serviceName, id, TimeSpan.FromSeconds(30));
+            }
+            catch (RedisException)
+            {
+                SetRedisClient();
+                await UpdateStatus();
+            }
+        }
+    }
+}
