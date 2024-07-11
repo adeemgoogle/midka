@@ -1,54 +1,90 @@
-"errors": null,
+{
+    "data": {
+        "atm": [
+            {
+                "id": " ",
+                "katoCode": " ",
+                "filial": " ",
+                "locality": "",
+                "adress": "",
+                "adressKaz": "",
+                "location": " ",
+                "publicFlag": false,
+                "cashInFlag": false,
+                "allDayFlag": false,
+                "currencies": [
+                    " "
+                ],
+                "weekdayWorkTime": {
+                    "startTime": " ",
+                    "lunchStart": " ",
+                    "lunchEnd": " ",
+                    "endTime": " "
+                },
+                "sundayWorkTime": {
+                    "startTime": " ",
+                    "lunchStart": " ",
+                    "lunchEnd": " ",
+                    "endTime": " "
+                },
+                "saturdayWorkTime": {
+                    "startTime": " ",
+                    "lunchStart": " ",
+                    "lunchEnd": " ",
+                    "endTime": " "
+                },
+                "geoLocation": {
+                    "latitude": 0,
+                    "longitude": 0
+                }
+            },
+            {
+               "id": " ",
+                "katoCode": " ",
+                "filial": " ",
+                "locality": "",
+                "adress": "",
+                "adressKaz": "",
+                "location": " ",
+                "publicFlag": false,
+                "cashInFlag": false,
+                "allDayFlag": false,
+                "currencies": [
+                    " "
+                ],
+                "weekdayWorkTime": {
+                    "startTime": " ",
+                    "lunchStart": " ",
+                    "lunchEnd": " ",
+                    "endTime": " "
+                },
+                "sundayWorkTime": {
+                    "startTime": " ",
+                    "lunchStart": " ",
+                    "lunchEnd": " ",
+                    "endTime": " "
+                },
+                "saturdayWorkTime": {
+                    "startTime": " ",
+                    "lunchStart": " ",
+                    "lunchEnd": " ",
+                    "endTime": " "
+                },
+                "geoLocation": {
+                    "latitude": 0,
+                    "longitude": 0
+                }
+            },
+        ]
+    },
+    "errors": null,
     "query": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
     "document": {
         "originalQuery": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
         "children": [
-            {
-                "children": [
-                    {
-                        "children": [
-                            {
-                                "children": [
-                                    {
-                                        "children": [
-                                            {
-                                                "children": [
-                                                    {
-                                                        "children": [],
-                                                        "sourceLocation": {
-                                                            "start": 22,
-                                                            "end": 34,
-                                                            "line": 0,
-                                                            "column": 0
-                                                        }
-                                                    }
-                                                ],
-                                                "sourceLocation": {
-                                                    "start": 11,
-                                                    "end": 22,
-                                                    "line": 0,
-                                                    "column": 0
-                                                }
-                                            },
-                                            {
-                                                "children": [
-                                                    {
-                                                        "children": [],
-                                                        "sourceLocation": {
-                                                            "start": 35,
-                                                            "end": 37,
-                                                            "line": 0,
-                                                            "column": 0
-                                                        }
-                                                    }
-                                                ],
-                                                "sourceLocation": {
-                                                    "start": 24,
-                                                    "end": 35,
-                                                    "line": 0,
-                                                    "column": 0
-                                                }
-                                            }
-                                        ],
-                                        "sourceLocation": null
-                                    },
+
+
+how to delete this part from respone "query": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
+    "document": {
+        "originalQuery": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
+        "children": [
