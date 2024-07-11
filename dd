@@ -1,90 +1,68 @@
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory logger)
 {
-    "data": {
-        "atm": [
-            {
-                "id": " ",
-                "katoCode": " ",
-                "filial": " ",
-                "locality": "",
-                "adress": "",
-                "adressKaz": "",
-                "location": " ",
-                "publicFlag": false,
-                "cashInFlag": false,
-                "allDayFlag": false,
-                "currencies": [
-                    " "
-                ],
-                "weekdayWorkTime": {
-                    "startTime": " ",
-                    "lunchStart": " ",
-                    "lunchEnd": " ",
-                    "endTime": " "
-                },
-                "sundayWorkTime": {
-                    "startTime": " ",
-                    "lunchStart": " ",
-                    "lunchEnd": " ",
-                    "endTime": " "
-                },
-                "saturdayWorkTime": {
-                    "startTime": " ",
-                    "lunchStart": " ",
-                    "lunchEnd": " ",
-                    "endTime": " "
-                },
-                "geoLocation": {
-                    "latitude": 0,
-                    "longitude": 0
-                }
-            },
-            {
-               "id": " ",
-                "katoCode": " ",
-                "filial": " ",
-                "locality": "",
-                "adress": "",
-                "adressKaz": "",
-                "location": " ",
-                "publicFlag": false,
-                "cashInFlag": false,
-                "allDayFlag": false,
-                "currencies": [
-                    " "
-                ],
-                "weekdayWorkTime": {
-                    "startTime": " ",
-                    "lunchStart": " ",
-                    "lunchEnd": " ",
-                    "endTime": " "
-                },
-                "sundayWorkTime": {
-                    "startTime": " ",
-                    "lunchStart": " ",
-                    "lunchEnd": " ",
-                    "endTime": " "
-                },
-                "saturdayWorkTime": {
-                    "startTime": " ",
-                    "lunchStart": " ",
-                    "lunchEnd": " ",
-                    "endTime": " "
-                },
-                "geoLocation": {
-                    "latitude": 0,
-                    "longitude": 0
-                }
-            },
-        ]
-    },
-    "errors": null,
-    "query": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
-    "document": {
-        "originalQuery": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
-        "children": [
+    
+    logger.AddSerilog();
 
+    if (env.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+    
+    app.UseMetricServer();
+    app.UseGraphiQl();
+    app.UseRouting();
+    app.UseEndpoints(endpoints => endpoints.MapControllers());
+    app.UseHealthChecks("/healthz");
+}
 
-how to delete this part from respone "query": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
-    "document": {
-        "originalQuery": "{\n     atm(pagingFrom:0 pagingSize:2){\n       id\n        katoCode\n        filial\n        locality\n        adress\n        adressKaz\n        location\n        publicFlag\n        cashInFlag\n        allDayFlag\n        currencies\n        weekdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        sundayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n         saturdayWorkTime{\n            startTime\n            lunchStart\n            lunchEnd\n            endTime\n        }\n        geoLocation{\n            latitude\n            longitude\n        }\n    }\n}",
-        "children": [
+------
+[Route("")]
+public class QueryController : Controller
+{
+    private readonly ISchema _schema;
+    private readonly IDocumentExecuter _documentExecuter;
+
+    public QueryController(ISchema schema, IDocumentExecuter documentExecuter)
+    {
+        _schema = schema;
+        _documentExecuter = documentExecuter;
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Post([FromBody] QueryDTO query)
+    {
+        if (query == null) { throw new ArgumentNullException(nameof(query)); }
+        var inputs = query.Variables?.ToString().ToInputs(); 
+        var execOptions = new ExecutionOptions()
+        {
+            Schema = _schema,
+            Query = query.Query,
+            Inputs = inputs
+        };
+
+        try
+        {
+            var res = await _documentExecuter.ExecuteAsync(execOptions).ConfigureAwait(false);
+
+            if (res.Errors?.Count > 0)
+            {
+               
+                foreach (var err in res.Errors)
+                {
+                    Log.Error("Not Found {err} query {query}", err.Message, query.Query);
+                }
+                return BadRequest(res);
+            }
+
+            Log.Information("Found {res} query {query}", res.ToString(), query.Query);
+            return Ok(res);
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("my error is here");
+            
+            Log.Error("exception {ex} query {query}", ex.Message, query.Query);
+            return BadRequest(ex);
+        }
+    }
