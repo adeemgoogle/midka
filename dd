@@ -1,3 +1,26 @@
+это код на go где используется slave
+cr := cron.New()
+	go func() {
+		slave.Check(conf.RedisServers, conf.RedisPassword, conf.RedisServiceName, conf.RedisDB)
+		_, err = cr.AddFunc("*/2 * * * *", func() {
+			s.logger.Info("Started to upload information...")
+
+			err := s.theirDb.StealInformation()
+			if err != nil {
+				s.logger.Error("failed to make cash", "error", err)
+			}
+
+			s.logger.Info("Successful inserted data")
+			return
+		})
+		if err != nil {
+			s.logger.Error("failed cron", "error", err)
+			return
+		}
+		cr.Start()
+	}()
+
+тот SlaveService который ты написал нужно сделать также на .net но при этом это мой код 
 using System;
 using System.Collections.Generic;
 using System.Threading;
