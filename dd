@@ -1,243 +1,83 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Quartz;
-using Quartz.Impl;
-using Quartz.Spi;
-using Serilog;
-using Serilog.Events;
-using Sentry;
-using Serilog.Formatting.Compact;
-using TradePointsLoader.Repository;
-using TradePointsLoader.Service;
-using Microsoft.AspNetCore.Hosting;
-using TradePointsLoader.Controllers;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using TradePointsLoader;
+package slave
 
-class Program
-{
-    private static readonly IConfiguration _config = new ConfigurationBuilder()
-        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-        .AddJsonFile("appsettings.json")
-        .AddEnvironmentVariables()
-        .Build();
+import (
+	"context"
+	"errors"
+	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
+	"log"
+	"strconv"
+	"strings"
+	"time"
+)
 
-    static async Task<int> Main(string[] args)
-    {
-        ConfigureLogging();
+var (
+	redisClient *redis.Client
+	servers     []string
+	password    string
+	serviceName string
+	db          int
+	serverCount int
+	id          int
+)
 
-        try
-        {
-            var host = CreateWebHostBuilder(args).Build();
-            await host.RunAsync();
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            Log.Fatal(ex, "Host terminated unexpectedly");
-            return 1;
-        }
-        finally
-        {
-            Log.CloseAndFlush();
-        }
-    }
+func Check(serversString, pswrd, servName, dbNum string) {
+	servers = strings.Split(serversString, ",")
+	serverCount = len(servers)
+	id = 0
+	password = pswrd
+	serviceName = servName
+	dbInt, err := strconv.Atoi(dbNum)
+	db = dbInt
+	if err != nil {
+		log.Fatal("slave: redis db must be number")
+	}
+	ctx := context.Background()
 
-    static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-        new WebHostBuilder()
-            .UseKestrel()
-            .UseUrls("http://*:8080")
-            .UseConfiguration(_config)
-            .ConfigureServices(ConfigureServices)
-            .UseStartup<Startup>();
+	setRedisClient()
 
-    static void ConfigureServices(IServiceCollection services)
-    {
-        services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-        services.AddLogging();
-        services.AddHealthChecks();
-        services.AddSingleton<HealthzController>();
-        
-
-        // Register services
-        services.AddSingleton<PostgresService>();
-        services.AddSingleton<KATORepository>();
-        services.AddSingleton(provider =>
-        {
-            var katoRepository = provider.GetRequiredService<KATORepository>();
-            return katoRepository.GetKATORef();
-        });
-        services.AddSingleton<TradePointsRepository>();
-        services.AddSingleton<IJobFactory, SingletonJobFactory>();
-        services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
-        // Add our job
-        services.AddSingleton<MyJob>();
-        services.AddSingleton(new JobSchedule(
-            jobType: typeof(MyJob),
-            cronExpression: "0 0 * * * ?")); // Run every 1 hour
-
-        services.AddHostedService<QuartzHostedService>();
-    }
-
-    static void ConfigureLogging()
-    {
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
-            .CreateLogger();
-    }
-
-    public class MyJob : IJob
-    {
-        private readonly IConfiguration _config;
-       
-
-        public MyJob(IConfiguration config)
-        {
-            _config = config;
-           
-        }
-
-        public async Task Execute(IJobExecutionContext context)
-        {
-            try
-            {
-                var dbConnector = new PostgresService(_config);
-                var connection = dbConnector.ConnectToDB();
-
-                Log.Information("Loading trade points data");
-
-
-
-                KATORepository katoRep = new KATORepository(_config);
-                var katodict = katoRep.GetKATORef();
-
-                TradePointsRepository tradePointsRep = new TradePointsRepository(_config, katodict);
-                var aTMs = tradePointsRep.GetAtms();
-                var branches = tradePointsRep.GetBranches();
-
-
-                dbConnector.TruncateAtmworktime();
-                dbConnector.TruncateBRanchworktime();
-                dbConnector.TruncateBRanch();
-                dbConnector.TruncateATMS();
-                dbConnector.TruncateKato();
-
-                dbConnector.AddKATO(katodict);
-                dbConnector.AddBranches(branches);
-                dbConnector.AddATMs(aTMs);
-                dbConnector.AddBranchs(branches);
-                dbConnector.AddAtms(aTMs);
-
-                Log.Information("Process finished anf cron is worked");
-            }
-            catch (Exception ex)
-            {
-                SentrySdk.CaptureException(ex);
-                Log.Error(ex, "Error during job execution");
-            }
-
-            await Task.CompletedTask;
-        }
-    }
-
-    public class SingletonJobFactory : IJobFactory
-    {
-        private readonly IServiceProvider _serviceProvider;
-
-        public SingletonJobFactory(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
-
-        public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
-        {
-            return _serviceProvider.GetService(bundle.JobDetail.JobType) as IJob;
-        }
-
-        public void ReturnJob(IJob job) { }
-    }
-
-    public class JobSchedule
-    {
-        public JobSchedule(Type jobType, string cronExpression)
-        {
-            JobType = jobType;
-            CronExpression = cronExpression;
-        }
-
-        public Type JobType { get; }
-        public string CronExpression { get; }
-    }
-
-    public class QuartzHostedService : IHostedService
-    {
-        private readonly ISchedulerFactory _schedulerFactory;
-        private readonly IJobFactory _jobFactory;
-        private readonly IEnumerable<JobSchedule> _jobSchedules;
-        private IScheduler _scheduler;
-
-        public QuartzHostedService(
-            ISchedulerFactory schedulerFactory,
-            IJobFactory jobFactory,
-            IEnumerable<JobSchedule> jobSchedules)
-        {
-            _schedulerFactory = schedulerFactory;
-            _jobFactory = jobFactory;
-            _jobSchedules = jobSchedules;
-        }
-
-        public async Task StartAsync(CancellationToken cancellationToken)
-        {
-            _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
-            _scheduler.JobFactory = _jobFactory;
-
-            foreach (var jobSchedule in _jobSchedules)
-            {
-                var job = CreateJob(jobSchedule);
-                var trigger = CreateTrigger(jobSchedule);
-
-                await _scheduler.ScheduleJob(job, trigger, cancellationToken);
-            }
-
-            await _scheduler.Start(cancellationToken);
-            Log.Information("cron created");
-        }
-
-        public async Task StopAsync(CancellationToken cancellationToken)
-        {
-            if (_scheduler != null)
-            {
-                await _scheduler.Shutdown(cancellationToken);
-            }
-        }
-
-        private IJobDetail CreateJob(JobSchedule schedule)
-        {
-            var jobType = schedule.JobType;
-            return JobBuilder
-                .Create(jobType)
-                .WithIdentity(jobType.FullName)
-                .WithDescription(jobType.Name)
-                .Build();
-        }
-
-        private ITrigger CreateTrigger(JobSchedule schedule)
-        {
-            return TriggerBuilder
-                .Create()
-                .WithIdentity($"{schedule.JobType.FullName}.trigger")
-                .WithCronSchedule(schedule.CronExpression)
-                .WithDescription(schedule.CronExpression)
-                .Build();
-        }
-    }
+	for {
+		if isMasterDead(ctx) {
+			becomeMaster(ctx)
+			return
+		}
+		time.Sleep(30 * time.Second)
+	}
 }
-{"@t":"2024-07-11T09:34:53.4212189Z","@m":"Scheduler \"DefaultQuartzScheduler_$_NON_CLUSTERED\" shutting down.","@i":"cff05048","0":"DefaultQuartzScheduler_$_NON_CLUSTERED","SourceContext":"Quartz.Core.QuartzScheduler"}
-{"@t":"2024-07-11T09:34:53.4292908Z","@m":"Scheduler DefaultQuartzScheduler_$_NON_CLUSTERED paused.","@i":"06ba145d","SourceContext":"Quartz.Core.QuartzScheduler"}
-{"@t":"2024-07-11T09:34:53.4382509Z","@m":"Scheduler DefaultQuartzScheduler_$_NON_CLUSTERED Shutdown complete.","@i":"d39815b0","SourceContext":"Quartz.Core.QuartzScheduler"}
+
+func setRedisClient() {
+	redisClient = redis.NewClient(&redis.Options{
+		Addr:     servers[id],
+		Password: password,
+		DB:       db,
+	})
+
+	id = (id + 1) % serverCount
+}
+
+func isMasterDead(ctx context.Context) bool {
+	res, err := redisClient.Get(ctx, serviceName).Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		setRedisClient()
+		return isMasterDead(ctx)
+	}
+	return res == ""
+}
+
+func becomeMaster(ctx context.Context) {
+	go func() {
+		for {
+			updateStatus(ctx)
+			time.Sleep(10 * time.Second)
+		}
+	}()
+}
+
+func updateStatus(ctx context.Context) {
+	id := uuid.New()
+	_, err := redisClient.Set(ctx, serviceName, id.String(), 30*time.Second).Result()
+	if err != nil {
+		setRedisClient()
+		updateStatus(ctx)
+	}
+}
