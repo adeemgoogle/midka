@@ -1,120 +1,243 @@
-public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory logger)
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+using Serilog;
+using Serilog.Events;
+using Sentry;
+using Serilog.Formatting.Compact;
+using TradePointsLoader.Repository;
+using TradePointsLoader.Service;
+using Microsoft.AspNetCore.Hosting;
+using TradePointsLoader.Controllers;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using TradePointsLoader;
+
+class Program
 {
-    
-    logger.AddSerilog();
+    private static readonly IConfiguration _config = new ConfigurationBuilder()
+        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+        .AddJsonFile("appsettings.json")
+        .AddEnvironmentVariables()
+        .Build();
 
-    if (env.IsDevelopment())
+    static async Task<int> Main(string[] args)
     {
-        app.UseDeveloperExceptionPage();
-    }
-    
-    app.UseMetricServer();
-    app.UseGraphiQl();
-    app.UseRouting();
-    app.UseEndpoints(endpoints => endpoints.MapControllers());
-    app.UseHealthChecks("/healthz");
-}
-
-------
-[Route("")]
-public class QueryController : Controller
-{
-    private readonly ISchema _schema;
-    private readonly IDocumentExecuter _documentExecuter;
-
-    public QueryController(ISchema schema, IDocumentExecuter documentExecuter)
-    {
-        _schema = schema;
-        _documentExecuter = documentExecuter;
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Post([FromBody] QueryDTO query)
-    {
-        if (query == null) { throw new ArgumentNullException(nameof(query)); }
-        var inputs = query.Variables?.ToString().ToInputs(); 
-        var execOptions = new ExecutionOptions()
-        {
-            Schema = _schema,
-            Query = query.Query,
-            Inputs = inputs
-        };
+        ConfigureLogging();
 
         try
         {
-            var res = await _documentExecuter.ExecuteAsync(execOptions).ConfigureAwait(false);
-
-            if (res.Errors?.Count > 0)
-            {
-               
-                foreach (var err in res.Errors)
-                {
-                    Log.Error("Not Found {err} query {query}", err.Message, query.Query);
-                }
-                return BadRequest(res);
-            }
-
-            Log.Information("Found {res} query {query}", res.ToString(), query.Query);
-            return Ok(res);
-
+            var host = CreateWebHostBuilder(args).Build();
+            await host.RunAsync();
+            return 0;
         }
         catch (Exception ex)
         {
-            Console.WriteLine("my error is here");
-            
-            Log.Error("exception {ex} query {query}", ex.Message, query.Query);
-            return BadRequest(ex);
+            Log.Fatal(ex, "Host terminated unexpectedly");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
         }
     }
-using Microsoft.AspNetCore.Http;
-using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
-using System.Threading.Tasks;
 
-public class CleanGraphiQLResponseMiddleware
-{
-    private readonly RequestDelegate _next;
+    static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+        new WebHostBuilder()
+            .UseKestrel()
+            .UseUrls("http://*:8080")
+            .UseConfiguration(_config)
+            .ConfigureServices(ConfigureServices)
+            .UseStartup<Startup>();
 
-    public CleanGraphiQLResponseMiddleware(RequestDelegate next)
+    static void ConfigureServices(IServiceCollection services)
     {
-        _next = next;
+        services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+        services.AddLogging();
+        services.AddHealthChecks();
+        services.AddSingleton<HealthzController>();
+        
+
+        // Register services
+        services.AddSingleton<PostgresService>();
+        services.AddSingleton<KATORepository>();
+        services.AddSingleton(provider =>
+        {
+            var katoRepository = provider.GetRequiredService<KATORepository>();
+            return katoRepository.GetKATORef();
+        });
+        services.AddSingleton<TradePointsRepository>();
+        services.AddSingleton<IJobFactory, SingletonJobFactory>();
+        services.AddSingleton<ISchedulerFactory, StdSchedulerFactory>();
+        // Add our job
+        services.AddSingleton<MyJob>();
+        services.AddSingleton(new JobSchedule(
+            jobType: typeof(MyJob),
+            cronExpression: "0 0 * * * ?")); // Run every 1 hour
+
+        services.AddHostedService<QuartzHostedService>();
     }
 
-    public async Task InvokeAsync(HttpContext context)
+    static void ConfigureLogging()
     {
-        var originalBodyStream = context.Response.Body;
+        Log.Logger = new LoggerConfiguration()
+            .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Debug, formatter: new RenderedCompactJsonFormatter())
+            .CreateLogger();
+    }
 
-        using (var responseBody = new MemoryStream())
+    public class MyJob : IJob
+    {
+        private readonly IConfiguration _config;
+       
+
+        public MyJob(IConfiguration config)
         {
-            context.Response.Body = responseBody;
+            _config = config;
+           
+        }
 
-            await _next(context);
-
-            responseBody.Seek(0, SeekOrigin.Begin);
-            var responseBodyString = await new StreamReader(responseBody).ReadToEndAsync();
-
-            // Check if the request is for GraphiQL
-            if (context.Request.Path.StartsWithSegments("/graphiql"))
+        public async Task Execute(IJobExecutionContext context)
+        {
+            try
             {
-                // Remove unwanted fields from JSON response
-                var jsonResponse = JObject.Parse(responseBodyString);
-                jsonResponse.Remove("query");
-                jsonResponse.Remove("document");
+                var dbConnector = new PostgresService(_config);
+                var connection = dbConnector.ConnectToDB();
 
-                // Convert modified JSON back to string
-                var modifiedResponse = jsonResponse.ToString();
+                Log.Information("Loading trade points data");
 
-                // Write modified response back to response stream
-                context.Response.Body = new MemoryStream();
-                await context.Response.WriteAsync(modifiedResponse);
+
+
+                KATORepository katoRep = new KATORepository(_config);
+                var katodict = katoRep.GetKATORef();
+
+                TradePointsRepository tradePointsRep = new TradePointsRepository(_config, katodict);
+                var aTMs = tradePointsRep.GetAtms();
+                var branches = tradePointsRep.GetBranches();
+
+
+                dbConnector.TruncateAtmworktime();
+                dbConnector.TruncateBRanchworktime();
+                dbConnector.TruncateBRanch();
+                dbConnector.TruncateATMS();
+                dbConnector.TruncateKato();
+
+                dbConnector.AddKATO(katodict);
+                dbConnector.AddBranches(branches);
+                dbConnector.AddATMs(aTMs);
+                dbConnector.AddBranchs(branches);
+                dbConnector.AddAtms(aTMs);
+
+                Log.Information("Process finished anf cron is worked");
             }
-            else
+            catch (Exception ex)
             {
-                // Write original response back to response stream
-                responseBody.Seek(0, SeekOrigin.Begin);
-                await responseBody.CopyToAsync(originalBodyStream);
+                SentrySdk.CaptureException(ex);
+                Log.Error(ex, "Error during job execution");
             }
+
+            await Task.CompletedTask;
+        }
+    }
+
+    public class SingletonJobFactory : IJobFactory
+    {
+        private readonly IServiceProvider _serviceProvider;
+
+        public SingletonJobFactory(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
+        public IJob NewJob(TriggerFiredBundle bundle, IScheduler scheduler)
+        {
+            return _serviceProvider.GetService(bundle.JobDetail.JobType) as IJob;
+        }
+
+        public void ReturnJob(IJob job) { }
+    }
+
+    public class JobSchedule
+    {
+        public JobSchedule(Type jobType, string cronExpression)
+        {
+            JobType = jobType;
+            CronExpression = cronExpression;
+        }
+
+        public Type JobType { get; }
+        public string CronExpression { get; }
+    }
+
+    public class QuartzHostedService : IHostedService
+    {
+        private readonly ISchedulerFactory _schedulerFactory;
+        private readonly IJobFactory _jobFactory;
+        private readonly IEnumerable<JobSchedule> _jobSchedules;
+        private IScheduler _scheduler;
+
+        public QuartzHostedService(
+            ISchedulerFactory schedulerFactory,
+            IJobFactory jobFactory,
+            IEnumerable<JobSchedule> jobSchedules)
+        {
+            _schedulerFactory = schedulerFactory;
+            _jobFactory = jobFactory;
+            _jobSchedules = jobSchedules;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
+            _scheduler.JobFactory = _jobFactory;
+
+            foreach (var jobSchedule in _jobSchedules)
+            {
+                var job = CreateJob(jobSchedule);
+                var trigger = CreateTrigger(jobSchedule);
+
+                await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+            }
+
+            await _scheduler.Start(cancellationToken);
+            Log.Information("cron created");
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            if (_scheduler != null)
+            {
+                await _scheduler.Shutdown(cancellationToken);
+            }
+        }
+
+        private IJobDetail CreateJob(JobSchedule schedule)
+        {
+            var jobType = schedule.JobType;
+            return JobBuilder
+                .Create(jobType)
+                .WithIdentity(jobType.FullName)
+                .WithDescription(jobType.Name)
+                .Build();
+        }
+
+        private ITrigger CreateTrigger(JobSchedule schedule)
+        {
+            return TriggerBuilder
+                .Create()
+                .WithIdentity($"{schedule.JobType.FullName}.trigger")
+                .WithCronSchedule(schedule.CronExpression)
+                .WithDescription(schedule.CronExpression)
+                .Build();
         }
     }
 }
+{"@t":"2024-07-11T09:34:53.4212189Z","@m":"Scheduler \"DefaultQuartzScheduler_$_NON_CLUSTERED\" shutting down.","@i":"cff05048","0":"DefaultQuartzScheduler_$_NON_CLUSTERED","SourceContext":"Quartz.Core.QuartzScheduler"}
+{"@t":"2024-07-11T09:34:53.4292908Z","@m":"Scheduler DefaultQuartzScheduler_$_NON_CLUSTERED paused.","@i":"06ba145d","SourceContext":"Quartz.Core.QuartzScheduler"}
+{"@t":"2024-07-11T09:34:53.4382509Z","@m":"Scheduler DefaultQuartzScheduler_$_NON_CLUSTERED Shutdown complete.","@i":"d39815b0","SourceContext":"Quartz.Core.QuartzScheduler"}
