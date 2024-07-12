@@ -85,7 +85,7 @@ class Program
         services.AddSingleton<MyJob>();
         services.AddSingleton(new JobSchedule(
             jobType: typeof(MyJob),
-            cronExpression: "0 16 12 * * ?")); // Run every 1 hour
+            cronExpression: "0 0 * * * ?")); // Run every 1 hour
 
         services.AddHostedService<QuartzHostedService>();
         services.AddSingleton<IConnectionMultiplexer>(provider =>
@@ -125,6 +125,7 @@ class Program
             {
                 if (IsMasterDead())
                 {
+                    Log.Information("One pod is dead!");
                     await BecomeMasterAsync(cancellationToken);
                     return;
                 }
@@ -143,6 +144,7 @@ class Program
         {
             while (!cancellationToken.IsCancellationRequested)
             {
+                Console.WriteLine("i am try to be masteer");
                 await UpdateStatusAsync(cancellationToken);
                 await Task.Delay(10 * 1000, cancellationToken); // 10 seconds delay
             }
@@ -169,6 +171,7 @@ class Program
 
         public async Task Execute(IJobExecutionContext context)
         {
+            Log.Information("My job is started");
             await _slaveService.CheckAsync(context.CancellationToken);
             try
             {
@@ -241,6 +244,7 @@ class Program
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            Log.Information("Started reality cron");
             _scheduler = await _schedulerFactory.GetScheduler(cancellationToken);
             _scheduler.JobFactory = _jobFactory;
 
@@ -250,6 +254,7 @@ class Program
                 var trigger = CreateTrigger(jobSchedule);
 
                 await _scheduler.ScheduleJob(job, trigger, cancellationToken);
+
             }
 
             await _scheduler.Start(cancellationToken);
@@ -276,6 +281,7 @@ class Program
 
         private ITrigger CreateTrigger(JobSchedule schedule)
         {
+            Log.Information("created trigger for cron");
             return TriggerBuilder.Create()
                                  .WithIdentity($"{schedule.JobType.FullName}.trigger")
                                  .WithCronSchedule(schedule.CronExpression)
@@ -298,4 +304,5 @@ class Program
 }
 
 
-он запускает проверку подов но не запускает крон. как пофиксить
+
+этот код не отрабатывает cron, но проверяет поды. Сделай так чтобы они работали одновременно
