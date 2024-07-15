@@ -18,6 +18,8 @@ using TradePointsLoader;
 using Microsoft.AspNetCore.Mvc;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
+using TradePointsLoader.Controllers;
+using Nest;
 
 class Program
 {
@@ -87,7 +89,6 @@ class Program
             return ConnectionMultiplexer.Connect(connectionString);
         });
 
-        services.AddHostedService<SlaveHostedService>();
         services.AddHostedService<QuartzHostedService>(provider =>
         {
             var hostedService = new QuartzHostedService(
@@ -203,9 +204,9 @@ class Program
                 var branches = tradePointsRep.GetBranches();
 
                 dbConnector.TruncateAtmworktime();
-                dbConnector.TruncateBranchworktime();
-                dbConnector.TruncateBranch();
-                dbConnector.TruncateATMs();
+                dbConnector.TruncateBRanchworktime();
+                dbConnector.TruncateBRanch();
+                dbConnector.TruncateATMS();
                 dbConnector.TruncateKato();
 
                 dbConnector.AddKATO(katodict);
@@ -313,8 +314,39 @@ class Program
                              .Build();
         }
 
-        private ITrigger CreateTrigger(JobSchedule schedule)
+        private Quartz.ITrigger CreateTrigger(JobSchedule schedule)
         {
             Log.Information("Created trigger for cron");
             return TriggerBuilder.Create()
-                                 .WithIdentity($"{schedule.JobType.Full
+                                 .WithIdentity($"{schedule.JobType.FullName}.trigger")
+                                 .WithCronSchedule(schedule.CronExpression)
+                                 .WithDescription(schedule.CronExpression)
+                                 .Build();
+        }
+    }
+
+
+    public class JobSchedule
+    {
+        public JobSchedule(Type jobType, string cronExpression)
+        {
+            JobType = jobType;
+            CronExpression = cronExpression;
+        }
+
+        public Type JobType { get; }
+        public string CronExpression { get; }
+    }
+}
+
+
+{"@t":"2024-07-15T07:45:16.1269307Z","@m":"Started reality cron","@i":"1c877285"}
+{"@t":"2024-07-15T07:45:16.4794229Z","@m":"Default Quartz.NET properties loaded from embedded resource file","@i":"f1df8142","SourceContext":"Quartz.Impl.StdSchedulerFactory"}
+{"@t":"2024-07-15T07:45:16.6025692Z","@m":"Initialized Scheduler Signaller of type: Quartz.Core.SchedulerSignalerImpl","@i":"d6ab0d5f","SourceContext":"Quartz.Core.SchedulerSignalerImpl"}
+{"@t":"2024-07-15T07:45:16.6028548Z","@m":"Quartz Scheduler created","@i":"389d80b0","SourceContext":"Quartz.Core.QuartzScheduler"}
+{"@t":"2024-07-15T07:45:16.6033387Z","@m":"RAMJobStore initialized.","@i":"8c5a21db","SourceContext":"Quartz.Simpl.RAMJobStore"}
+{"@t":"2024-07-15T07:45:16.6037196Z","@m":"Quartz Scheduler 3.9.0.0 - 'DefaultQuartzScheduler' with instanceId 'NON_CLUSTERED' initialized","@i":"3164f3ef","SourceContext":"Quartz.Impl.StdSchedulerFactory"}
+{"@t":"2024-07-15T07:45:16.6039047Z","@m":"Using thread pool 'Quartz.Simpl.DefaultThreadPool', size: 10","@i":"7942d54d","SourceContext":"Quartz.Impl.StdSchedulerFactory"}
+{"@t":"2024-07-15T07:45:16.6041428Z","@m":"Using job store 'Quartz.Simpl.RAMJobStore', supports persistence: False, clustered: False","@i":"46d3fae1","SourceContext":"Quartz.Impl.StdSchedulerFactory"}
+{"@t":"2024-07-15T07:45:16.6047722Z","@m":"JobFactory set to: Program+SingletonJobFactory","@i":"61bfeb4c","SourceContext":"Quartz.Core.QuartzScheduler"}
+{"@t":"2024-07-15T07:45:17.3485031Z","@m":"This node is not the master. Quartz jobs will not be started.","@i":"ecf93949"}
