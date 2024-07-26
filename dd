@@ -1,1 +1,3 @@
-
+\GoLand\plugins\go-plugin\lib\dlv\windows\dlv.exe --listen=127.0.0.1:61099 --headless=true --api-version=2 --check-go-version=false --only-same-user=false exec C:\Users\00058157\AppData\Local\JetBrains\GoLand2023.2\tmp\GoLand\___go_build_gprc_cmd.exe --
+API server listening at: 127.0.0.1:61099
+could not launch process: not an executable file
