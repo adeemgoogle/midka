@@ -1,12 +1,54 @@
+    public async Task CheckAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            if (IsMasterDead())
+            {
+                await BecomeMasterAsync(cancellationToken);
+                return;
+            }
+            else if (IsMaster())
+            {
+                Log.Information("Already master, performing master duties...");
+            }
+            else
+            {
+                Log.Information("Currently a slave, waiting...");
+            }
+            await Task.Delay(30 * 1000, cancellationToken); // 30 seconds delay
+        }
+    }
 
-System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances are not supported. Path: $.Errors.InnerException.TargetSite.MethodHandle.Value.
- ---> System.NotSupportedException: Serialization and deserialization of 'System.IntPtr' instances are not supported.
-   at System.Text.Json.Serialization.Converters.UnsupportedTypeConverter`1.Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)
-   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
-   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
-   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
-   at System.Text.Json.Serialization.JsonConverter`1.TryWrite(Utf8JsonWriter writer, T& value, JsonSerializerOptions options, WriteStack& state)
-   at System.Text.Json.Serialization.Metadata.JsonPropertyInfo`1.GetMemberAndWriteJson(Object obj, WriteStack& state, Utf8JsonWriter writer)
-   at System.Text.Json.Serialization.Converters.ObjectDefaultConverter`1.OnTryWrite(Utf8JsonWriter writer, T value, JsonSerializerOptions options, WriteStack& state)
+    public bool IsMaster()
+    {
+        var db = _redis.GetDatabase(_db);
+        var res = db.StringGet(_serviceName);
+        return res == master;
+    }
 
-как починить?
+    private bool IsMasterDead()
+    {
+        var db = _redis.GetDatabase(_db);
+        var res = db.StringGet(_serviceName);
+        return res.IsNullOrEmpty;
+    }
+
+    private async Task BecomeMasterAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            await UpdateStatusAsync(cancellationToken);
+            await Task.Delay(200 * 1000, cancellationToken); // 10 seconds delay
+        }
+    }
+
+    private async Task UpdateStatusAsync(CancellationToken cancellationToken)
+    {
+        var db = _redis.GetDatabase(_db);
+        var id = Guid.NewGuid().ToString();
+        await db.StringSetAsync(_serviceName, id, TimeSpan.FromSeconds(30));
+        master = id;
+    }
+}
+
+сделай так чтобы он проверял под каждые 5 минут и чтобы выводил лог только 1 раз а не 4
