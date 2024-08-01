@@ -51,4 +51,51 @@
     }
 }
 
-сделай так чтобы он проверял под каждые 5 минут и чтобы выводил лог только 1 раз а не 4
+сделай так чтобы он проверял под каждые 5 минут и чтобы выводил лог только 1 раз а не 
+
+
+
+
+package main
+
+import (
+    "strconv"
+    "time"
+
+    "github.com/gofiber/fiber/v2"
+)
+
+const tokenLifetime = 24 * time.Hour
+
+func CheckToken(tokenString string) (bool, error) {
+    tokenTime, err := strconv.ParseInt(tokenString, 10, 64)
+    if err != nil {
+        return false, err
+    }
+
+    tokenCreationTime := time.Unix(tokenTime, 0)
+    if time.Since(tokenCreationTime) > tokenLifetime {
+        return false, nil
+    }
+
+    return true, nil
+}
+
+func main() {
+    app := fiber.New()
+
+    app.Get("/protected", func(c *fiber.Ctx) error {
+        tokenString := c.Get("Authorization")
+        isValid, err := CheckToken(tokenString)
+        if err != nil {
+            return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "Invalid token format"})
+        }
+        if !isValid {
+            return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Token has expired"})
+        }
+
+        return c.JSON(fiber.Map{"message": "Token is valid"})
+    })
+
+    app.Listen(":8080")
+}
