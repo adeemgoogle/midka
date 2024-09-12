@@ -1,17 +1,13 @@
-{
-    "data": {
-        "metadata": {
-            "pageSize": 1,
-            "pageNumber": 1,
-            "total": 6
-        },
-        "data": [
-            {
-                "createdAt": 1678711541000,
-                "amount": -10000,
-                "type": "manually",
-                "description": "Сгорание",
-            }
-        ]
-    }
+
+var p *bluemonday.Policy
+
+func Init() {
+	p = bluemonday.UGCPolicy()
+}
+func GetBonusReq(s *model.BonusRequset)  {
+	s.Phone = sanitizeString(s.Phone)
+	s.MerchantId = sanitizeString(s.MerchantId)
+}
+func sanitizeString(s string) string {
+	return html.UnescapeString(p.Sanitize(s))
 }
