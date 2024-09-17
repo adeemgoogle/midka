@@ -1,1 +1,33 @@
+{
+    "XMLName": {
+        "Space": "",
+        "Local": ""
+    },
+    "Text": "",
+    "SoapEnv": "",
+    "Header": "",
+    "Body": {
+        "Text": "",
+        "ZHCMFM0195Response": {
+            "Text": "",
+            "N0": "",
+            "BEGDA": "",
+            "DATAX": "",
+            "EMPNUMBER": "",
+            "ENDDA": "",
+            "FIO": "",
+            "ID": "",
+            "IDTXT": "",
+            "ORCODE1": "",
+            "ORCODE2": "",
+            "ORGEH1": "",
+            "ORGEH2": "",
+            "PLANS": "",
+            "PLCODE": "",
+            "WERKS": "",
+            "WERKSCODE": ""
+        }
+    }
+}
 
+make it to struct(model) on golang with omitempty
