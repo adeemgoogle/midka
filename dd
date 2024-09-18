@@ -1,93 +1,29 @@
-token, err := jwt.Parse(k.ExtractBearerToken(ah), func(token *jwt.Token) (interface{}, error)  
-package main
-
-import (
-	"fmt"
-	"strings"
-	"time"
-
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
-)
-
-// Секретный ключ для подписи токенов
-var jwtSecret = []byte("your-secret-key")
-
-func main() {
-	// Создаем новое приложение Fiber
-	app := fiber.New()
-
-	// Маршрут для проверки токена
-	app.Get("/check-token", func(c *fiber.Ctx) error {
-		// Получаем заголовок Authorization
-		authHeader := c.Get("Authorization")
-
-		// Проверяем, начинается ли заголовок с "Bearer "
-		if !strings.HasPrefix(authHeader, "Bearer ") {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Invalid authorization format",
-			})
+func GetExpTime(token string) (int64, error) {
+	tokenStr, _, err := new(jwt.Parser).ParseUnverified(token, jwt.MapClaims{})
+	if err != nil {
+		return 0, err
+	}
+	if claims, ok := tokenStr.Claims.(jwt.MapClaims); ok {
+		if exp, ok := claims["exp"].(float64); ok {
+			return int64(exp), nil
 		}
-
-		// Извлекаем токен, удаляя "Bearer " из начала строки
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-
-		// Парсим токен
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			// Проверяем метод подписи, ожидаем "HMAC"
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-			}
-			return jwtSecret, nil
-		})
-
-		// Если произошла ошибка при парсинге токена
-		if err != nil {
-			// Проверка типа ошибки
-			if err.(*jwt.ValidationError).Errors&jwt.ValidationErrorExpired != 0 {
-				// Если токен истек
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"message": "Token expired",
-				})
-			}
-			// Другая ошибка
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"message": "Invalid token",
-				"error":   err.Error(),
-			})
-		}
-
-		// Проверяем, является ли токен валидным и существует ли в нем claim "iat"
-		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			// Извлекаем время создания токена (iat - issued at)
-			if iat, ok := claims["iat"].(float64); ok {
-				// Преобразуем iat в время
-				issuedAt := time.Unix(int64(iat), 0)
-
-				// Текущее время
-				currentTime := time.Now()
-
-				// Проверяем, прошло ли больше 5 часов с момента создания токена
-				if currentTime.Sub(issuedAt) > 5*time.Hour {
-					// Токен просрочен — возвращаем false
-					return c.JSON(fiber.Map{
-						"valid": false,
-					})
-				}
-
-				// Если токен действителен
-				return c.JSON(fiber.Map{
-					"valid": true,
-				})
-			}
-		}
-
-		// Если токен недействителен
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"message": "Invalid token",
-		})
-	})
-
-	// Запускаем приложение
-	app.Listen(":3000")
+	}
+	return 0, err
 }
+
+func CheckToken(tokenExp string) (bool, error) {
+	if tokenExp != "" {
+		tokenTme, err := GetExpTime(tokenExp)
+		if err != nil {
+			return false, errors.New("The token is wrong")
+		}
+		now := time.Now().Unix()
+		tokenCreatedat := tokenTme - 5*60*60
+
+		if now > tokenCreatedat {
+			return true, nil
+		}
+	}
+	return false, errors.New("wrong Tokens")
+}
+проверь, если токен живет больше чем 5 часов то он должен вернуть false
