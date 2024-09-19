@@ -1,29 +1,31 @@
-func GetExpTime(token string) (int64, error) {
-	tokenStr, _, err := new(jwt.Parser).ParseUnverified(token, jwt.MapClaims{})
-	if err != nil {
-		return 0, err
-	}
-	if claims, ok := tokenStr.Claims.(jwt.MapClaims); ok {
-		if exp, ok := claims["exp"].(float64); ok {
-			return int64(exp), nil
-		}
-	}
-	return 0, err
+{
+    "XMLName": {
+        "Space": "http://schemas.xmlsoap.org/soap/envelope/",
+        "Local": "Envelope"
+    },
+    "Text": "",
+    "SoapEnv": "http://schemas.xmlsoap.org/soap/envelope/",
+    "Header": "",
+    "Body": {
+        "Text": "",
+        "ZHCMFM0195Response": {
+            "Text": "",
+            "N0": "s",
+            "BEGDA": "",
+            "DATAX": "",
+            "EMPNUMBER": "",
+            "ENDDA": "",
+            "FIO": "",
+            "ID": "",
+            "IDTXT": "",
+            "ORCODE1": "",
+            "ORCODE2": "",
+            "ORGEH1": "",
+            "ORGEH2": "",
+            "PLANS":  "",
+            "PLCODE":  "",
+            "WERKS":  "",
+            "WERKSCODE":  "",
+        }
+    }
 }
-
-func CheckToken(tokenExp string) (bool, error) {
-	if tokenExp != "" {
-		tokenTme, err := GetExpTime(tokenExp)
-		if err != nil {
-			return false, errors.New("The token is wrong")
-		}
-		now := time.Now().Unix()
-		tokenCreatedat := tokenTme - 5*60*60
-
-		if now > tokenCreatedat {
-			return true, nil
-		}
-	}
-	return false, errors.New("wrong Tokens")
-}
-проверь, если токен живет больше чем 5 часов то он должен вернуть false
