@@ -1,31 +1,85 @@
-{
-    "XMLName": {
-        "Space": "http://schemas.xmlsoap.org/soap/envelope/",
-        "Local": "Envelope"
-    },
-    "Text": "",
-    "SoapEnv": "http://schemas.xmlsoap.org/soap/envelope/",
-    "Header": "",
-    "Body": {
-        "Text": "",
-        "ZHCMFM0195Response": {
-            "Text": "",
-            "N0": "s",
-            "BEGDA": "",
-            "DATAX": "",
-            "EMPNUMBER": "",
-            "ENDDA": "",
-            "FIO": "",
-            "ID": "",
-            "IDTXT": "",
-            "ORCODE1": "",
-            "ORCODE2": "",
-            "ORGEH1": "",
-            "ORGEH2": "",
-            "PLANS":  "",
-            "PLCODE":  "",
-            "WERKS":  "",
-            "WERKSCODE":  "",
-        }
-    }
+func (s *Service) Complaints(req *model.Complaints) (*model.Response, error) {
+	resp := new(model.Response)
+
+	wg := new(sync.WaitGroup)
+	if req.ClientId != "" {
+		var ocrm model.Response
+		chErr := make(chan error)
+		go func(*model.Complaints, *model.Response, chan error) {
+			wg.Add(1)
+			var a protocc.GetDossierRequest
+			a.PId = req.ClientId
+			ocrmResp, err := s.Grpc.GetDoisser(context.Background(), &a)
+			if err != nil {
+				s.logger.Error("error while do request ", err)
+				chErr <- err
+				wg.Done()
+				return
+			}
+			respBytes, err := protojson.Marshal(ocrmResp)
+			if err != nil {
+				s.logger.Error("error while marshall grpc ", err)
+				chErr <- err
+				wg.Done()
+				return
+			}
+			err = json.Unmarshal(respBytes, &ocrm)
+			if err != nil {
+				s.logger.Error("error while unmarshall ", err)
+				chErr <- err
+				wg.Done()
+				return
+			}
+
+			wg.Done()
+		}(req, &ocrm, chErr)
+		wg.Wait()
+		fmt.Println(ocrm)
+		close(chErr)
+		return &ocrm, nil
+	}
+	
+	
+
+	return resp, nil
+
+}
+
+как здесь в resp записать данные от ocrm? если ocrm предоставляет только данные про id \ categoryId
+type Response struct {
+	RequestType     string `json:"request_type"`
+	ClientId        string `json:"client_id"`
+	TabNum          string `json:"tab_num"`
+	Id              string `json:"Id"` // camunda request
+	CategoryId      string `json:"category_id"`
+	Product         string `json:"product"`
+	Reason          string `json:"reason"`
+	Atm             string `json:"atm"`
+	Branch          string `json:"branch"`
+	Terminal        string `json:"terminal"`
+	AutoCashier     string `json:"autoCashier"`
+	Pos             string `json:"pos"`
+	Department      string `json:"department"`
+	BranchCredit    string `json:"branch_credit"`
+	FourDigits      string `json:"four_digits"`
+	PriorityType    string `json:"priority_type"`
+	DeliveryAddress string `json:"delivery_address"`
+	Email           string `json:"email"`
+	MobilePhone     string `json:"mobilePhone"`
+	Comment         string `json:"comment"`
+	RequestNumber   string `json:"requestNumber"`
+	EMPNUMBER       string `json:"EMPNUMBER"`
+	FIO             string `json:"FIO"`
+	ORCODE1         string `json:"ORCODE1"`
+	ORCODE2         string `json:"ORCODE2"`
+	ORGEH1          string `json:"ORGEH1"`
+	ORGEH2          string `json:"ORGEH2"`
+	PLANS           string `json:"PLANS"`
+	PLCODE          string `json:"PLCODE"`
+	WERKS           string `json:"WERKS"`
+	ID              string `json:"id"`
+	Surname         string `json:"pSurname"`
+	GivenName       string `json:"pGivenName"`
+	MiddleName      string `json:"pMiddleName"`
+	Iin             string `json:"Piin"`
 }
