@@ -1,1 +1,27 @@
-
+"chargeBearer": "SHAR"
+"structuredemittance": [
+"invoiceNotes": "Payment as agreed"
+"invoiceNumber": "1",
+"poNumber": "12345",
+"partialPayment": false
+J.
+"creditorAgentBranchName": "Test",
+"debtorEnterpriseId": "V-BRA-CCC-57987557-100676596-001*,
+"creditorAccountNumber": "254686*,
+"creditorArentInstruction": "testpayment"
+"debtorAgentclearingMemberIDType": "USABA",
+"endToEndIO* : "GSBNRH6B89GHAZORUGNINSKRXAPIZZCXYUH",
+"serviceLevel": "STANDARD",
+"creditorEnterpriseId": "V-USA-USD-CBWBUS44XXX- 106700060-001*
+"transactionID*: "BD9ISCASKFGHGGHOGHJBG4KQY6P"
+"unstructuredRemittance": "testpayment"
+"instructedCurzency": "MN",
+"#xTradeRe[Number": "96399c7a785545a3863302eae967dddb"
+"creditorAgentclearingMemberID": "546493222",
+"instructedAmount": "1.64",
+"paymentPurpose": "Exportbills",
+"creditorAgentBic": "CBWBUS44XXX",
+"debtorAgentclearinglemberID": "062001186*,
+"valueAddedTaxIndicator": "INC",
+"creditorTaxID*: "12345",
+"creditorAgentBranchID": "12345*
