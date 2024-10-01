@@ -1,27 +1,40 @@
-"chargeBearer": "SHAR"
-"structuredemittance": [
-"invoiceNotes": "Payment as agreed"
-"invoiceNumber": "1",
-"poNumber": "12345",
-"partialPayment": false
-J.
-"creditorAgentBranchName": "Test",
-"debtorEnterpriseId": "V-BRA-CCC-57987557-100676596-001*,
-"creditorAccountNumber": "254686*,
-"creditorArentInstruction": "testpayment"
-"debtorAgentclearingMemberIDType": "USABA",
-"endToEndIO* : "GSBNRH6B89GHAZORUGNINSKRXAPIZZCXYUH",
-"serviceLevel": "STANDARD",
-"creditorEnterpriseId": "V-USA-USD-CBWBUS44XXX- 106700060-001*
-"transactionID*: "BD9ISCASKFGHGGHOGHJBG4KQY6P"
-"unstructuredRemittance": "testpayment"
-"instructedCurzency": "MN",
-"#xTradeRe[Number": "96399c7a785545a3863302eae967dddb"
-"creditorAgentclearingMemberID": "546493222",
-"instructedAmount": "1.64",
-"paymentPurpose": "Exportbills",
-"creditorAgentBic": "CBWBUS44XXX",
-"debtorAgentclearinglemberID": "062001186*,
-"valueAddedTaxIndicator": "INC",
-"creditorTaxID*: "12345",
-"creditorAgentBranchID": "12345*
+
+var url = pm.variables.get("url");
+var realm = "adem";
+var grant_type = "client";
+var client_id = "client";
+var client_secret = "vva02";
+
+// creating the request URL
+var url  = `${url}/realms/${realm}/protocol/openid-connect/token`;
+// creating the body of the request
+var data = `grant_type=${grant_type}&client_id=${client_id}&client_secret=${client_secret}`;
+
+// get access token from Keycloak
+pm.sendRequest({
+    url: url,
+    method: 'POST',
+    header: { 'Content-Type': 'application/x-www-form-urlencoded'},
+    body: {
+        mode: 'raw',
+        raw: data
+    }
+},  function(err, response) {
+    var response_json = response.json();
+    if (err === null) {
+        // Set the environment variable for token
+        pm.variables.set('access_token', response_json.access_token);
+    }
+    else {
+        console.error("Ошибка при вызове keycloak: " + err);
+    }
+    pm.test('Access token из Keycloak успешно получен', () => {
+        pm.expect(err).to.equal(null);
+        pm.expect(response).to.have.property('code', 200);
+        pm.expect(response_json).to.have.property('access_token').and.not.to.be.null
+    });
+});
+
+There was an error in evaluating the Pre-request Script:Error: Cannot read properties of undefined (reading 'json')
+
+FIX IT
