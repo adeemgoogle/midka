@@ -1,51 +1,6 @@
+error on create new publishererror: cannot create Kafka producer: kafka: client has run out of available brokers to talk to: 3 errors occurred:
+* EOF
+* EOF
+* EOF
 
-XMLName xml.Name `xml:"Envelope"`
-	Body    struct {
-		ServiceStartSaleTrxResponse struct {
-			Return struct {
-				RspStatus struct {
-					RspCode int    `xml:"rspCode"`
-					RspDesc string `xml:"rspDesc"`
-				} `xml:"rspStatus"`
-				Header struct {
-					XlsTrxId string `xml:"xlsTrxId"`
-				} `xml:"header"`
-				TransactionTable struct {
-					TransactionRecord []struct {
-						PostBalance     string `xml:"postBalance"`
-						PreviousBalance string `xml:"previousBalance"`
-						Amount          string `xml:"amount"`
-					} `xml:"transactionRecord"`
-				} `xml:"transactionTable"`
-			} `xml:"return"`
-		} `xml:"serviceStartSaleTrxResponse"`
-	} `xml:"Body"`
-
-выведи примерный ответ этой модельки
-<Envelope>
-    <Body>
-        <serviceStartSaleTrxResponse>
-            <return>
-                <rspStatus>
-                    <rspCode>200</rspCode>
-                    <rspDesc>Success</rspDesc>
-                </rspStatus>
-                <header>
-                    <xlsTrxId>12345ABC</xlsTrxId>
-                </header>
-                <transactionTable>
-                    <transactionRecord>
-                        <postBalance>1500.00</postBalance>
-                        <previousBalance>1000.00</previousBalance>
-                        <amount>500.00</amount>
-                    </transactionRecord>
-                    <transactionRecord>
-                        <postBalance>2000.00</postBalance>
-                        <previousBalance>1500.00</previousBalance>
-                        <amount>500.00</amount>
-                    </transactionRecord>
-                </transactionTable>
-            </return>
-        </serviceStartSaleTrxResponse>
-    </Body>
-</Envelope>
+how to fix it 
