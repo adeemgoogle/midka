@@ -22,3 +22,30 @@ XMLName xml.Name `xml:"Envelope"`
 	} `xml:"Body"`
 
 выведи примерный ответ этой модельки
+<Envelope>
+    <Body>
+        <serviceStartSaleTrxResponse>
+            <return>
+                <rspStatus>
+                    <rspCode>200</rspCode>
+                    <rspDesc>Success</rspDesc>
+                </rspStatus>
+                <header>
+                    <xlsTrxId>12345ABC</xlsTrxId>
+                </header>
+                <transactionTable>
+                    <transactionRecord>
+                        <postBalance>1500.00</postBalance>
+                        <previousBalance>1000.00</previousBalance>
+                        <amount>500.00</amount>
+                    </transactionRecord>
+                    <transactionRecord>
+                        <postBalance>2000.00</postBalance>
+                        <previousBalance>1500.00</previousBalance>
+                        <amount>500.00</amount>
+                    </transactionRecord>
+                </transactionTable>
+            </return>
+        </serviceStartSaleTrxResponse>
+    </Body>
+</Envelope>
