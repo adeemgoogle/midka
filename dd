@@ -1,56 +1,34 @@
-using System;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Serilog;
+private static readonly IConfiguration _config = new ConfigurationBuilder()
+  .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+  .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)  // Основной файл конфигурации
+  .AddEnvironmentVariables()
+  .Build();
 
-class Program
+static async Task<int> Main(string[] args)
 {
-    private static readonly IConfiguration _config = new ConfigurationBuilder()
-        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)  // Основной файл конфигурации
-        .AddJsonFile($"appsettings.{GetEnvironment()}.json", optional: true, reloadOnChange: true)  // Окружение
-        .AddEnvironmentVariables()
-        .Build();
-
-    static async Task<int> Main(string[] args)
+    ConfigureLogging();
+    try
     {
-        ConfigureLogging();
-        try
-        {
-            var host = CreateWebHostBuilder(args).Build();
-            await host.RunAsync();
-            return 0;
-        }
-        catch (Exception ex)
-        {
-            Log.Fatal($"Host terminated unexpectedly: {ex.Message}");
-            return 1;
-        }
-        finally
-        {
-            Log.CloseAndFlush();
-        }
+        var host = CreateWebHostBuilder(args).Build();
+        await host.RunAsync();
+        return 0;
     }
-
-    private static string GetEnvironment()
+    catch (Exception ex)
     {
-        // Получаем текущее окружение из переменной среды ASPNETCORE_ENVIRONMENT.
-        // По умолчанию, если не указано, используется "Production".
-        return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+        Log.Fatal($"Host terminated unexpectedly: {ex.Message}");
+        return 1;
     }
-
-    private static void ConfigureLogging()
+    finally
     {
-        Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(_config)
-            .CreateLogger();
+        Log.CloseAndFlush();
     }
+}
 
-    public static IHostBuilder CreateWebHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
-            {
-                webBuilder.UseStartup<Startup>();
-            });
+static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+    new WebHostBuilder()
+        .UseKestrel()
+        .UseUrls("http://*:8080")
+        .UseConfiguration(_config)
+        .ConfigureServices(ConfigureServices)
+        .UseStartup<Startup>();
 }
