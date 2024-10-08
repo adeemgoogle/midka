@@ -1,26 +1,11 @@
-FROM microsoft/dotnet/sdk:6.0 AS build
-WORKDIR /app
-EXPOSE 80
-EXPOSE 443
-
-FROM microsoft/dotnet/sdk:6.0 AS build
-WORKDIR /src
-
-COPY nuget.config ./
-COPY src/loader/T/T.csproj T/
-RUN cd T && dotnet restore .
-
-# Copy everything else and build
-COPY src/loader/T/. T/
-WORKDIR "/src/T"
-RUN dotnet build "T.csproj" -c release -o /app/build
-
-FROM build AS publish
-WORKDIR "/src/T"
-RUN dotnet publish "T.csproj" -c release -o /app/publish --no-restore
-
-# Build runtime image
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "T.dll"]
+Unhandled exception. System.TypeInitializationException: The type initializer for 'Program' threw an exception.
+ ---> System.IO.FileNotFoundException: The configuration file 'appsettings.Production.json' was not found and is not optional. The physical path is '/app/appsettings.Production.json'.
+   at Microsoft.Extensions.Configuration.FileConfigurationProvider.Load(Boolean reload)
+   at Microsoft.Extensions.Configuration.FileConfigurationProvider.Load()
+   at Microsoft.Extensions.Configuration.ConfigurationRoot..ctor(IList`1 providers)
+   at Microsoft.Extensions.Configuration.ConfigurationBuilder.Build()
+   at Program..cctor() in /src/T/Program.cs:line 26
+   --- End of inner exception stack trace ---
+   at Program.CreateWebHostBuilder(String[] args) in /src/T/Program.cs:line 59
+   at Program.Main(String[] args) in /src/T/Program.cs:line 38
+   at Program.<Main>(String[] args)
