@@ -1,6 +1,8 @@
-error on create new publishererror: cannot create Kafka producer: kafka: client has run out of available brokers to talk to: 3 errors occurred:
-* EOF
-* EOF
-* EOF
 
-how to fix it 
+
+ services.AddSingleton<IConnectionMultiplexer>(provider =>
+ {
+     var connectionString = _config.GetConnectionString("RedisConnection");
+     return ConnectionMultiplexer.Connect(connectionString);
+ });
+Error connecting right now. To allow this multiplexer to continue retrying until it's able to connect, use abortConnect=false in your connection string or AbortOnConnectFail=false; in your code.
