@@ -1,8 +1,30 @@
+class Program
+{
+    private static readonly IConfiguration _config = new ConfigurationBuilder()
+        .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+        .AddJsonFile($"appsettings.{}.json")
+        .AddEnvironmentVariables()
+        .Build();
 
+    static async Task<int> Main(string[] args)
+    {
+        ConfigureLogging();
+        try
+        {
+            var host = CreateWebHostBuilder(args).Build();
+            await host.RunAsync();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal($"Host terminated unexpectedly: {ex.Message}");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+}
 
- services.AddSingleton<IConnectionMultiplexer>(provider =>
- {
-     var connectionString = _config.GetConnectionString("RedisConnection");
-     return ConnectionMultiplexer.Connect(connectionString);
- });
-Error connecting right now. To allow this multiplexer to continue retrying until it's able to connect, use abortConnect=false in your connection string or AbortOnConnectFail=false; in your code.
+пофикси так чтобы он если это dev\master использовал соответсвующие appsettings
