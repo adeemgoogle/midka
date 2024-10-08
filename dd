@@ -1,34 +1,44 @@
-private static readonly IConfiguration _config = new ConfigurationBuilder()
-  .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-  .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)  // Основной файл конфигурации
-  .AddEnvironmentVariables()
-  .Build();
-
-static async Task<int> Main(string[] args)
+class Program
 {
-    ConfigureLogging();
-    try
-    {
-        var host = CreateWebHostBuilder(args).Build();
-        await host.RunAsync();
-        return 0;
-    }
-    catch (Exception ex)
-    {
-        Log.Fatal($"Host terminated unexpectedly: {ex.Message}");
-        return 1;
-    }
-    finally
-    {
-        Log.CloseAndFlush();
-    }
-}
+    private static readonly IConfiguration _config = new ConfigurationBuilder()
+      .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+      .AddJsonFile($"appsettings.{Getenvironment()}.json")
+      .AddEnvironmentVariables()
+      .Build();
 
-static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-    new WebHostBuilder()
-        .UseKestrel()
-        .UseUrls("http://*:8080")
-        .UseConfiguration(_config)
-        .ConfigureServices(ConfigureServices)
-        .UseStartup<Startup>();
+    static async Task<int> Main(string[] args)
+    {
+        ConfigureLogging();
+        Log.Information($"APPLICATION IS STARTING ON {Getenvironment()}");
+        try
+        {
+            var host = CreateWebHostBuilder(args).Build();
+            await host.RunAsync();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal($"Host terminated unexpectedly: {ex.StackTrace}");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+    private static string Getenvironment()
+    {
+        return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+    }
+
+
+    static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
+        new WebHostBuilder()
+            .UseKestrel()
+            .UseUrls("http://*:8080")
+            .UseConfiguration(_config)
+            .ConfigureServices(ConfigureServices)
+            .UseStartup<Startup>();
+
 }
+at Program.CreateWebHostBuilder(String[] args) in /src/T/Program.cs:line 59\n   at Program.Main(String[] args) in /src/T/Program.cs:line 38","@i":"30c8a76f","@l":"Fatal"}
