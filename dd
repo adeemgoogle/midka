@@ -1,11 +1,2 @@
-Unhandled exception. System.TypeInitializationException: The type initializer for 'Program' threw an exception.
- ---> System.IO.FileNotFoundException: The configuration file 'appsettings.Production.json' was not found and is not optional. The physical path is '/app/appsettings.Production.json'.
-   at Microsoft.Extensions.Configuration.FileConfigurationProvider.Load(Boolean reload)
-   at Microsoft.Extensions.Configuration.FileConfigurationProvider.Load()
-   at Microsoft.Extensions.Configuration.ConfigurationRoot..ctor(IList`1 providers)
-   at Microsoft.Extensions.Configuration.ConfigurationBuilder.Build()
-   at Program..cctor() in /src/T/Program.cs:line 26
-   --- End of inner exception stack trace ---
-   at Program.CreateWebHostBuilder(String[] args) in /src/T/Program.cs:line 59
-   at Program.Main(String[] args) in /src/T/Program.cs:line 38
-   at Program.<Main>(String[] args)
+\go\pkg\mod\cache\vcs\a30cd5884ebb227fa6e61d79cb8459795bda57d6337ac6125191cd0467587210: exit status 128:
+        fatal: unable to connect to 
