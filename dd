@@ -1,2 +1,3 @@
 \go\pkg\mod\cache\vcs\a30cd5884ebb227fa6e61d79cb8459795bda57d6337ac6125191cd0467587210: exit status 128:
         fatal: unable to connect to 
+git config --global url."https://gitlab.com/".insteadOf git@gitlab.com:
