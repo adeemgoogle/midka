@@ -1,3 +1,70 @@
-go: digital-banking-platform/packages/go/keycloak@v0.0.0-00010101000000-000000000000: reading gitlab.b.kz/digital-banking-platform/packages/go/keycloak.git/go.mod at revision v0.0.13: git ls-remote -q origin in C:\Users\BAKHYADE\go\pkg\mod\cache\vcs\a30cd5884ebb227fa6e61d79cb8459795bda57d6337ac6125191cd0467587210: exit status 128:
-        fatal: unable to connect to gitlab.bcc.kz:
-        gitlab.b.kz[0: 10.15.143.11]: errno=Unknown error
+ def allsumTotal = [];
+    shortSchedule.each { if(it.allsum != null){
+        allsumTotal += Double.parseDouble(it.allsum);
+        allsumTotal = allsumTotal.inject(0) {result, i -> result + i};
+    }else{
+        allsumTotal = 0;
+    }}
+    allsumTotal =  Math.floor(allsumTotal * 100) / 100;
+    allsumTotal = String.format("%.2f", allsumTotal);
+
+    def raschetTotal = [];
+    shortSchedule.each { if(it.raschet != null){
+        raschetTotal += Double.parseDouble(it.raschet);
+        raschetTotal = raschetTotal.inject(0) {result, i -> result + i};
+    }else{
+        raschetTotal =  0;
+    }};
+
+    raschetTotal =  Math.floor(raschetTotal * 100) / 100;
+    raschetTotal = String.format("%.2f", raschetTotal);
+
+    def debtTotal = [];
+    shortSchedule.each { if(it.debt != null){
+        debtTotal += Double.parseDouble(it.debt);
+        debtTotal = debtTotal.inject(0) {result, i -> result + i};
+    }else{
+        debtTotal = 0;
+    }};
+    debtTotal = Math.floor(debtTotal * 100) / 100;
+    debtTotal = String.format("%.2f", debtTotal);
+
+    def sumSubsTotal = [];
+    shortSchedule.each { if(it.sumsubs != null) {
+        sumSubsTotal += Double.parseDouble(it.sumsubs)
+        sumSubsTotal = sumSubsTotal.inject(0) {result, i -> result + i};
+    } else{
+        sumSubsTotal = 0;
+    }};
+    sumSubsTotal = Math.floor(sumSubsTotal * 100) / 100;
+    sumSubsTotal = String.format("%.2f", sumSubsTotal);
+
+    def sumCliTotal = [];
+    shortSchedule.each { if(it.sumcli != null) {
+        sumCliTotal += Double.parseDouble(it.sumcli)
+        sumCliTotal = sumCliTotal.inject(0) {result, i -> result + i};
+    } else{
+        sumCliTotal = 0;
+    }};
+    sumCliTotal = Math.floor(sumCliTotal * 100) / 100;
+    sumCliTotal = String.format("%.2f", sumCliTotal);
+
+    def creditTotal = [];
+    shortSchedule.each {if(it.credit != null){
+        creditTotal += Double.parseDouble(it.credit);
+        creditTotal = creditTotal.inject(0) {result, i -> result + i};
+    }else{
+        creditTotal = 0;
+    }};
+    creditTotal =  Math.floor(creditTotal * 100) / 100;
+    creditTotal = String.format("%.2f", creditTotal);
+
+    def odPcnTotal = [];
+    shortSchedule.each { if(it.sumcli != null) {
+        odPcnTotal += Double.parseDouble(it.odpcn)
+        odPcnTotal = odPcnTotal.inject(0) {result, i -> result + i};
+    } else{
+        odPcnTotal = 0;
+    }};
+    odPcnTotal =  Math.floor(odPcnTotal * 100) / 100;
+    odPcnTotal = String.format("%.2f", odPcnTotal);
