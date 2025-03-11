@@ -1,1 +1,122 @@
+func parseFloatOrZero(value string) float64 {
+	if value == "" {
+		return 0
+	}
+	var num float64
+	fmt.Sscanf(value, "%f", &num)
+	return num
+}
+
+func calculateTotal(payments []Payment, fieldSelector func(Payment) string) string {
+	var total float64
+	for _, p := range payments {
+		total += parseFloatOrZero(fieldSelector(p))
+	}
+	return fmt.Sprintf("%.2f", math.Floor(total*100)/100)
+}
+
+
+func extractBorrowers(contractInfo *ContractInfo) []Borrower {
+	var borrowers []Borrower
+	for _, prs := range contractInfo.PRS.PrsDtl {
+		address := prs.Address
+		borrowers = append(borrowers, Borrower{
+			Name:    prs.Name,
+			TaxCode: prs.TaxCode,
+			Address: address,
+			Phone:   prs.Phone,
+		})
+	}
+	return borrowers
+}
+
+
+func handleRequest(c *fiber.Ctx) error {
+	// Parse JSON input
+	var requestData struct {
+		SubProcess  SubProcess  `json:"subprocess"`
+		BusinessKey string      `json:"businessKey"`
+		UpdDayResult UpdDayResult `json:"upddayResult"`
+		Commision   string      `json:"commision"`
+		Vars        Vars        `json:"vars"`
+		Contract    ContractInfo `json:"contractInfo"`
+	}
+
+	if err := c.BodyParser(&requestData); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Invalid JSON format"})
+	}
+
+	// Extract process variables
+	updDayProcessId := requestData.Vars.PkoUpdDay.FileUploader.ProcessId
+	viewId := requestData.Vars.PkoUpdDay.FileUploader.ViewId
+	myDate := time.Now().Format("02-01-2006")
+
+	// Extract payment schedule
+	schedule := requestData.UpdDayResult.Response.Main.Schedule.Payment
+
+	// Compute totals
+	allsumTotal := calculateTotal(schedule, func(p Payment) string { return p.AllSum })
+	raschetTotal := calculateTotal(schedule, func(p Payment) string { return p.Raschet })
+	debtTotal := calculateTotal(schedule, func(p Payment) string { return p.Debt })
+	sumSubsTotal := calculateTotal(schedule, func(p Payment) string { return p.SumSubs })
+	sumCliTotal := calculateTotal(schedule, func(p Payment) string { return p.SumCli })
+	creditTotal := calculateTotal(schedule, func(p Payment) string { return p.Credit })
+	odPcnTotal := calculateTotal(schedule, func(p Payment) string { return p.OdPcn })
+
+	// Parse contract date
+	parsedDate, _ := time.Parse("2006-01-02", requestData.Contract.FromDate)
+	newToDate := parsedDate.Format("02-01-2006")
+
+	// Determine client full name
+	clientFullName := ""
+	if requestData.SubProcess.Model.FromBcc {
+		clientFullName = requestData.SubProcess.Model.Client.FullName
+	} else {
+		clientFullName = requestData.BusinessKey // Mocked as a replacement
+	}
+
+	// Prepare response
+	responseData := fiber.Map{
+		"LoanCode":     requestData.Contract.Code,
+		"LoanFromDate": newToDate,
+		"CurrentDate":  myDate,
+		"DepAddress":   requestData.Contract.BnkAddr1 + " " + requestData.Contract.BnkAddr2,
+		"CliAddress":   requestData.Contract.Addr1 + " " + requestData.Contract.Addr2,
+		"CliPhone":     requestData.Contract.Tel,
+		"OperationFee": requestData.Commision,
+		"OperationType": "4",
+		"FromBcc":      true,
+		"CliAcc":       requestData.Contract.CliAcc,
+		"BankBin":      requestData.Contract.BnkAcc,
+		"OtpConfirm":   "true",
+		"LoanInfo": fiber.Map{
+			"Loaner":   clientFullName,
+			"Iin":      requestData.Contract.TaxCode,
+			"LoanSum":  requestData.SubProcess.Model.LoanInfo.Sdok,
+			"LoanVal":  requestData.Contract.ValCode,
+			"LoanTerm": requestData.Contract.DDate,
+			"LoanGsv":  requestData.Contract.Gsv,
+			"LoanPc":   requestData.Contract.Pc,
+			"LoanMethod": requestData.Contract.Meth,
+		},
+		"TotalSums": fiber.Map{
+			"AllsumTotal": allsumTotal,
+			"RaschetTotal": raschetTotal,
+			"DebtTotal": debtTotal,
+			"SumSubsTotal": sumSubsTotal,
+			"SumCliTotal": sumCliTotal,
+			"CreditTotal": creditTotal,
+			"OdPcnTotal": odPcnTotal,
+		},
+		"ScheduleStruct": schedule,
+	}
+
+	return c.JSON(responseData)
+}
+
+func main() {
+	app := fiber.New()
+	app.Post("/process", handleRequest)
+	log.Fatal(app.Listen(":3000"))
+}
 
