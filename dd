@@ -120,3 +120,98 @@ func main() {
 	log.Fatal(app.Listen(":3000"))
 }
 
+
+
+func handleRequest(c *fiber.Ctx) error {
+	var requestData struct {
+		SubProcess   SubProcess   `json:"subprocess"`
+		BusinessKey  string       `json:"businessKey"`
+		UpdDayResult UpdDayResult `json:"upddayResult"`
+		Commision    string       `json:"commision"`
+		Vars         Vars         `json:"vars"`
+		Contract     ContractInfo `json:"contractInfo"`
+	}
+
+	if err := c.BodyParser(&requestData); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{"error": "Invalid JSON format"})
+	}
+
+	updDayProcessId := requestData.Vars.PkoUpdDay.FileUploader.ProcessId
+	viewId := requestData.Vars.PkoUpdDay.FileUploader.ViewId
+	myDate := time.Now().Format("02-01-2006")
+
+	schedule := requestData.UpdDayResult.Response.Main.Schedule.Payment
+
+	// Manually calculate sums
+	var allsumTotal, raschetTotal, debtTotal, sumSubsTotal, sumCliTotal, creditTotal, odPcnTotal float64
+
+	for _, p := range schedule {
+		var allsum, raschet, debt, sumsubs, sumcli, credit, odpcn float64
+
+		fmt.Sscanf(p.AllSum, "%f", &allsum)
+		fmt.Sscanf(p.Raschet, "%f", &raschet)
+		fmt.Sscanf(p.Debt, "%f", &debt)
+		fmt.Sscanf(p.SumSubs, "%f", &sumsubs)
+		fmt.Sscanf(p.SumCli, "%f", &sumcli)
+		fmt.Sscanf(p.Credit, "%f", &credit)
+		fmt.Sscanf(p.OdPcn, "%f", &odpcn)
+
+		allsumTotal += allsum
+		raschetTotal += raschet
+		debtTotal += debt
+		sumSubsTotal += sumsubs
+		sumCliTotal += sumcli
+		creditTotal += credit
+		odPcnTotal += odpcn
+	}
+
+	// Format contract date
+	parsedDate, _ := time.Parse("2006-01-02", requestData.Contract.FromDate)
+	newToDate := parsedDate.Format("02-01-2006")
+
+	// Determine client full name
+	clientFullName := requestData.BusinessKey
+	if requestData.SubProcess.Model.FromBcc {
+		clientFullName = requestData.SubProcess.Model.Client.FullName
+	}
+
+	// Build response
+	responseData := fiber.Map{
+		"LoanCode":     requestData.Contract.Code,
+		"LoanFromDate": newToDate,
+		"CurrentDate":  myDate,
+		"DepAddress":   requestData.Contract.BnkAddr1 + " " + requestData.Contract.BnkAddr2,
+		"CliAddress":   requestData.Contract.Addr1 + " " + requestData.Contract.Addr2,
+		"CliPhone":     requestData.Contract.Tel,
+		"OperationFee": requestData.Commision,
+		"OperationType": "4",
+		"FromBcc":      true,
+		"CliAcc":       requestData.Contract.CliAcc,
+		"BankBin":      requestData.Contract.BnkAcc,
+		"OtpConfirm":   "true",
+		"LoanInfo": fiber.Map{
+			"Loaner":   clientFullName,
+			"Iin":      requestData.Contract.TaxCode,
+			"LoanSum":  requestData.SubProcess.Model.LoanInfo.Sdok,
+			"LoanVal":  requestData.Contract.ValCode,
+			"LoanTerm": requestData.Contract.DDate,
+			"LoanGsv":  requestData.Contract.Gsv,
+			"LoanPc":   requestData.Contract.Pc,
+			"LoanMethod": requestData.Contract.Meth,
+		},
+		"TotalSums": fiber.Map{
+			"AllsumTotal": fmt.Sprintf("%.2f", math.Floor(allsumTotal*100)/100),
+			"RaschetTotal": fmt.Sprintf("%.2f", math.Floor(raschetTotal*100)/100),
+			"DebtTotal": fmt.Sprintf("%.2f", math.Floor(debtTotal*100)/100),
+			"SumSubsTotal": fmt.Sprintf("%.2f", math.Floor(sumSubsTotal*100)/100),
+			"SumCliTotal": fmt.Sprintf("%.2f", math.Floor(sumCliTotal*100)/100),
+			"CreditTotal": fmt.Sprintf("%.2f", math.Floor(creditTotal*100)/100),
+			"OdPcnTotal": fmt.Sprintf("%.2f", math.Floor(odPcnTotal*100)/100),
+		},
+		"ScheduleStruct": schedule,
+	}
+
+	return c.JSON(responseData)
+}
+
+
