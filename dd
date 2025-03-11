@@ -1,1 +1,183 @@
+package repository
 
+import (
+	"math"
+	"strconv"
+	"time"
+
+	"github.com/myproject/internal/domain"
+)
+
+// LoanRepository реализует операции, связанные с вычислением сумм и форматированием.
+type LoanRepository struct{}
+
+// NewLoanRepository создаёт новый экземпляр LoanRepository.
+func NewLoanRepository() *LoanRepository {
+	return &LoanRepository{}
+}
+
+// CalculateTotalSums вычисляет итоговые суммы из графика платежей с округлением через math.Floor.
+func (r *LoanRepository) CalculateTotalSums(schedule domain.Schedule) (float64, float64, float64, float64, float64, float64, float64) {
+	var allsumTotal, raschetTotal, debtTotal, sumSubsTotal, sumCliTotal, creditTotal, odPcnTotal float64
+
+	for _, p := range schedule.Payment {
+		allsumTotal += parseFloat(p.AllSum)
+		raschetTotal += parseFloat(p.Raschet)
+		debtTotal += parseFloat(p.Debt)
+		sumSubsTotal += parseFloat(p.SumSubs)
+		sumCliTotal += parseFloat(p.SumCli)
+		creditTotal += parseFloat(p.Credit)
+		odPcnTotal += parseFloat(p.OdPcn)
+	}
+
+	// Применяем math.Floor для округления до 2 знаков после запятой
+	allsumTotal = math.Floor(allsumTotal*100) / 100
+	raschetTotal = math.Floor(raschetTotal*100) / 100
+	debtTotal = math.Floor(debtTotal*100) / 100
+	sumSubsTotal = math.Floor(sumSubsTotal*100) / 100
+	sumCliTotal = math.Floor(sumCliTotal*100) / 100
+	creditTotal = math.Floor(creditTotal*100) / 100
+	odPcnTotal = math.Floor(odPcnTotal*100) / 100
+
+	return allsumTotal, raschetTotal, debtTotal, sumSubsTotal, sumCliTotal, creditTotal, odPcnTotal
+}
+
+// FormatDate форматирует дату из формата "yyyy-MM-dd" в "dd-MM-yyyy".
+func (r *LoanRepository) FormatDate(dateStr string) string {
+	parsedDate, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		return ""
+	}
+	return parsedDate.Format("02-01-2006")
+}
+
+// ExtractCoBorrowers формирует карту co‑заёмщиков (до 10 элементов) из данных договора.
+func (r *LoanRepository) ExtractCoBorrowers(contract domain.ContractInfo) map[string]interface{} {
+	coBorrowers := make(map[string]interface{})
+	prsDtl := contract.PRS.PrsDtl
+
+	if len(prsDtl) > 0 {
+		limit := len(prsDtl)
+		if limit > 10 {
+			limit = 10
+		}
+		for i := 0; i < limit; i++ {
+			suffix := ""
+			if i > 0 {
+				suffix = strconv.Itoa(i + 1)
+			}
+			bd := prsDtl[i]
+			// Конкатенация адресных полей
+			address := bd.PrsAddrResRus1 + " " + bd.PrsAddrResRus2
+			coBorrowers["PrsName"+suffix] = bd.PrsName
+			coBorrowers["PrsTaxcode"+suffix] = bd.PrsTaxcode
+			coBorrowers["PrsAddrres"+suffix] = address
+			coBorrowers["PrsTel"+suffix] = bd.PrsTel
+		}
+	} else {
+		// Если данных о заёмщиках нет – задаём 10 ключей с nil
+		for i := 0; i < 10; i++ {
+			suffix := ""
+			if i > 0 {
+				suffix = strconv.Itoa(i + 1)
+			}
+			coBorrowers["PrsAddrres"+suffix] = nil
+		}
+	}
+	return coBorrowers
+}
+
+// parseFloat безопасно преобразует строку в float64.
+func parseFloat(value string) float64 {
+	if value == "" {
+		return 0
+	}
+	f, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return 0
+	}
+	return f
+}o
+
+
+package usecase
+
+import (
+	"time"
+
+	"github.com/myproject/internal/domain"
+	"github.com/myproject/internal/repository"
+)
+
+// LoanUsecase определяет бизнес-логику обработки запроса.
+type LoanUsecase struct {
+	repo *repository.LoanRepository
+}
+
+// NewLoanUsecase создаёт новый экземпляр LoanUsecase.
+func NewLoanUsecase(repo *repository.LoanRepository) *LoanUsecase {
+	return &LoanUsecase{repo: repo}
+}
+
+// ProcessLoanRequest обрабатывает входящий запрос и формирует итоговый ответ.
+func (u *LoanUsecase) ProcessLoanRequest(req domain.LoanRequest) map[string]interface{} {
+	// Вычисляем итоговые суммы
+	allsumTotal, raschetTotal, debtTotal, sumSubsTotal, sumCliTotal, creditTotal, odPcnTotal :=
+		u.repo.CalculateTotalSums(req.UpdDayResult.Response.Main.Schedule)
+
+	// Форматируем даты
+	newToDate := u.repo.FormatDate(req.Contract.FromDate)
+	myDate := time.Now().Format("02-01-2006") // текущая дата в формате dd-MM-yyyy
+
+	// Определяем полное имя клиента
+	clientFullName := req.BusinessKey
+	if req.SubProcess.Model.FromBcc {
+		clientFullName = req.SubProcess.Model.Client.FullName
+	}
+
+	// Извлекаем co‑заёмщиков
+	coBorrowers := u.repo.ExtractCoBorrowers(req.Contract)
+
+	// Формируем финальный ответ (все числовые суммы возвращаются как float64)
+	response := map[string]interface{}{
+		"LoanCode":     req.Contract.Code,
+		"LoanFromDate": newToDate,
+		"CurrentDate":  myDate,
+		"DepAddress":   req.Contract.BnkAddr1 + " " + req.Contract.BnkAddr2,
+		"CliAddress":   req.Contract.Addr1 + " " + req.Contract.Addr2,
+		"CliPhone":     req.Contract.Tel,
+		"OperationFee": req.Commision,
+		"OperationType": "4",
+		"FromBcc":      true,
+		"CliAcc":       req.Contract.CliAcc,
+		"BankBin":      req.Contract.BnkAcc,
+		"OtpConfirm":   true,
+		"LoanInfo": map[string]interface{}{
+			"Loaner":     clientFullName,
+			"Iin":        req.Contract.TaxCode,
+			"LoanSum":    req.SubProcess.Model.LoanInfo.Sdok,
+			"LoanVal":    req.Contract.ValCode,
+			"LoanTerm":   req.Contract.DDate,
+			"LoanGsv":    req.Contract.Gsv,
+			"LoanPc":     req.Contract.Pc,
+			"LoanMethod": req.Contract.Meth,
+		},
+		"TotalSums": map[string]float64{
+			"AllsumTotal":  allsumTotal,
+			"RaschetTotal": raschetTotal,
+			"DebtTotal":    debtTotal,
+			"SumSubsTotal": sumSubsTotal,
+			"SumCliTotal":  sumCliTotal,
+			"CreditTotal":  creditTotal,
+			"OdPcnTotal":   odPcnTotal,
+		},
+		"ScheduleStruct": req.UpdDayResult.Response.Main.Schedule,
+	}
+
+	// Объединяем данные о co‑заёмщиках с основным ответом
+	for k, v := range coBorrowers {
+		response[k] = v
+	}
+
+	return response
+}
